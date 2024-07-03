@@ -301,9 +301,8 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 		public function load_scripts_for_block_editor() {
 			global $post;
 
-			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
-			$dependencies = [ ...$asset_file['dependencies'], 'wp-blocks', 'wp-element', 'wp-edit-post', 'wp-plugins', 'wp-components' ];
-			wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $dependencies, $asset_file['version'], true );
+			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
+			wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
 			$custom_statuses = apply_filters( 'vw_custom_status_list', $this->get_custom_statuses(), $post );
 			wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', array_values( $custom_statuses ) );
