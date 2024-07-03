@@ -151,56 +151,8 @@
 
 jQuery( document ).ready( function () {
 	jQuery( '.delete-status a' ).on( 'click', function () {
-		if ( ! confirm( __vw_localize_custom_status_configure.delete_status_string ) ) {
+		if ( ! confirm( VW_CUSTOM_STATUS_CONFIGURE.delete_status_string ) ) {
 			return false;
 		}
 	} );
-
-	/**
-	 * Instantiate the drag and drop sorting functionality
-	 */
-	jQuery( '#the-list' ).sortable( {
-		items: 'tr.term-static',
-		update( event, ui ) {
-			const affected_item = ui.item;
-			// Reset the position indicies for all terms
-			jQuery( '#the-list tr' ).removeClass( 'alternate' );
-			const terms = new Array();
-			jQuery( '#the-list tr.term-static' ).each( function ( index, value ) {
-				const term_id = jQuery( this ).attr( 'id' ).replace( 'term-', '' );
-				terms[ index ] = term_id;
-				jQuery( 'td.position', this ).html( index + 1 );
-				// Update the WP core design for alternating rows
-				if ( index % 2 == 0 ) {
-					jQuery( this ).addClass( 'alternate' );
-				}
-			} );
-			// Prepare the POST
-			const params = {
-				action: 'update_status_positions',
-				status_positions: terms,
-				custom_status_sortable_nonce: jQuery( '#custom-status-sortable' ).val(),
-			};
-			// Inform WordPress of our updated positions
-			jQuery.post( ajaxurl, params, function ( retval ) {
-				jQuery( '.vip-workflow-admin .vip-workflow-message' ).remove();
-				// If there's a success message, print it. Otherwise we assume we received an error message
-				if ( retval.status == 'success' ) {
-					var message =
-						'<span class="vip-workflow-updated-message vip-workflow-message">' +
-						retval.message +
-						'</span>';
-				} else {
-					var message =
-						'<span class="vip-workflow-error-message vip-workflow-message">' +
-						retval.message +
-						'</span>';
-				}
-				jQuery( '.vip-workflow-admin h2' ).append( message );
-				// Set a timeout to eventually remove it
-				setTimeout( edit_flow_hide_message, 8000 );
-			} );
-		},
-	} );
-	jQuery( '#the-list tr.term-static' ).disableSelection();
 } );

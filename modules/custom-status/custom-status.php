@@ -275,7 +275,7 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 				$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'jquery-ui-sortable', 'vip-workflow-settings-js' ];
 				wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $dependencies, $asset_file['version'], true );
 
-				wp_localize_script( 'vip-workflow-custom-status-configure', '__vw_localize_custom_status_configure', [
+				wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
 					'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
 				] );
 			}
@@ -304,8 +304,8 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 			wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-			$custom_statuses = apply_filters( 'vw_custom_status_list', $this->get_custom_statuses(), $post );
-			wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', array_values( $custom_statuses ) );
+			$custom_statuses = array_values( $this->get_custom_statuses() );
+			wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', $custom_statuses );
 		}
 
 		public function load_styles_for_block_editor() {
@@ -375,8 +375,6 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 						}
 					}
 				}
-
-				$custom_statuses = apply_filters( 'vw_custom_status_list', $custom_statuses, $post );
 
 				// All right, we want to set up the JS var which contains all custom statuses
 				$all_statuses = [];
@@ -560,20 +558,16 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 		 * Get all custom statuses as an ordered array
 		 *
 		 * @param array|string $statuses
-		 * @param array $args
 		 * @return array $statuses All of the statuses
 		 */
-		public function get_custom_statuses( $args = [] ) {
-			global $wp_post_statuses;
-
+		public function get_custom_statuses() {
 			if ( $this->disable_custom_statuses_for_post_type() ) {
 				return $this->get_core_post_statuses();
 			}
 
 			// Internal object cache for repeat requests
-			$arg_hash = md5( serialize( $args ) );
-			if ( ! empty( $this->custom_statuses_cache[ $arg_hash ] ) ) {
-				return $this->custom_statuses_cache[ $arg_hash ];
+			if ( ! empty( $this->custom_statuses_cache ) ) {
+				return $this->custom_statuses_cache;
 			}
 
 			// Handle if the requested taxonomy doesn't exist
@@ -616,8 +610,7 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 				$ordered_statuses[] = $unpositioned_status;
 			}
 
-			$this->custom_statuses_cache[ $arg_hash ] = $ordered_statuses;
-
+			$this->custom_statuses_cache = $ordered_statuses;
 			return $ordered_statuses;
 		}
 
