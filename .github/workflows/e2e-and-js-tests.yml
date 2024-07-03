@@ -1,0 +1,39 @@
+name: E2E and JS tests
+
+on: push
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up NodeJS 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Build Edit Flow
+        run: |
+          npm ci
+          npm run build
+
+      # - name: Install WordPress with wp-env
+      #   run: npm run wp-env start
+
+      - name: Run Lint JS
+        run: npm run lint-js
+
+      # - name: Run tests
+      #   run: npm run test

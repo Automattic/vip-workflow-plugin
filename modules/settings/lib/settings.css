@@ -1,0 +1,227 @@
+/* @override http://localhost:8888/wpplugindev/wp-content/plugins/vip-workflow/css/settings.css?ver=0.6.4 */
+
+.float-right {
+	float:right;
+}
+
+.float-left {
+	float: left;
+}
+
+.clear-left {
+	clear: left;
+}
+
+.clear-right {
+	clear: right;
+}
+
+.clear-both {
+	clear: both;
+}
+
+.vip-workflow-modules {
+	width: 100%;
+	overflow: hidden;
+	margin-top: 20px;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.vip-workflow-modules .vip-workflow-module {
+	width: 250px;
+	min-height: 150px;
+	position: relative;
+	float: left;
+	border: 1px solid #e1e1e1;
+	padding: 10px;
+	background-color: #f1f1f1;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	margin-right: 15px;
+	margin-bottom: 15px;
+}
+
+.vip-workflow-modules .vip-workflow-module p {
+	font-size: 12px;
+	color: #3d3d3d;
+	line-height: 150%;
+	font-family: "Helvetica Neue",Helvetica,Arial,"Lucida Grande",Verdana,"Bitstream Vera Sans",sans-serif;
+}
+
+.vip-workflow-modules .vip-workflow-module h4 {
+	color: #000000;
+    font-family: "Helvetica Neue",Helvetica,Arial,"Lucida Grande",Verdana,"Bitstream Vera Sans",sans-serif;
+    font-size: 17px;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1.1;
+    margin: 0;
+    padding: 0;
+}
+
+.vip-workflow-modules .vip-workflow-module .vip-workflow-module-actions {
+	position: absolute;
+	bottom: 0px;
+	left: 10px;
+	width: 250px;
+}
+
+.vip-workflow-modules .vip-workflow-module .button-primary:hover {
+	color: #FFFFFF;
+	border-color: #3B5D0C;
+}
+
+.vip-workflow-modules .vip-workflow-module .button-primary.configure-vip-workflow-module {
+	color: #f1f1f1;
+	border: solid 1px #666;
+	background: #DDD;
+	background: -webkit-gradient(linear, left top, left bottom, from(#BBB), to(#888));
+	background: -moz-linear-gradient(top,  #BBB,  #888);
+	box-shadow: none;
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#BBB', endColorstr='#888');
+	text-shadow: none;
+	float: right;
+}
+
+.vip-workflow-modules .vip-workflow-module .button-primary.enable-disable-vip-workflow-module {
+	float: left;
+}
+
+.vip-workflow-modules .vip-workflow-module .button-primary.configure-vip-workflow-module:hover {
+	color: #FFF;
+	border-color: #444;
+}
+
+.vip-workflow-admin a.cancel-settings-link {
+	margin-left: 10px;
+}
+
+.vip-workflow-admin .inline-edit-row fieldset label span.title {
+	width: 6em;
+}
+
+.vip-workflow-admin .inline-edit-row fieldset label span.input-text-wrap {
+	margin-left: 6em;
+}
+
+.vip-workflow-admin .explanation,
+.vip-workflow-admin .explanation p {
+	font-size: 16px;
+	line-height: 22px;
+}
+
+.vip-workflow-admin .explanation {
+	margin-bottom: 1em;
+}
+
+.vip-workflow-admin .explanation p {
+	margin: 0.5em 0;
+}
+
+.vip-workflow-admin .tablenav {
+	display: none;
+}
+
+/* Display drag handles for the cursor on sortable list tables for our custom taxonomies */
+.vip-workflow-admin table.wp-list-table tbody.ui-sortable tr.term-static {
+	cursor: move;
+}
+
+.vip-workflow-admin table.wp-list-table tbody.ui-sortable tr.ui-sortable-helper td,
+.vip-workflow-admin table.wp-list-table tbody.ui-sortable tr.ui-sortable-helper .row-actions {
+	visibility: hidden;
+}
+
+.vip-workflow-admin table.wp-list-table tbody.ui-sortable tr.ui-sortable-helper {
+	border: 1px solid #DFDFDF;
+}
+
+.vip-workflow-admin table.wp-list-table tbody.ui-sortable tr.ui-sortable-helper td.column-name {
+	visibility: visible;
+	border-bottom: none;
+}
+
+/* Display disabled inputs with a very light gray background */
+.vip-workflow-admin input[disabled] {
+	background-color: #eee;
+}
+
+.vip-workflow-modules .vip-workflow-module input.button,
+.vip-workflow-modules .vip-workflow-module a.button {
+	font-weight: normal;
+	margin: 0;
+}
+
+.vip-workflow-modules .vip-workflow-module a.button-primary {
+	float: right;
+}
+
+.credits {
+	color: #666666;
+	font-size: 11px;
+}
+
+.credits a {
+	color: #666666;
+}
+
+/* Module specific image styles */
+
+.button-inline-block {
+	display: inline-block;
+}
+
+h3.nav-tab-wrapper {
+	margin-top: 0;
+}
+
+.form-wrap .form-field {
+	margin: 0;
+	padding-top: 3px;
+	padding-bottom: 3px;
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.form-error p {
+	font-weight:bold;
+	color: #CC0000;
+}
+
+.form-wrap p.submit a {
+	font-style: normal;
+}
+
+.vip-workflow-message {
+	position: relative;
+	top: -5px;
+	margin-left: 25px;
+	font-weight:normal;
+	font-size: 12px;
+	line-height: 20px;
+	padding-left: 25px;
+	padding-right: 25px;
+	padding-top: 5px;
+	padding-bottom: 4px;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+}
+
+.vip-workflow-updated-message {
+	background-color: #FFFFE0;
+	border: 1px solid #E6DB55;
+}
+
+.vip-workflow-error-message {
+	background-color: #FFEBE8;
+	border: 1px solid #CC0000;
+}
+
+/* Admin Menu Icon */
+#adminmenu .toplevel_page_vw-settings .wp-menu-image img {
+	width: 16px;
+	height: 16px;
+}
