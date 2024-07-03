@@ -23,11 +23,13 @@ global $vip_workflow;
 				<?php $add_new_nav_class = empty( $action ) ? 'nav-tab-active' : ''; ?>
 				<a href="<?php echo esc_url( $this->get_link() ); ?>" class="nav-tab <?php echo esc_attr( $add_new_nav_class ); ?>"><?php esc_html_e( 'Add New', 'vip-workflow' ); ?></a>
 				<?php $options_nav_class = 'change-options' === $action ? 'nav-tab-active' : ''; ?>
-				<a href="<?php echo esc_url( $this->get_link( array( 'action' => 'change-options' ) ) ); ?>" class="nav-tab <?php echo esc_attr( $options_nav_class ); ?>"><?php esc_html_e( 'Options', 'vip-workflow' ); ?></a>
+				<a href="<?php echo esc_url( $this->get_link( [ 'action' => 'change-options' ] ) ); ?>" class="nav-tab <?php echo esc_attr( $options_nav_class ); ?>"><?php esc_html_e( 'Options', 'vip-workflow' ); ?></a>
+				<?php $options_nav_class = 'manage-workflow' === $action ? 'nav-tab-active' : ''; ?>
+				<a href="<?php echo esc_url( $this->get_link( [ 'action' => 'manage-workflow' ] ) ); ?>" class="nav-tab <?php echo esc_attr( $options_nav_class ); ?>"><?php esc_html_e( 'Workflow', 'vip-workflow' ); ?></a>
 			</h3>
 
 			<?php if ( 'change-options' === $action ) { ?>
-			<form class="basic-settings" action="<?php echo esc_url( $this->get_link( array( 'action' => 'change-options' ) ) ); ?>" method="post">
+			<form class="basic-settings" action="<?php echo esc_url( $this->get_link( [ 'action' => 'change-options' ] ) ); ?>" method="post">
 				<?php settings_fields( $this->module->options_group_name ); ?>
 				<?php do_settings_sections( $this->module->options_group_name ); ?>
 				<input id="vip_workflow_module_name" name="vip_workflow_module_name" type="hidden" value="<?php echo esc_attr( $this->module->name ); ?>" />

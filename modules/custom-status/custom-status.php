@@ -1187,7 +1187,7 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 		 */
 		public function print_configure_view() {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- No verification required for unprivileged URL check.
-			$action = isset( $_GET['action'] ) && in_array( $_GET['action'], [ 'edit-status', 'change-options' ] ) ? $_GET['action'] : '';
+			$action = isset( $_GET['action'] ) && in_array( $_GET['action'], [ 'edit-status', 'change-options', 'manage-workflow' ] ) ? $_GET['action'] : '';
 
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- No verification required for unprivileged URL check.
 			$term_id = isset( $_GET['term-id'] ) ? absint( $_GET['term-id'] ) : false;
@@ -1217,10 +1217,12 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 				}
 
 				include_once __DIR__ . '/views/edit-status.php';
-			} else {
+			} elseif ( 'change-options' === $action ) {
 				$custom_status_list_table = new VW_Custom_Status_List_Table();
 				$custom_status_list_table->prepare_items();
 				include_once __DIR__ . '/views/configure.php';
+			} elseif ( 'manage-workflow' === $action ) {
+				echo '<p>Manage Workflow</p>';
 			}
 		}
 
