@@ -1,3 +1,3 @@
 jQuery( document ).ready( function () {
-	jQuery( '#ef-usergroup-users ul' ).listFilterizer();
+	jQuery( '#vw-usergroup-users ul' ).listFilterizer();
 } );

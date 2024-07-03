@@ -61,7 +61,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 
 			// filter to disable it.
 			// ToDo: Update the ef prefix.
-			$is_analytics_enabled = apply_filters( 'ef_should_analytics_be_enabled', $is_analytics_enabled );
+			$is_analytics_enabled = apply_filters( 'vw_should_analytics_be_enabled', $is_analytics_enabled );
 
 			return $is_analytics_enabled;
 		}
@@ -111,7 +111,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 		 * If add_post_type_support() has been used anywhere (legacy support), inherit the state
 		 *
 		 * @param array $module_post_types Current state of post type options for the module
-		 * @param string $post_type_support What the feature is called for post_type_support (e.g. 'ef_calendar')
+		 * @param string $post_type_support What the feature is called for post_type_support (e.g. 'vw_calendar')
 		 * @return array $normalized_post_type_options The setting for each post type, normalized based on rules
 		 *
 		 * @since 0.7
@@ -144,7 +144,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 				'public' => true,
 			);
 			// ToDo: Update the ef prefix.
-			$pt_args = apply_filters( 'edit_flow_supported_module_post_types_args', $pt_args, $module );
+			$pt_args = apply_filters( 'vip_workflow_supported_module_post_types_args', $pt_args, $module );
 			return get_post_types( $pt_args, 'objects' );
 		}
 
@@ -291,7 +291,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 
 			$response = null;
 			// ToDo: Update the ef prefix.
-			$response = apply_filters( 'ef_get_user_meta', $response, $user_id, $key, $string );
+			$response = apply_filters( 'vw_get_user_meta', $response, $user_id, $key, $string );
 			if ( ! is_null( $response ) ) {
 				return $response;
 			}
@@ -314,7 +314,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 
 			$response = null;
 			// ToDo: Update the ef prefix.
-			$response = apply_filters( 'ef_update_user_meta', $response, $user_id, $key, $value, $previous );
+			$response = apply_filters( 'vw_update_user_meta', $response, $user_id, $key, $value, $previous );
 			if ( ! is_null( $response ) ) {
 				return $response;
 			}
@@ -448,8 +448,8 @@ if ( ! class_exists( 'VW_Module' ) ) {
 			// ToDo: Update the ef prefix.
 			// Set up arguments
 			$defaults = array(
-				'list_class' => 'ef-users-select-form',
-				'input_id' => 'ef-selected-users',
+				'list_class' => 'vw-users-select-form',
+				'input_id' => 'vw-selected-users',
 			);
 			$parsed_args = wp_parse_args( $args, $defaults );
 			extract( $parsed_args, EXTR_SKIP );
@@ -463,7 +463,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 				),
 				'orderby' => 'display_name',
 			);
-			$args = apply_filters( 'ef_users_select_form_get_users_args', $args );
+			$args = apply_filters( 'vw_users_select_form_get_users_args', $args );
 
 			$users = get_users( $args );
 
@@ -482,8 +482,8 @@ if ( ! class_exists( 'VW_Module' ) ) {
 					?>
 					<li>
 						<label for="<?php echo esc_attr( $input_id . '-' . $user->ID ); ?>">
-							<div class="ef-user-subscribe-actions">
-								<?php do_action( 'ef_user_subscribe_actions', $user->ID, $checked ); ?>
+							<div class="vw-user-subscribe-actions">
+								<?php do_action( 'vw_user_subscribe_actions', $user->ID, $checked ); ?>
 								<input type="checkbox" id="<?php echo esc_attr( $input_id . '-' . $user->ID ); ?>" name="<?php echo esc_attr( $input_id ); ?>[]" value="<?php echo esc_attr( $user->ID ); ?>"
 																	  <?php
 																		echo esc_attr( $checked );
@@ -492,8 +492,8 @@ if ( ! class_exists( 'VW_Module' ) ) {
 								/>
 							</div>
 
-							<span class="ef-user_displayname"><?php echo esc_html( $user->display_name ); ?></span>
-							<span class="ef-user_useremail"><?php echo esc_html( $user->user_email ); ?></span>
+							<span class="vw-user_displayname"><?php echo esc_html( $user->display_name ); ?></span>
+							<span class="vw-user_useremail"><?php echo esc_html( $user->user_email ); ?></span>
 						</label>
 					</li>
 				<?php endforeach; ?>
@@ -513,7 +513,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 		public function add_caps_to_role( $role, $caps ) {
 			// ToDo: Update the ef prefix.
 			// In some contexts, we don't want to add caps to roles
-			if ( apply_filters( 'ef_kill_add_caps_to_role', false, $role, $caps ) ) {
+			if ( apply_filters( 'vw_kill_add_caps_to_role', false, $role, $caps ) ) {
 				return;
 			}
 

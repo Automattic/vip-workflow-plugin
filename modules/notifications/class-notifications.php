@@ -15,23 +15,23 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		// Taxonomy name used to store users following posts
 		public $following_users_taxonomy = 'following_users';
 		// Taxonomy name used to store user groups following posts
-		public $following_usergroups_taxonomy = VW_User_Groups::taxonomy_key;
+		public $following_usergroups_taxonomy = VW_User_Groups::TAXONOMY_KEY;
 
 		public $module;
 
 		public $edit_post_subscriptions_cap = 'edit_post_subscriptions';
 
 		/**
-		 * Register the module with Edit Flow but don't do anything else
+		 * Register the module with VIP Workflow but don't do anything else
 		 */
 		public function __construct() {
 
-			// Register the module with Edit Flow
+			// Register the module with VIP Workflow
 			$this->module_url = $this->get_module_url( __FILE__ );
 			$args             = [
-				'title'                 => __( 'Notifications', 'edit-flow' ),
-				'short_description'     => __( 'Update your team of important changes to your content.', 'edit-flow' ),
-				'extended_description'  => __( 'With email notifications, you can keep everyone updated about what’s happening with a given content. Each status change or editorial comment sends out an email notification to users subscribed to a post. User groups can be used to manage who receives notifications on what. With webhook notifications, all notifications will also be sent to the specified webhook URL(i.e.: Slack incoming webhooks) but will ignore specific user or user groups subscription settings.', 'edit-flow' ),
+				'title'                 => __( 'Notifications', 'vip-workflow' ),
+				'short_description'     => __( 'Update your team of important changes to your content.', 'vip-workflow' ),
+				'extended_description'  => __( 'With email notifications, you can keep everyone updated about what’s happening with a given content. Each status change sends out an email notification to users subscribed to a post. User groups can be used to manage who receives notifications on what. With webhook notifications, all notifications will also be sent to the specified webhook URL(i.e.: Slack incoming webhooks) but will ignore specific user or user groups subscription settings.', 'vip-workflow' ),
 				'module_url'            => $this->module_url,
 				'img_url'               => $this->module_url . 'lib/notifications_s128.png',
 				'slug'                  => 'notifications',
@@ -46,16 +46,16 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 					'webhook_url'         => '',
 				],
 				'configure_page_cb'     => 'print_configure_view',
-				'post_type_support'     => 'ef_notification',
+				'post_type_support'     => 'vw_notification',
 				'autoload'              => false,
 				'settings_help_tab'     => [
-					'id'      => 'ef-notifications-overview',
-					'title'   => __( 'Overview', 'edit-flow' ),
-					'content' => __( '<p>Notifications ensure you keep up to date with progress your most important content. Users can be subscribed to notifications on a post one by one or by selecting user groups.</p><p>When enabled, email notifications can be sent when a post changes status or an editorial comment is left by a writer or an editor.</p>', 'edit-flow' ),
+					'id'      => 'vw-notifications-overview',
+					'title'   => __( 'Overview', 'vip-workflow' ),
+					'content' => __( '<p>Notifications ensure you keep up to date with progress your most important content. Users can be subscribed to notifications on a post one by one or by selecting user groups.</p><p>When enabled, email notifications can be sent when a post changes status.</p>', 'vip-workflow' ),
 				],
-				'settings_help_sidebar' => __( '<p><strong>For more information:</strong></p><p><a href="http://editflow.org/features/notifications/">Notifications Documentation</a></p><p><a href="http://wordpress.org/tags/edit-flow?forum_id=10">Edit Flow Forum</a></p><p><a href="https://github.com/Automattic/Edit-Flow">Edit Flow on Github</a></p>', 'edit-flow' ),
+				'settings_help_sidebar' => __( '<p><strong>For more information:</strong></p><p><a href="https://github.com/Automattic/vip-workflow-plugin">VIP Workflow on Github</a></p>', 'vip-workflow' ),
 			];
-			$this->module     = EditFlow()->register_module( 'notifications', $args );
+			$this->module     = vip_workflow()->register_module( 'notifications', $args );
 		}
 
 		/**
@@ -67,22 +67,21 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			$this->register_taxonomies();
 
 			// Allow users to use a different user capability for editing post subscriptions
-			$this->edit_post_subscriptions_cap = apply_filters( 'ef_edit_post_subscriptions_cap', $this->edit_post_subscriptions_cap );
+			$this->edit_post_subscriptions_cap = apply_filters( 'vw_edit_post_subscriptions_cap', $this->edit_post_subscriptions_cap );
 
 			// Set up metabox and related actions
 			add_action( 'add_meta_boxes', [ $this, 'add_post_meta_box' ] );
 
 			// Add "access badge" to the subscribers list.
-			add_action( 'ef_user_subscribe_actions', [ $this, 'display_subscriber_warning_badges' ], 10, 2 );
+			add_action( 'vw_user_subscribe_actions', [ $this, 'display_subscriber_warning_badges' ], 10, 2 );
 
 			// Saving post actions
 			// self::save_post_subscriptions() is hooked into transition_post_status so we can ensure usergroup data
 			// is properly saved before sending notifs
 			add_action( 'transition_post_status', [ $this, 'save_post_subscriptions' ], 0, 3 );
 			add_action( 'transition_post_status', [ $this, 'notification_status_change' ], 10, 3 );
-			add_action( 'ef_post_insert_editorial_comment', [ $this, 'notification_comment' ] );
 			add_action( 'delete_user', [ $this, 'delete_user_action' ] );
-			add_action( 'ef_send_scheduled_email', [ $this, 'send_single_email' ], 10, 4 );
+			add_action( 'vw_send_scheduled_email', [ $this, 'send_single_email' ], 10, 4 );
 
 			add_action( 'admin_init', [ $this, 'register_settings' ] );
 
@@ -91,20 +90,17 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_styles' ] );
 
 			// Add a "Follow" link to posts
-			if ( apply_filters( 'ef_notifications_show_follow_link', true ) ) {
+			if ( apply_filters( 'vw_notifications_show_follow_link', true ) ) {
 				// A little extra JS for the follow button
 				add_action( 'admin_head', [ $this, 'action_admin_head_follow_js' ] );
 				// Manage Posts
 				add_filter( 'post_row_actions', [ $this, 'filter_post_row_actions' ], 10, 2 );
 				add_filter( 'page_row_actions', [ $this, 'filter_post_row_actions' ], 10, 2 );
-				// Calendar and Story Budget
-				add_filter( 'ef_calendar_item_actions', [ $this, 'filter_post_row_actions' ], 10, 2 );
-				add_filter( 'ef_story_budget_item_actions', [ $this, 'filter_post_row_actions' ], 10, 2 );
 			}
 
 			//Ajax for saving notifiction updates
 			add_action( 'wp_ajax_save_notifications', [ $this, 'ajax_save_post_subscriptions' ] );
-			add_action( 'wp_ajax_ef_notifications_user_post_subscription', [ $this, 'handle_user_post_subscription' ] );
+			add_action( 'wp_ajax_vw_notifications_user_post_subscription', [ $this, 'handle_user_post_subscription' ] );
 		}
 
 		/**
@@ -132,32 +128,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 * @since 0.7
 		 */
 		public function upgrade( $previous_version ) {
-			global $edit_flow;
-
-			// Upgrade path to v0.7
-			if ( version_compare( $previous_version, '0.7', '<' ) ) {
-				// Migrate whether notifications were enabled or not
-				$enabled = get_option( 'edit_flow_notifications_enabled' );
-				if ( $enabled ) {
-					$enabled = 'on';
-				} else {
-					$enabled = 'off';
-				}
-				$edit_flow->update_module_option( $this->module->name, 'enabled', $enabled );
-				delete_option( 'edit_flow_notifications_enabled' );
-				// Migrate whether to always notify the admin
-				$always_notify_admin = get_option( 'edit_flow_always_notify_admin' );
-				if ( $always_notify_admin ) {
-					$always_notify_admin = 'on';
-				} else {
-					$always_notify_admin = 'off';
-				}
-				$edit_flow->update_module_option( $this->module->name, 'always_notify_admin', $always_notify_admin );
-				delete_option( 'edit_flow_always_notify_admin' );
-
-				// Technically we've run this code before so we don't want to auto-install new data
-				$edit_flow->update_module_option( $this->module->name, 'loaded_once', true );
-			}
+			// Nothing to do here yet
 		}
 
 		/**
@@ -195,13 +166,13 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 
 			if ( $this->is_whitelisted_functional_view() ) {
 				wp_enqueue_script( 'jquery-listfilterizer' );
-				wp_enqueue_script( 'edit-flow-notifications-js', $this->module_url . 'lib/notifications.js', [ 'jquery', 'jquery-listfilterizer' ], EDIT_FLOW_VERSION, true );
+				wp_enqueue_script( 'vip-workflow-notifications-js', $this->module_url . 'lib/notifications.js', [ 'jquery', 'jquery-listfilterizer' ], VIP_WORKFLOW_VERSION, true );
 				wp_localize_script(
-					'edit-flow-notifications-js',
-					'ef_notifications_localization',
+					'vip-workflow-notifications-js',
+					'vw_notifications_localization',
 					[
-						'no_access' => esc_html__( 'No Access', 'edit-flow' ),
-						'no_email'  => esc_html__( 'No Email', 'edit-flow' ),
+						'no_access' => esc_html__( 'No Access', 'vip-workflow' ),
+						'no_email'  => esc_html__( 'No Email', 'vip-workflow' ),
 					]
 				);
 			}
@@ -218,7 +189,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 
 			if ( $this->is_whitelisted_functional_view() || $this->is_whitelisted_settings_view() ) {
 				wp_enqueue_style( 'jquery-listfilterizer' );
-				wp_enqueue_style( 'edit-flow-notifications-css', $this->module->module_url . 'lib/notifications.css', false, EDIT_FLOW_VERSION );
+				wp_enqueue_style( 'vip-workflow-notifications-css', $this->module->module_url . 'lib/notifications.css', false, VIP_WORKFLOW_VERSION );
 			}
 		}
 
@@ -234,7 +205,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		/**
 		 * Action to Follow / Unfollow posts on the manage posts screen
 		 */
-		$('.wp-list-table, #ef-calendar-view, #ef-story-budget-wrap').on( 'click', '.ef_follow_link a', function(e){
+		$('.wp-list-table').on( 'click', '.vw_follow_link a', function(e){
 
 			e.preventDefault();
 
@@ -282,7 +253,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 
 			$parts = $this->get_follow_action_parts( $post );
 
-			$actions['ef_follow_link'] = '<a title="' . esc_attr( $parts['title'] ) . '" href="' . esc_url( $parts['link'] ) . '">' . $parts['text'] . '</a>';
+			$actions['vw_follow_link'] = '<a title="' . esc_attr( $parts['title'] ) . '" href="' . esc_url( $parts['link'] ) . '">' . $parts['text'] . '</a>';
 
 			return $actions;
 		}
@@ -294,23 +265,23 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 */
 		private function get_follow_action_parts( $post ) {
 			$args = [
-				'action'  => 'ef_notifications_user_post_subscription',
+				'action'  => 'vw_notifications_user_post_subscription',
 				'post_id' => $post->ID,
 			];
 
 			$following_users = $this->get_following_users( $post->ID );
 			if ( in_array( wp_get_current_user()->user_login, $following_users ) ) {
 				$args['method'] = 'unfollow';
-				$title_text     = __( 'Click to unfollow updates to this post', 'edit-flow' );
-				$follow_text    = __( 'Following', 'edit-flow' );
+				$title_text     = __( 'Click to unfollow updates to this post', 'vip-workflow' );
+				$follow_text    = __( 'Following', 'vip-workflow' );
 			} else {
 				$args['method'] = 'follow';
-				$title_text     = __( 'Follow updates to this post', 'edit-flow' );
-				$follow_text    = __( 'Follow', 'edit-flow' );
+				$title_text     = __( 'Follow updates to this post', 'vip-workflow' );
+				$follow_text    = __( 'Follow', 'vip-workflow' );
 			}
 
 			// wp_nonce_url() has encoding issues: http://core.trac.wordpress.org/ticket/20771
-			$args['_wpnonce'] = wp_create_nonce( 'ef_notifications_user_post_subscription' );
+			$args['_wpnonce'] = wp_create_nonce( 'vw_notifications_user_post_subscription' );
 
 			return [
 				'title' => $title_text,
@@ -330,7 +301,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 
 			$usergroup_post_types = $this->get_post_types_for_module( $this->module );
 			foreach ( $usergroup_post_types as $post_type ) {
-				add_meta_box( 'edit-flow-notifications', __( 'Notifications', 'edit-flow' ), [ $this, 'notifications_meta_box' ], $post_type, 'advanced' );
+				add_meta_box( 'vip-workflow-notifications', __( 'Notifications', 'vip-workflow' ), [ $this, 'notifications_meta_box' ], $post_type, 'advanced' );
 			}
 		}
 
@@ -340,35 +311,35 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 * @todo add_cap to set subscribers for posts; default to Admin and editors
 		 */
 		public function notifications_meta_box() {
-			global $post, $post_ID, $edit_flow;
+			global $post, $post_ID, $vip_workflow;
 			?>
-			<div id="ef-post_following_box">
+			<div id="vw-post_following_box">
 				<a name="subscriptions"></a>
 
-				<p><?php _e( 'Select the users and user groups that should receive email notifications when the status of this post is updated or when an editorial comment is added.', 'edit-flow' ); ?></p>
-				<div id="ef-post_following_users_box">
-					<h4><?php _e( 'Users', 'edit-flow' ); ?></h4>
+				<p><?php _e( 'Select the users and user groups that should receive email notifications when the status of this post is updated.', 'vip-workflow' ); ?></p>
+				<div id="vw-post_following_users_box">
+					<h4><?php _e( 'Users', 'vip-workflow' ); ?></h4>
 					<?php
 					$followers        = $this->get_following_users( $post->ID, 'id' );
 					$select_form_args = [
-						'list_class' => 'ef-post_following_list',
+						'list_class' => 'vw-post_following_list',
 					];
 					$this->users_select_form( $followers, $select_form_args );
 					?>
 				</div>
 
-				<?php if ( $this->module_enabled( 'user_groups' ) && in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $edit_flow->user_groups->module ) ) ) : ?>
-				<div id="ef-post_following_usergroups_box">
-					<h4><?php _e( 'User Groups', 'edit-flow' ); ?></h4>
+				<?php if ( $this->module_enabled( 'user_groups' ) && in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) ) ) : ?>
+				<div id="vw-post_following_usergroups_box">
+					<h4><?php _e( 'User Groups', 'vip-workflow' ); ?></h4>
 					<?php
 					$following_usergroups = $this->get_following_usergroups( $post->ID, 'ids' );
-					$edit_flow->user_groups->usergroups_select_form( $following_usergroups );
+					$vip_workflow->user_groups->usergroups_select_form( $following_usergroups );
 					?>
 				</div>
 				<?php endif; ?>
 				<div class="clear"></div>
-				<input type="hidden" name="ef-save_followers" value="1" /> <?php // Extra protection against autosaves ?>
-				<?php wp_nonce_field( 'save_user_usergroups', 'ef_notifications_nonce', false ); ?>
+				<input type="hidden" name="vw-save_followers" value="1" /> <?php // Extra protection against autosaves ?>
+				<?php wp_nonce_field( 'save_user_usergroups', 'vw_notifications_nonce', false ); ?>
 			</div>
 
 			<?php
@@ -393,14 +364,14 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			// Add No Access span if they won't be notified
 			if ( ! $this->user_can_be_notified( get_user_by( 'id', $user_id ), $post->ID ) ) {
 				// span.post_following_list-no_access is also added in notifications.js after AJAX that ticks/unticks a user
-				echo '<span class="post_following_list-no_access">' . esc_html__( 'No Access', 'edit-flow' ) . '</span>';
+				echo '<span class="post_following_list-no_access">' . esc_html__( 'No Access', 'vip-workflow' ) . '</span>';
 			}
 
 			// Add No Email span if they have no email
 			$user_object = get_user_by( 'id', $user_id );
 			if ( ! is_a( $user_object, 'WP_User' ) || empty( $user_object->user_email ) ) {
 				// span.post_following_list-no_email is also added in notifications.js after AJAX that ticks/unticks a user
-				echo '<span class="post_following_list-no_email">' . esc_html__( 'No Email', 'edit-flow' ) . '</span>';
+				echo '<span class="post_following_list-no_email">' . esc_html__( 'No Email', 'vip-workflow' ) . '</span>';
 			}
 		}
 
@@ -408,18 +379,18 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 * Called when a notification editorial metadata checkbox is checked. Handles saving of a user/usergroup to a post.
 		 */
 		public function ajax_save_post_subscriptions() {
-			global $edit_flow;
+			global $vip_workflow;
 
 			// Verify nonce.
 			if ( ! isset( $_POST['_nonce'] ) || ! wp_verify_nonce( $_POST['_nonce'], 'save_user_usergroups' ) ) {
-				die( esc_html__( 'Nonce check failed. Please ensure you can add users or user groups to a post.', 'edit-flow' ) );
+				die( esc_html__( 'Nonce check failed. Please ensure you can add users or user groups to a post.', 'vip-workflow' ) );
 			}
 
 			$post_id = isset( $_POST['post_id'] ) ? (int) $_POST['post_id'] : 0;
 			$post    = get_post( $post_id );
 
 			$valid_post = ! is_null( $post ) && ! wp_is_post_revision( $post_id ) && ! wp_is_post_autosave( $post_id );
-			if ( ! isset( $_POST['ef_notifications_name'] ) || ! $valid_post || ! current_user_can( $this->edit_post_subscriptions_cap ) ) {
+			if ( ! isset( $_POST['vw_notifications_name'] ) || ! $valid_post || ! current_user_can( $this->edit_post_subscriptions_cap ) ) {
 				die();
 			}
 
@@ -428,9 +399,9 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 				$user_group_ids = array_map( 'intval', $_POST['user_group_ids'] );
 			}
 
-			if ( 'ef-selected-users[]' === $_POST['ef_notifications_name'] ) {
+			if ( 'vw-selected-users[]' === $_POST['vw_notifications_name'] ) {
 				// Prevent auto-subscribing users that have opted out of notifications.
-				add_filter( 'ef_notification_auto_subscribe_current_user', '__return_false', PHP_INT_MAX );
+				add_filter( 'vw_notification_auto_subscribe_current_user', '__return_false', PHP_INT_MAX );
 				$this->save_post_following_users( $post, $user_group_ids );
 
 				if ( defined( 'DOING_AJAX' ) && DOING_AJAX && isset( $_POST['post_id'] ) ) {
@@ -461,11 +432,11 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 					wp_send_json_success( $json_success );
 				}
 				// Remove auto-subscribe prevention behavior from earlier.
-				remove_filter( 'ef_notification_auto_subscribe_current_user', '__return_false', PHP_INT_MAX );
+				remove_filter( 'vw_notification_auto_subscribe_current_user', '__return_false', PHP_INT_MAX );
 			}
 
-			$groups_enabled = $this->module_enabled( 'user_groups' ) && in_array( get_post_type( $post_id ), $this->get_post_types_for_module( $edit_flow->user_groups->module ) );
-			if ( 'following_usergroups[]' === $_POST['ef_notifications_name'] && $groups_enabled ) {
+			$groups_enabled = $this->module_enabled( 'user_groups' ) && in_array( get_post_type( $post_id ), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) );
+			if ( 'following_usergroups[]' === $_POST['vw_notifications_name'] && $groups_enabled ) {
 				$this->save_post_following_usergroups( $post, $user_group_ids );
 			}
 
@@ -479,7 +450,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 */
 		public function handle_user_post_subscription() {
 
-			if ( ! empty( $_GET['_wpnonce'] ) && ! wp_verify_nonce( $_GET['_wpnonce'], 'ef_notifications_user_post_subscription' ) ) {
+			if ( ! empty( $_GET['_wpnonce'] ) && ! wp_verify_nonce( $_GET['_wpnonce'], 'vw_notifications_user_post_subscription' ) ) {
 				$this->print_ajax_response( 'error', $this->module->messages['nonce-failed'] );
 			}
 
@@ -514,18 +485,18 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 * @param int $post ID of the post
 		 */
 		public function save_post_subscriptions( $new_status, $old_status, $post ) {
-			global $edit_flow;
+			global $vip_workflow;
 
 			if ( ! empty( $_POST['_wpnonce'] ) && ! wp_verify_nonce( $_POST['_wpnonce'], 'editpost' ) ) {
 				$this->print_ajax_response( 'error', $this->module->messages['nonce-failed'] );
 			}
 
 			// only if has edit_post_subscriptions cap
-			if ( ( ! wp_is_post_revision( $post ) && ! wp_is_post_autosave( $post ) ) && isset( $_POST['ef-save_followers'] ) && current_user_can( $this->edit_post_subscriptions_cap ) ) {
-				$users      = isset( $_POST['ef-selected-users'] ) ? $_POST['ef-selected-users'] : [];
+			if ( ( ! wp_is_post_revision( $post ) && ! wp_is_post_autosave( $post ) ) && isset( $_POST['vw-save_followers'] ) && current_user_can( $this->edit_post_subscriptions_cap ) ) {
+				$users      = isset( $_POST['vw-selected-users'] ) ? $_POST['vw-selected-users'] : [];
 				$usergroups = isset( $_POST['following_usergroups'] ) ? $_POST['following_usergroups'] : [];
 				$this->save_post_following_users( $post, $users );
-				if ( $this->module_enabled( 'user_groups' ) && in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $edit_flow->user_groups->module ) ) ) {
+				if ( $this->module_enabled( 'user_groups' ) && in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) ) ) {
 					$this->save_post_following_usergroups( $post, $usergroups );
 				}
 			}
@@ -543,12 +514,12 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 
 			// Add current user to following users
 			$user = wp_get_current_user();
-			if ( $user && apply_filters( 'ef_notification_auto_subscribe_current_user', true, 'subscription_action' ) ) {
+			if ( $user && apply_filters( 'vw_notification_auto_subscribe_current_user', true, 'subscription_action' ) ) {
 				$users[] = $user->ID;
 			}
 
 			// Add post author to following users
-			if ( apply_filters( 'ef_notification_auto_subscribe_post_author', true, 'subscription_action' ) ) {
+			if ( apply_filters( 'vw_notification_auto_subscribe_post_author', true, 'subscription_action' ) ) {
 				$users[] = $post->post_author;
 			}
 
@@ -577,10 +548,10 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 * Set up and send post status change notification email
 		 */
 		public function notification_status_change( $new_status, $old_status, $post ) {
-			global $edit_flow;
+			global $vip_workflow;
 
 			// Kill switch for notification
-			if ( ! apply_filters( 'ef_notification_status_change', $new_status, $old_status, $post ) || ! apply_filters( "ef_notification_{$post->post_type}_status_change", $new_status, $old_status, $post ) ) {
+			if ( ! apply_filters( 'vw_notification_status_change', $new_status, $old_status, $post ) || ! apply_filters( "vw_notification_{$post->post_type}_status_change", $new_status, $old_status, $post ) ) {
 				return false;
 			}
 
@@ -590,7 +561,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			}
 
 			// No need to notify if it's a revision, auto-draft, or if post status wasn't changed
-			$ignored_statuses = apply_filters( 'ef_notification_ignored_statuses', [ $old_status, 'inherit', 'auto-draft' ], $post->post_type );
+			$ignored_statuses = apply_filters( 'vw_notification_ignored_statuses', [ $old_status, 'inherit', 'auto-draft' ], $post->post_type );
 
 			if ( ! in_array( $new_status, $ignored_statuses ) ) {
 
@@ -598,21 +569,21 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 				$current_user = wp_get_current_user();
 
 				$post_author = get_userdata( $post->post_author );
-				//$duedate = $edit_flow->post_metadata->get_post_meta($post->ID, 'duedate', true);
+				//$duedate = $vip_workflow->post_metadata->get_post_meta($post->ID, 'duedate', true);
 
 				$blogname = get_option( 'blogname' );
 
 				$body = '';
 
 				$post_id    = $post->ID;
-				$post_title = ef_draft_or_post_title( $post_id );
+				$post_title = vw_draft_or_post_title( $post_id );
 				$post_type  = get_post_type_object( $post->post_type )->labels->singular_name;
 
 				if ( 0 != $current_user->ID ) {
 					$current_user_display_name = $current_user->display_name;
 					$current_user_email        = sprintf( '(%s)', $current_user->user_email );
 				} else {
-					$current_user_display_name = __( 'WordPress Scheduler', 'edit-flow' );
+					$current_user_display_name = __( 'WordPress Scheduler', 'vip-workflow' );
 					$current_user_email        = '';
 				}
 
@@ -643,19 +614,19 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 				if ( 'new' == $old_status || 'auto-draft' == $old_status ) {
 					$old_status_friendly_name = 'New';
 					/* translators: 1: site name, 2: post type, 3. post title */
-					$subject = sprintf( __( '[%1$s] New %2$s Created: "%3$s"', 'edit-flow' ), $blogname, $post_type, $post_title );
+					$subject = sprintf( __( '[%1$s] New %2$s Created: "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 					/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-					$body .= sprintf( __( 'A new %1$s (#%2$s "%3$s") was created by %4$s %5$s', 'edit-flow' ), $post_type, $post_id, $post_title, $current_user->display_name, $current_user->user_email ) . "\r\n";
+					$body .= sprintf( __( 'A new %1$s (#%2$s "%3$s") was created by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user->display_name, $current_user->user_email ) . "\r\n";
 				} elseif ( 'trash' == $new_status ) {
 					/* translators: 1: site name, 2: post type, 3. post title */
-					$subject = sprintf( __( '[%1$s] %2$s Trashed: "%3$s"', 'edit-flow' ), $blogname, $post_type, $post_title );
+					$subject = sprintf( __( '[%1$s] %2$s Trashed: "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 					/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-					$body .= sprintf( __( '%1$s #%2$s "%3$s" was moved to the trash by %4$s %5$s', 'edit-flow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+					$body .= sprintf( __( '%1$s #%2$s "%3$s" was moved to the trash by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
 				} elseif ( 'trash' == $old_status ) {
 					/* translators: 1: site name, 2: post type, 3. post title */
-					$subject = sprintf( __( '[%1$s] %2$s Restored (from Trash): "%3$s"', 'edit-flow' ), $blogname, $post_type, $post_title );
+					$subject = sprintf( __( '[%1$s] %2$s Restored (from Trash): "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 					/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-					$body .= sprintf( __( '%1$s #%2$s "%3$s" was restored from trash by %4$s %5$s', 'edit-flow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+					$body .= sprintf( __( '%1$s #%2$s "%3$s" was restored from trash by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
 				} elseif ( 'future' == $new_status ) {
 					/* translators: 1: site name, 2: post type, 3. post title */
 					$subject = sprintf( __( '[%1$s] %2$s Scheduled: "%3$s"' ), $blogname, $post_type, $post_title );
@@ -663,39 +634,39 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 					$body .= sprintf( __( '%1$s #%2$s "%3$s" was scheduled by %4$s %5$s.  It will be published on %6$s' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email, $this->get_scheduled_datetime( $post ) ) . "\r\n";
 				} elseif ( 'publish' == $new_status ) {
 					/* translators: 1: site name, 2: post type, 3. post title */
-					$subject = sprintf( __( '[%1$s] %2$s Published: "%3$s"', 'edit-flow' ), $blogname, $post_type, $post_title );
+					$subject = sprintf( __( '[%1$s] %2$s Published: "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 					/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-					$body .= sprintf( __( '%1$s #%2$s "%3$s" was published by %4$s %5$s', 'edit-flow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+					$body .= sprintf( __( '%1$s #%2$s "%3$s" was published by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
 				} elseif ( 'publish' == $old_status ) {
 					/* translators: 1: site name, 2: post type, 3. post title */
-					$subject = sprintf( __( '[%1$s] %2$s Unpublished: "%3$s"', 'edit-flow' ), $blogname, $post_type, $post_title );
+					$subject = sprintf( __( '[%1$s] %2$s Unpublished: "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 					/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-					$body .= sprintf( __( '%1$s #%2$s "%3$s" was unpublished by %4$s %5$s', 'edit-flow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+					$body .= sprintf( __( '%1$s #%2$s "%3$s" was unpublished by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
 				} else {
 					/* translators: 1: site name, 2: post type, 3. post title */
-					$subject = sprintf( __( '[%1$s] %2$s Status Changed for "%3$s"', 'edit-flow' ), $blogname, $post_type, $post_title );
+					$subject = sprintf( __( '[%1$s] %2$s Status Changed for "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 					/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-					$body .= sprintf( __( 'Status was changed for %1$s #%2$s "%3$s" by %4$s %5$s', 'edit-flow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+					$body .= sprintf( __( 'Status was changed for %1$s #%2$s "%3$s" by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
 				}
 
 				/* translators: 1: date, 2: time, 3: timezone */
-				$body .= sprintf( __( 'This action was taken on %1$s at %2$s %3$s', 'edit-flow' ), date_i18n( get_option( 'date_format' ) ), date_i18n( get_option( 'time_format' ) ), get_option( 'timezone_string' ) ) . "\r\n";
+				$body .= sprintf( __( 'This action was taken on %1$s at %2$s %3$s', 'vip-workflow' ), date_i18n( get_option( 'date_format' ) ), date_i18n( get_option( 'time_format' ) ), get_option( 'timezone_string' ) ) . "\r\n";
 
 				// Email body
 				$body .= "\r\n";
 				/* translators: 1: old status, 2: new status */
-				$body .= sprintf( __( '%1$s => %2$s', 'edit-flow' ), $old_status_friendly_name, $new_status_friendly_name );
+				$body .= sprintf( __( '%1$s => %2$s', 'vip-workflow' ), $old_status_friendly_name, $new_status_friendly_name );
 				$body .= "\r\n\r\n";
 
 				$body .= "--------------------\r\n\r\n";
 
 				/* translators: 1: post type */
-				$body .= sprintf( __( '== %s Details ==', 'edit-flow' ), $post_type ) . "\r\n";
+				$body .= sprintf( __( '== %s Details ==', 'vip-workflow' ), $post_type ) . "\r\n";
 				/* translators: 1: post title */
-				$body .= sprintf( __( 'Title: %s', 'edit-flow' ), $post_title ) . "\r\n";
+				$body .= sprintf( __( 'Title: %s', 'vip-workflow' ), $post_title ) . "\r\n";
 				if ( ! empty( $post_author ) ) {
 					/* translators: 1: author name, 2: author email */
-					$body .= sprintf( __( 'Author: %1$s (%2$s)', 'edit-flow' ), $post_author->display_name, $post_author->user_email ) . "\r\n";
+					$body .= sprintf( __( 'Author: %1$s (%2$s)', 'vip-workflow' ), $post_author->display_name, $post_author->user_email ) . "\r\n";
 				}
 
 				$edit_link = htmlspecialchars_decode( get_edit_post_link( $post_id ) );
@@ -705,13 +676,11 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 					$view_link = htmlspecialchars_decode( get_permalink( $post_id ) );
 				}
 				$body .= "\r\n";
-				$body .= __( '== Actions ==', 'edit-flow' ) . "\r\n";
+				$body .= __( '== Actions ==', 'vip-workflow' ) . "\r\n";
 				/* translators: 1: edit link */
-				$body .= sprintf( __( 'Add editorial comment: %s', 'edit-flow' ), $edit_link . '#editorialcomments/add' ) . "\r\n";
-				/* translators: 1: edit link */
-				$body .= sprintf( __( 'Edit: %s', 'edit-flow' ), $edit_link ) . "\r\n";
+				$body .= sprintf( __( 'Edit: %s', 'vip-workflow' ), $edit_link ) . "\r\n";
 				/* translators: 1: view link */
-				$body .= sprintf( __( 'View: %s', 'edit-flow' ), $view_link ) . "\r\n";
+				$body .= sprintf( __( 'View: %s', 'vip-workflow' ), $view_link ) . "\r\n";
 
 				$body .= $this->get_notification_footer( $post );
 
@@ -719,7 +688,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 
 				if ( 'on' === $this->module->options->send_to_webhook ) {
 					/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
-					$format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'edit-flow' );
+					$format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
 					$text   = sprintf( $format, $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name );
 
 					$this->send_to_webhook( $text, 'status-change', $current_user, $post );
@@ -727,115 +696,14 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			}
 		}
 
-		/**
-		 * Set up and set editorial comment notification email
-		 *
-		 * @param WP_Comment $comment
-		 * @return boolean|null|void
-		 */
-		public function notification_comment( $comment ) {
-
-			$post = get_post( $comment->comment_post_ID );
-
-			$supported_post_types = $this->get_post_types_for_module( $this->module );
-			if ( ! in_array( $post->post_type, $supported_post_types ) ) {
-				return;
-			}
-
-			// Kill switch for notification
-			if ( ! apply_filters( 'ef_notification_editorial_comment', $comment, $post ) ) {
-				return false;
-			}
-
-			$user         = get_userdata( $post->post_author );
-			$current_user = wp_get_current_user();
-
-			$post_id    = $post->ID;
-			$post_type  = get_post_type_object( $post->post_type )->labels->singular_name;
-			$post_title = ef_draft_or_post_title( $post_id );
-
-			// Fetch the text list of people who were notified from comment meta @see VW_Editorial_Comments->maybe_output_comment_meta()
-			$notification_list = get_comment_meta( $comment->comment_ID, 'notification_list', true );
-
-			// Check if this a reply
-			//$parent_ID = isset( $comment->comment_parent_ID ) ? $comment->comment_parent_ID : 0;
-			//if($parent_ID) $parent = get_comment($parent_ID);
-
-			// Set user to follow post, but make it filterable
-			if ( apply_filters( 'ef_notification_auto_subscribe_current_user', true, 'comment' ) ) {
-				$this->follow_post_user( $post, (int) $current_user->ID );
-			}
-
-			// Set the post author to follow the post but make it filterable
-			if ( apply_filters( 'ef_notification_auto_subscribe_post_author', true, 'comment' ) ) {
-				$this->follow_post_user( $post, (int) $post->post_author );
-			}
-
-			$blogname = get_option( 'blogname' );
-
-			/* translators: 1: blog name, 2: post title */
-			$subject = sprintf( __( '[%1$s] New Editorial Comment: "%2$s"', 'edit-flow' ), $blogname, $post_title );
-
-			/* translators: 1: post id, 2: post title, 3. post type */
-			$body = sprintf( __( 'A new editorial comment was added to %3$s #%1$s "%2$s"', 'edit-flow' ), $post_id, $post_title, $post_type ) . "\r\n\r\n";
-			/* translators: 1: comment author, 2: author email, 3: date, 4: time */
-			$body .= sprintf( __( '%1$s (%2$s) said on %3$s at %4$s:', 'edit-flow' ), $current_user->display_name, $current_user->user_email, mysql2date( get_option( 'date_format' ), $comment->comment_date ), mysql2date( get_option( 'time_format' ), $comment->comment_date ) ) . "\r\n";
-			$body .= "\r\n" . $comment->comment_content . "\r\n";
-
-			// @TODO: mention if it was a reply
-			/*
-			if($parent) {
-
-			}
-			*/
-
-
-			$body .= "\r\n--------------------\r\n";
-			// Insert the notification list from comment meta @see VW_Editorial_Comments->maybe_output_comment_meta()
-			if ( $notification_list ) {
-				$body .= esc_html__( 'Notified', 'edit-flow' ) . ': ' . esc_html( $notification_list ) . "\n";
-			}
-
-			$edit_link = htmlspecialchars_decode( get_edit_post_link( $post_id ) );
-			$view_link = htmlspecialchars_decode( get_permalink( $post_id ) );
-
-			$body .= "\r\n";
-			$body .= __( '== Actions ==', 'edit-flow' ) . "\r\n";
-			/* translators: 1: edit link */
-			$body .= sprintf( __( 'Reply: %s', 'edit-flow' ), $edit_link . '#editorialcomments/reply/' . $comment->comment_ID ) . "\r\n";
-			/* translators: 1: edit link */
-			$body .= sprintf( __( 'Add editorial comment: %s', 'edit-flow' ), $edit_link . '#editorialcomments/add' ) . "\r\n";
-			/* translators: 1: edit link */
-			$body .= sprintf( __( 'Edit: %s', 'edit-flow' ), $edit_link ) . "\r\n";
-			/* translators: 1: view link */
-			$body .= sprintf( __( 'View: %s', 'edit-flow' ), $view_link ) . "\r\n";
-
-			/* translators: 1: post type */
-			$body .= "\r\n" . sprintf( __( 'You can see all editorial comments on this %s here: ', 'edit-flow' ), $post_type ) . "\r\n";
-			$body .= $edit_link . '#editorialcomments' . "\r\n\r\n";
-
-			$body .= $this->get_notification_footer( $post );
-
-			$this->send_email( 'comment', $post, $subject, $body );
-
-			if ( 'on' === $this->module->options->send_to_webhook ) {
-				/* translators: 1: comment author, 2: post type, 3: post id, 4: edit link, 5: post title, 6: comment content */
-				$format  = __( '*%1$s* left a comment on *%2$s #%3$s - <%4$s|%5$s>*', 'edit-flow' ) . "\n\n";
-				$format .= '%6$s';
-				$text    = sprintf( $format, $comment->comment_author, $post_type, $post_id, $edit_link, $post_title, $comment->comment_content );
-
-				$this->send_to_webhook( $text, 'comment', $current_user, $comment );
-			}
-		}
-
 		public function get_notification_footer( $post ) {
 			$body  = '';
 			$body .= "\r\n--------------------\r\n";
 			/* translators: 1: post title */
-			$body .= sprintf( __( 'You are receiving this email because you are subscribed to "%s".', 'edit-flow' ), ef_draft_or_post_title( $post->ID ) );
+			$body .= sprintf( __( 'You are receiving this email because you are subscribed to "%s".', 'vip-workflow' ), vw_draft_or_post_title( $post->ID ) );
 			$body .= "\r\n";
 			/* translators: 1: date */
-			$body .= sprintf( __( 'This email was sent %s.', 'edit-flow' ), date( 'r' ) );
+			$body .= sprintf( __( 'This email was sent %s.', 'vip-workflow' ), date( 'r' ) );
 			$body .= "\r\n \r\n";
 			$body .= get_option( 'blogname' ) . ' | ' . get_bloginfo( 'url' ) . ' | ' . admin_url( '/' ) . "\r\n";
 			return $body;
@@ -853,9 +721,9 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 				$recipients = explode( ',', $recipients );
 			}
 
-			$subject         = apply_filters( 'ef_notification_send_email_subject', $subject, $action, $post );
-			$message         = apply_filters( 'ef_notification_send_email_message', $message, $action, $post );
-			$message_headers = apply_filters( 'ef_notification_send_email_message_headers', $message_headers, $action, $post );
+			$subject         = apply_filters( 'vw_notification_send_email_subject', $subject, $action, $post );
+			$message         = apply_filters( 'vw_notification_send_email_message', $message, $action, $post );
+			$message_headers = apply_filters( 'vw_notification_send_email_message_headers', $message_headers, $action, $post );
 
 			if ( VW_NOTIFICATION_USE_CRON ) {
 				$this->schedule_emails( $recipients, $subject, $message, $message_headers );
@@ -870,9 +738,9 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 * Send notifications to Slack
 		 *
 		 * @param string $message Message to be sent to webhook
-		 * @param string $action Action being taken. Currently only `status-change` and `comment`
+		 * @param string $action Action being taken. Currently only `status-change`
 		 * @param WP_User $user User who is taking the action
-		 * @param WP_Post|WP_Comment $post Post or comment that the action is being taken on
+		 * @param WP_Post $post Post that the action is being taken on
 		 */
 		public function send_to_webhook( $message, $action, $user, $post ) {
 			$webhook_url = $this->module->options->webhook_url;
@@ -888,7 +756,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			];
 
 			// apply filters to the payload
-			$payload = apply_filters( 'ef_notification_send_to_webhook_payload', $payload, $action, $user, $post );
+			$payload = apply_filters( 'vw_notification_send_to_webhook_payload', $payload, $action, $user, $post );
 
 			// Send the notification
 			$response = wp_remote_post(
@@ -918,7 +786,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			$send_time = time();
 
 			foreach ( $recipients as $recipient ) {
-				wp_schedule_single_event( $send_time, 'ef_send_scheduled_email', [ $recipient, $subject, $message, $message_headers ] );
+				wp_schedule_single_event( $send_time, 'vw_send_scheduled_email', [ $recipient, $subject, $message, $message_headers ] );
 				$send_time += $time_offset;
 			}
 		}
@@ -943,7 +811,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 * @return string|array Recipients to receive notification.
 		 */
 		private function _get_notification_recipients( $post, $string = false ) {
-			global $edit_flow;
+			global $vip_workflow;
 
 			$post_id = $post->ID;
 			if ( ! $post_id ) {
@@ -960,7 +828,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			if ( $this->module_enabled( 'user_groups' ) ) {
 				$usergroups = $this->get_following_usergroups( $post_id, 'ids' );
 				foreach ( (array) $usergroups as $usergroup_id ) {
-					$usergroup = $edit_flow->user_groups->get_usergroup_by( 'id', $usergroup_id );
+					$usergroup = $vip_workflow->user_groups->get_usergroup_by( 'id', $usergroup_id );
 					foreach ( (array) $usergroup->user_ids as $user_id ) {
 						$usergroup_user = get_user_by( 'id', $user_id );
 						if ( $this->user_can_be_notified( $usergroup_user, $post_id ) ) {
@@ -984,7 +852,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			// Process the recipients for this email to be sent.
 			foreach ( $recipients as $key => $user_email ) {
 				// Don't send the email to the current user unless we've explicitly indicated they should receive it.
-				if ( false === apply_filters( 'ef_notification_email_current_user', false ) && wp_get_current_user()->user_email == $user_email ) {
+				if ( false === apply_filters( 'vw_notification_email_current_user', false ) && wp_get_current_user()->user_email == $user_email ) {
 					unset( $recipients[ $key ] );
 				}
 			}
@@ -996,7 +864,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			 * @param WP_Post $post
 			 * @param bool $string True if the recipients list will later be returned as a string.
 			 */
-			$recipients = apply_filters( 'ef_notification_recipients', $recipients, $post, $string );
+			$recipients = apply_filters( 'vw_notification_recipients', $recipients, $post, $string );
 
 			// If string set to true, return comma-delimited.
 			if ( $string && is_array( $recipients ) ) {
@@ -1030,7 +898,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			 * @param WP_User|bool $user The user object, otherwise false.
 			 * @param int $post_id The post the user will be notified about.
 			 */
-			return (bool) apply_filters( 'ef_notification_user_can_be_notified', $can_be_notified, $user, $post_id );
+			return (bool) apply_filters( 'vw_notification_user_can_be_notified', $can_be_notified, $user, $post_id );
 		}
 
 		/**
@@ -1259,7 +1127,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 * @return array $usergroups All of the usergroup slugs
 		 */
 		public function get_following_usergroups( $post_id, $return = 'all' ) {
-			global $edit_flow;
+			global $vip_workflow;
 
 			// Workaround for the fact that get_object_terms doesn't return just slugs
 			if ( 'slugs' == $return ) {
@@ -1309,7 +1177,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 				'order'          => 'DESC',
 				'post_status'    => 'any',
 			];
-			$post_args = apply_filters( 'ef_user_following_posts_query_args', $post_args );
+			$post_args = apply_filters( 'vw_user_following_posts_query_args', $post_args );
 			$posts     = get_posts( $post_args );
 			return $posts;
 		}
@@ -1322,10 +1190,10 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 */
 		public function register_settings() {
 				add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
-				add_settings_field( 'post_types', __( 'Post types for notifications:', 'edit-flow' ), [ $this, 'settings_post_types_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-				add_settings_field( 'always_notify_admin', __( 'Always notify blog admin', 'edit-flow' ), [ $this, 'settings_always_notify_admin_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-				add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'edit-flow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-				add_settings_field( 'webhook_url', __( 'Webhook URL', 'edit-flow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+				add_settings_field( 'post_types', __( 'Post types for notifications:', 'vip-workflow' ), [ $this, 'settings_post_types_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+				add_settings_field( 'always_notify_admin', __( 'Always notify blog admin', 'vip-workflow' ), [ $this, 'settings_always_notify_admin_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+				add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'vip-workflow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+				add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 		}
 
 		/**
@@ -1334,8 +1202,8 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 * @since 0.7
 		 */
 		public function settings_post_types_option() {
-			global $edit_flow;
-			$edit_flow->settings->helper_option_custom_post_type( $this->module );
+			global $vip_workflow;
+			$vip_workflow->settings->helper_option_custom_post_type( $this->module );
 		}
 
 		/**
@@ -1345,8 +1213,8 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 */
 		public function settings_always_notify_admin_option() {
 			$options = [
-				'off' => __( 'Disabled', 'edit-flow' ),
-				'on'  => __( 'Enabled', 'edit-flow' ),
+				'off' => __( 'Disabled', 'vip-workflow' ),
+				'on'  => __( 'Enabled', 'vip-workflow' ),
 			];
 			echo '<select id="always_notify_admin" name="' . esc_attr( $this->module->options_group_name ) . '[always_notify_admin]">';
 			foreach ( $options as $value => $label ) {
@@ -1364,8 +1232,8 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 		 */
 		public function settings_send_to_webhook() {
 			$options = [
-				'off' => __( 'Disabled', 'edit-flow' ),
-				'on'  => __( 'Enabled', 'edit-flow' ),
+				'off' => __( 'Disabled', 'vip-workflow' ),
+				'on'  => __( 'Enabled', 'vip-workflow' ),
 			];
 			echo '<select id="send_to_webhook" name="' . esc_attr( $this->module->options_group_name ) . '[send_to_webhook]">';
 			foreach ( $options as $value => $label ) {
@@ -1429,9 +1297,9 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 				<?php settings_fields( $this->module->options_group_name ); ?>
 				<?php do_settings_sections( $this->module->options_group_name ); ?>
 				<?php
-					echo '<input id="edit_flow_module_name" name="edit_flow_module_name" type="hidden" value="' . esc_attr( $this->module->name ) . '" />';
+					echo '<input id="vip_workflow_module_name" name="vip_workflow_module_name" type="hidden" value="' . esc_attr( $this->module->name ) . '" />';
 				?>
-				<p class="submit"><?php submit_button( null, 'primary', 'submit', false ); ?><a class="cancel-settings-link" href="<?php echo esc_url( EDIT_FLOW_SETTINGS_PAGE ); ?>"><?php _e( 'Back to Edit Flow', 'edit-flow' ); ?></a></p>
+				<p class="submit"><?php submit_button( null, 'primary', 'submit', false ); ?><a class="cancel-settings-link" href="<?php echo esc_url( VIP_WORKFLOW_SETTINGS_PAGE ); ?>"><?php _e( 'Back to VIP Workflow', 'vip-workflow' ); ?></a></p>
 			</form>
 			<?php
 		}
@@ -1452,7 +1320,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 				$time = date_i18n( get_option( 'time_format' ), $scheduled_ts );
 
 				/* translators: 1: date, 2: time */
-				return sprintf( __( '%1$s at %2$s', 'edit-flow' ), $date, $time );
+				return sprintf( __( '%1$s at %2$s', 'vip-workflow' ), $date, $time );
 		}
 	}
 

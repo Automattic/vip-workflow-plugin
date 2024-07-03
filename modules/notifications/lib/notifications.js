@@ -1,5 +1,5 @@
 jQuery( document ).ready( function ( $ ) {
-	$( '#ef-post_following_users_box ul' ).listFilterizer();
+	$( '#vw-post_following_users_box ul' ).listFilterizer();
 
 	const params = {
 		action: 'save_notifications',
@@ -18,7 +18,7 @@ jQuery( document ).ready( function ( $ ) {
 		);
 		if ( user_has_no_access ) {
 			var span = $( '<span />' ).addClass( 'post_following_list-no_access' );
-			span.text( ef_notifications_localization.no_access );
+			span.text( vw_notifications_localization.no_access );
 			$( container ).parent().prepend( span );
 			warning_background = true;
 		}
@@ -28,7 +28,7 @@ jQuery( document ).ready( function ( $ ) {
 		);
 		if ( user_has_no_email ) {
 			var span = $( '<span />' ).addClass( 'post_following_list-no_email' );
-			span.text( ef_notifications_localization.no_email );
+			span.text( vw_notifications_localization.no_email );
 			$( container ).parent().prepend( span );
 			warning_background = true;
 		}
@@ -36,15 +36,15 @@ jQuery( document ).ready( function ( $ ) {
 
 	$( document ).on(
 		'click',
-		'.ef-post_following_list li input:checkbox, .ef-following_usergroups li input:checkbox',
+		'.vw-post_following_list li input:checkbox, .vw-following_usergroups li input:checkbox',
 		function () {
 			const user_group_ids = [];
 			const parent_this = $( this );
-			params.ef_notifications_name = $( this ).attr( 'name' );
-			params._nonce = $( '#ef_notifications_nonce' ).val();
+			params.vw_notifications_name = $( this ).attr( 'name' );
+			params._nonce = $( '#vw_notifications_nonce' ).val();
 
 			$( this )
-				.parents( '.ef-post_following_list' )
+				.parents( '.vw-post_following_list' )
 				.find( 'input:checked' )
 				.map( function () {
 					user_group_ids.push( $( this ).val() );
@@ -76,11 +76,11 @@ jQuery( document ).ready( function ( $ ) {
 						.animate( { backgroundColor: backgroundHighlightColor }, 200 )
 						.animate( { backgroundColor }, 200 );
 
-					// This event is used to show an updated list of who will be notified of editorial comments and status updates.
-					$( '#ef-post_following_box' ).trigger( 'following_list_updated' );
+					// This event is used to show an updated list of who will be notified of status updates.
+					$( '#vw-post_following_box' ).trigger( 'following_list_updated' );
 				},
 				error( r ) {
-					$( '#ef-post_following_users_box' )
+					$( '#vw-post_following_users_box' )
 						.prev()
 						.append( ' <p class="error">There was an error. Please reload the page.</p>' );
 				},

@@ -148,52 +148,7 @@ if ( ! class_exists( 'VW_User_Groups' ) ) {
 		 * @since 0.7
 		 */
 		public function upgrade( $previous_version ) {
-			global $vip_workflow;
-
-			// Upgrade path to v0.7
-			if ( version_compare( $previous_version, '0.7', '<' ) ) {
-				global $wpdb;
-
-				// Set all of the user group terms to our new taxonomy
-				$wpdb->update( $wpdb->term_taxonomy, array( 'taxonomy' => self::TAXONOMY_KEY ), array( 'taxonomy' => 'following_usergroups' ) );
-
-				// Get all of the users who are a part of user groups and assign them to their new user group values
-				$query = "SELECT * FROM $wpdb->usermeta WHERE meta_key='wp_vw_usergroups';";
-				// There's no userdata here in this query and it's an upgrade query
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$usergroup_users = $wpdb->get_results( $query );
-
-				// Sort all of the users based on their usergroup(s)
-				$users_to_add = array();
-				foreach ( (array) $usergroup_users as $usergroup_user ) {
-					if ( is_object( $usergroup_user ) ) {
-						$users_to_add[ $usergroup_user->meta_value ][] = (int) $usergroup_user->user_id;
-					}
-				}
-				// Add user IDs to each usergroup
-				foreach ( $users_to_add as $usergroup_slug => $users_array ) {
-					$usergroup = $this->get_usergroup_by( 'slug', $usergroup_slug );
-					$this->add_users_to_usergroup( $users_array, $usergroup->term_id );
-				}
-				// Update the term slugs for each user group
-				$all_usergroups = $this->get_usergroups();
-				foreach ( $all_usergroups as $usergroup ) {
-					$new_slug = str_replace( 'vw_', self::TERM_PREFIX, $usergroup->slug );
-					$this->update_usergroup( $usergroup->term_id, array( 'slug' => $new_slug ) );
-				}
-
-				// Delete all of the previous usermeta values
-				$wpdb->query( "DELETE FROM $wpdb->usermeta WHERE meta_key='wp_vw_usergroups';" );
-
-				// Technically we've run this code before so we don't want to auto-install new data
-				$vip_workflow->update_module_option( $this->module->name, 'loaded_once', true );
-
-			}
-			// Upgrade path to v0.7.4
-			if ( version_compare( $previous_version, '0.7.4', '<' ) ) {
-				// Usergroup descriptions become base64_encoded, instead of maybe json_encoded.
-				$this->upgrade_074_term_descriptions( self::TAXONOMY_KEY );
-			}
+			// Nothing to do here yet
 		}
 
 		/**
@@ -252,10 +207,6 @@ if ( ! class_exists( 'VW_User_Groups' ) ) {
 				wp_enqueue_style( 'vip-workflow-user-groups-css', $this->module_url . 'lib/user-groups.css', false, VIP_WORKFLOW_VERSION );
 			}
 		}
-
-		/**
-		 * Module ???
-		 */
 
 		/**
 		 * Handles a POST request to add a new Usergroup. Redirects to edit view after
