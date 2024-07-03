@@ -1,5 +1,4 @@
 import './editor.scss';
-import './style.scss';
 
 const { __ } = wp.i18n;
 const { PluginPostStatusInfo } = wp.editPost;

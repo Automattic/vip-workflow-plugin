@@ -271,8 +271,9 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 		public function action_admin_enqueue_scripts() {
 			// Load Javascript we need to use on the configuration views (jQuery Sortable and Quick Edit)
 			if ( $this->is_whitelisted_settings_view( $this->module->name ) ) {
-				wp_enqueue_script( 'jquery-ui-sortable' );
-				wp_enqueue_script( 'vip-workflow-custom-status-configure', $this->module_url . 'lib/custom-status-configure.js', [ 'jquery', 'jquery-ui-sortable', 'vip-workflow-settings-js' ], VIP_WORKFLOW_VERSION, true );
+				$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
+				$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'jquery-ui-sortable', 'vip-workflow-settings-js' ];
+				wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $dependencies, $asset_file['version'], true );
 
 				wp_localize_script( 'vip-workflow-custom-status-configure', '__vw_localize_custom_status_configure', [
 					'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
@@ -281,7 +282,10 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 
 			// Custom javascript to modify the post status dropdown where it shows up
 			if ( $this->is_whitelisted_page() ) {
-				wp_enqueue_script( 'vip_workflow-custom_status', $this->module_url . 'lib/custom-status.js', [ 'jquery', 'post' ], VIP_WORKFLOW_VERSION, true );
+				$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status.asset.php';
+				$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'post' ];
+				wp_enqueue_script( 'vip_workflow-custom_status', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status.js', $dependencies, $asset_file['version'], true );
+
 				wp_localize_script('vip_workflow-custom_status', '__vw_localize_custom_status', [
 					'no_change' => esc_html__( '&mdash; No Change &mdash;', 'vip-workflow' ),
 					'published' => esc_html__( 'Published', 'vip-workflow' ),
@@ -297,15 +301,17 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 		public function load_scripts_for_block_editor() {
 			global $post;
 
-			wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/custom-status.build.js', [ 'wp-blocks', 'wp-element', 'wp-edit-post', 'wp-plugins', 'wp-components' ], VIP_WORKFLOW_VERSION );
+			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
+			$dependencies = [ ...$asset_file['dependencies'], 'wp-blocks', 'wp-element', 'wp-edit-post', 'wp-plugins', 'wp-components' ];
+			wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $dependencies, $asset_file['version'], true );
 
 			$custom_statuses = apply_filters( 'vw_custom_status_list', $this->get_custom_statuses(), $post );
-
 			wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', array_values( $custom_statuses ) );
 		}
 
 		public function load_styles_for_block_editor() {
-			wp_enqueue_style( 'vip-workflow-block-custom-status-styles', VIP_WORKFLOW_URL . 'dist/custom-status.editor.build.css', false, VIP_WORKFLOW_VERSION );
+			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
+			wp_enqueue_style( 'edit-flow-workflow-manager-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.css', [ 'wp-components' ], $asset_file['version'] );
 		}
 
 		/**
