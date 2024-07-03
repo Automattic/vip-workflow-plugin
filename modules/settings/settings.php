@@ -34,7 +34,6 @@ if ( ! class_exists( 'VW_Settings' ) ) {
 		 */
 		public function init() {
 			add_action( 'admin_init', array( $this, 'helper_settings_validate_and_save' ), 100 );
-			add_action( 'admin_init', array( $this, 'register_settings' ) );
 
 			add_action( 'admin_print_styles', array( $this, 'action_admin_print_styles' ) );
 			add_action( 'admin_print_scripts', array( $this, 'action_admin_print_scripts' ) );
@@ -156,7 +155,7 @@ if ( ! class_exists( 'VW_Settings' ) ) {
 		<div class="wrap vip-workflow-admin">
 			<?php if ( 'settings' != $current_module->name ) : ?>
 				<?php echo wp_kses_post( $page_icon ); ?>
-			<h2><a href="<?php echo esc_url( EDIT_FLOW_SETTINGS_PAGE ); ?>"><?php _e( 'VIP Workflow', 'vip-workflow' ); ?></a>:&nbsp;<?php echo esc_attr( $current_module->title ); ?><?php echo ( isset( $display_text ) ? wp_kses_post( $display_text ) : '' ); ?></h2>
+			<h2><a href="<?php echo esc_url( VIP_WORKFLOW_SETTINGS_PAGE ); ?>"><?php _e( 'VIP Workflow', 'vip-workflow' ); ?></a>:&nbsp;<?php echo esc_attr( $current_module->title ); ?><?php echo ( isset( $display_text ) ? wp_kses_post( $display_text ) : '' ); ?></h2>
 			<?php else : ?>
 				<?php echo wp_kses_post( $page_icon ); ?>
 			<h2><?php _e( 'VIP Workflow', 'vip-workflow' ); ?><?php echo ( isset( $display_text ) ? wp_kses_post( $display_text ) : '' ); ?></h2>

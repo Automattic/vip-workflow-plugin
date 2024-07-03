@@ -35,7 +35,7 @@ if ( version_compare( phpversion(), '8.0', '<' ) ) {
 define( 'VIP_WORKFLOW_VERSION', '0.0.1' );
 define( 'VIP_WORKFLOW_ROOT', __DIR__ );
 define( 'VIP_WORKFLOW_URL', plugins_url( '/', __FILE__ ) );
-define( 'VIP_WORKFLOW_SETTINGS_PAGE', add_query_arg( 'page', 'vip-workflow-settings', get_admin_url( null, 'admin.php' ) ) );
+define( 'VIP_WORKFLOW_SETTINGS_PAGE', add_query_arg( 'page', 'vw-settings', get_admin_url( null, 'admin.php' ) ) );
 
 // ToDo: Let's revisit if we want to instantiate the class here or not. Thinking we should move it elsewhere and keep this class simple.
 
