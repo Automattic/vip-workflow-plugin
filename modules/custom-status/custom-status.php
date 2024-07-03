@@ -277,6 +277,7 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 
 				wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
 					'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
+					'custom_statuses'      => array_values( $this->get_custom_statuses() ),
 				] );
 			}
 
@@ -1210,12 +1211,12 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 				}
 
 				include_once __DIR__ . '/views/edit-status.php';
-			} elseif ( 'change-options' === $action ) {
+			} elseif ( 'manage-workflow' === $action ) {
+				include_once __DIR__ . '/views/manage-workflow.php';
+			} else {
 				$custom_status_list_table = new VW_Custom_Status_List_Table();
 				$custom_status_list_table->prepare_items();
 				include_once __DIR__ . '/views/configure.php';
-			} elseif ( 'manage-workflow' === $action ) {
-				echo '<p>Manage Workflow</p>';
 			}
 		}
 
