@@ -703,7 +703,7 @@ if ( ! class_exists( 'VW_Notifications' ) ) {
 			$body .= sprintf( __( 'You are receiving this email because you are subscribed to "%s".', 'vip-workflow' ), vw_draft_or_post_title( $post->ID ) );
 			$body .= "\r\n";
 			/* translators: 1: date */
-			$body .= sprintf( __( 'This email was sent %s.', 'vip-workflow' ), date( 'r' ) );
+			$body .= sprintf( __( 'This email was sent %s.', 'vip-workflow' ), gmdate( 'r' ) );
 			$body .= "\r\n \r\n";
 			$body .= get_option( 'blogname' ) . ' | ' . get_bloginfo( 'url' ) . ' | ' . admin_url( '/' ) . "\r\n";
 			return $body;

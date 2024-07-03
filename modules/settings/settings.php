@@ -17,7 +17,6 @@ if ( ! class_exists( 'VW_Settings' ) ) {
 				'short_description' => __( 'VIP Workflow redefines your WordPress publishing workflow.', 'vip-workflow' ),
 				'extended_description' => __( 'Enable any of the features below to take control of your workflow. Custom statuses, email notifications, and more help you and your team save time so everyone can focus on what matters most: the content.', 'vip-workflow' ),
 				'module_url' => $this->module_url,
-				'img_url' => $this->module_url . 'lib/eflogo_s128.png',
 				'slug' => 'settings',
 				'settings_slug' => 'vw-settings',
 				'default_options' => array(
@@ -47,9 +46,7 @@ if ( ! class_exists( 'VW_Settings' ) ) {
 		public function action_admin_menu() {
 			global $vip_workflow;
 
-			$vw_logo = 'lib/eflogo_s32w.png';
-
-			add_menu_page( $this->module->title, $this->module->title, 'manage_options', $this->module->settings_slug, array( $this, 'settings_page_controller' ), $this->module->module_url . $vw_logo );
+			add_menu_page( $this->module->title, $this->module->title, 'manage_options', $this->module->settings_slug, array( $this, 'settings_page_controller' ) );
 
 			foreach ( $vip_workflow->modules as $mod_name => $mod_data ) {
 				if ( isset( $mod_data->options->enabled ) && 'on' == $mod_data->options->enabled
