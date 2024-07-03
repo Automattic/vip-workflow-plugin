@@ -1,0 +1,14 @@
+/* Admin menu icon size */
+#adminmenu .toplevel_page_ef-settings .wp-menu-image img {
+	width: 16px;
+	height: 16px;
+}
+
+/*
+	Override Gutenberg 2.0
+ */
+/* Override WP_List_Table styles that are hiding buttons on mobile devices */
+.vip-worklflow-admin .col-wrap .submit {
+    display: block;
+}
+
