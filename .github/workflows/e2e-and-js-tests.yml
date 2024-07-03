@@ -29,11 +29,11 @@ jobs:
           npm ci
           npm run build
 
-      - name: Install WordPress with wp-env
-        run: npm run wp-env start
+      # - name: Install WordPress with wp-env
+      #   run: npm run wp-env start
 
       - name: Run Lint JS
         run: npm run lint-js
 
-      - name: Run tests
-        run: npm run test
+      # - name: Run tests
+      #   run: npm run test

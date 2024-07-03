@@ -91,8 +91,8 @@ class VIP_Workflow {
 			self::$instance->setup_actions();
 			// ToDo: Take this away, along with any backwards compat code.
 			// Backwards compat for when we promoted use of the $edit_flow global
-			global $VIP_Workflow;
-			$VIP_Workflow = self::$instance;
+			global $vip_workflow;
+			$vip_workflow = self::$instance;
 		}
 		return self::$instance;
 	}
@@ -355,7 +355,7 @@ class VIP_Workflow {
 	 * Registers commonly used scripts + styles for easy enqueueing
 	 */
 	public function register_scripts_and_styles() {
-		wp_enqueue_style( 'vw-admin-css', VIP_WORKFLOW_URL . 'common/css/edit-flow-admin.css', false, VIP_WORKFLOW_VERSION, 'all' );
+		wp_enqueue_style( 'vw-admin-css', VIP_WORKFLOW_URL . 'common/css/vip-workflow-admin.css', false, VIP_WORKFLOW_VERSION, 'all' );
 
 		wp_register_script( 'jquery-listfilterizer', VIP_WORKFLOW_URL . 'common/js/jquery.listfilterizer.js', array( 'jquery' ), VIP_WORKFLOW_VERSION, true );
 		wp_register_style( 'jquery-listfilterizer', VIP_WORKFLOW_URL . 'common/css/jquery.listfilterizer.css', false, VIP_WORKFLOW_VERSION, 'all' );

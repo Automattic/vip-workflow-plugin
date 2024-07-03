@@ -41,9 +41,9 @@ if ( ! class_exists( 'VW_Module' ) ) {
 		 * @return <code>true</code> if the module is enabled, <code>false</code> otherwise
 		 */
 		public function module_enabled( $slug ) {
-			global $VIP_Workflow;
+			global $vip_workflow;
 
-			return isset( $VIP_Workflow->$slug ) && $VIP_Workflow->$slug->is_enabled();
+			return isset( $vip_workflow->$slug ) && $vip_workflow->$slug->is_enabled();
 		}
 
 		/**
@@ -177,10 +177,10 @@ if ( ! class_exists( 'VW_Module' ) ) {
 		 * @since 0.7
 		 */
 		public function get_post_statuses() {
-			global $VIP_Workflow;
+			global $vip_workflow;
 
 			if ( $this->module_enabled( 'custom_status' ) ) {
-				return $VIP_Workflow->custom_status->get_custom_statuses();
+				return $vip_workflow->custom_status->get_custom_statuses();
 			} else {
 				return $this->get_core_post_statuses();
 			}
@@ -367,7 +367,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 		 * @return bool $is_settings_view Return true if it is
 		 */
 		public function is_whitelisted_settings_view( $module_name = null ) {
-			global $pagenow, $VIP_Workflow;
+			global $pagenow, $vip_workflow;
 
 			// All of the settings views are based on admin.php and a $_GET['page'] parameter
 			if ( 'admin.php' != $pagenow || ! isset( $_GET['page'] ) ) {
@@ -375,7 +375,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 			}
 
 			// Load all of the modules that have a settings slug/ callback for the settings page
-			foreach ( $VIP_Workflow->modules as $mod_name => $mod_data ) {
+			foreach ( $vip_workflow->modules as $mod_name => $mod_data ) {
 				if ( isset( $mod_data->options->enabled ) && 'on' == $mod_data->options->enabled && $mod_data->configure_page_cb ) {
 					$settings_view_slugs[] = $mod_data->settings_slug;
 				}
@@ -386,7 +386,7 @@ if ( ! class_exists( 'VW_Module' ) ) {
 				return false;
 			}
 
-			if ( $module_name && $VIP_Workflow->modules->$module_name->settings_slug != $_GET['page'] ) {
+			if ( $module_name && $vip_workflow->modules->$module_name->settings_slug != $_GET['page'] ) {
 				return false;
 			}
 
