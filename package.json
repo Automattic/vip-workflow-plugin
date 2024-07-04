@@ -9,6 +9,7 @@
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack --watch",
+    "dev:hot": "wp-scripts start -c webpack.config.js --hot",
     "wp-env": "wp-env",
     "lint-js": "eslint --quiet modules"
   },

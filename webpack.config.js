@@ -13,6 +13,8 @@ const wpScriptsModulesEntries = glob
 		return acc;
 	}, {} );
 
+const host = process.env.HOST || 'localhost';
+
 module.exports = [
 	{
 		...defaultScriptsConfig,
@@ -22,6 +24,10 @@ module.exports = [
 		output: {
 			...defaultScriptsConfig.output,
 			path: __dirname + '/dist/modules/',
+		},
+		devServer: {
+			...defaultScriptsConfig.devServer,
+			host,
 		},
 	},
 ];

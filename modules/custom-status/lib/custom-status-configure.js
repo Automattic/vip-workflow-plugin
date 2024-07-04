@@ -3,6 +3,10 @@ import domReady from '@wordpress/dom-ready';
 import { createRoot, useState, useRef, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
+if ( module.hot ) {
+	module.hot.accept();
+}
+
 const WorkflowArrow = ( { start, end } ) => {
 	const canvasRef = useRef( null );
 	const width = 40;
@@ -52,8 +56,8 @@ function drawArrow( context, width, height ) {
 	let y1 = height - 20;
 
 	context.beginPath();
-	const arrowWidth = 3;
-	const headLength = 6;
+	const arrowWidth = 1;
+	const headLength = 20;
 	const headAngle = Math.PI / 6;
 	const angle = Math.atan2( y1 - y0, x1 - x0 );
 
@@ -208,162 +212,162 @@ function updateCustomStatusOrder( reorderedItems ) {
 	} );
 }
 
-( function ( $ ) {
-	const inlineEditCustomStatus = {
-		init() {
-			const t = this;
-			const row = $( '#inline-edit' );
+// ( function ( $ ) {
+// 	const inlineEditCustomStatus = {
+// 		init() {
+// 			const t = this;
+// 			const row = $( '#inline-edit' );
 
-			t.what = '#term-';
+// 			t.what = '#term-';
 
-			$( document ).on( 'click', '.editinline', function () {
-				inlineEditCustomStatus.edit( this );
-				return false;
-			} );
+// 			$( document ).on( 'click', '.editinline', function () {
+// 				inlineEditCustomStatus.edit( this );
+// 				return false;
+// 			} );
 
-			// prepare the edit row
-			row.on( 'keyup', function ( e ) {
-				if ( e.which == 27 ) {
-					return inlineEditCustomStatus.revert();
-				}
-			} );
+// 			// prepare the edit row
+// 			row.on( 'keyup', function ( e ) {
+// 				if ( e.which == 27 ) {
+// 					return inlineEditCustomStatus.revert();
+// 				}
+// 			} );
 
-			$( 'a.cancel', row ).on( 'click', function () {
-				return inlineEditCustomStatus.revert();
-			} );
-			$( 'a.save', row ).on( 'click', function () {
-				return inlineEditCustomStatus.save( this );
-			} );
-			$( 'input, select', row ).on( 'keydown', function ( e ) {
-				if ( e.which == 13 ) {
-					return inlineEditCustomStatus.save( this );
-				}
-			} );
-		},
+// 			$( 'a.cancel', row ).on( 'click', function () {
+// 				return inlineEditCustomStatus.revert();
+// 			} );
+// 			$( 'a.save', row ).on( 'click', function () {
+// 				return inlineEditCustomStatus.save( this );
+// 			} );
+// 			$( 'input, select', row ).on( 'keydown', function ( e ) {
+// 				if ( e.which == 13 ) {
+// 					return inlineEditCustomStatus.save( this );
+// 				}
+// 			} );
+// 		},
 
-		toggle( el ) {
-			const t = this;
-			$( t.what + t.getId( el ) ).css( 'display' ) == 'none' ? t.revert() : t.edit( el );
-		},
+// 		toggle( el ) {
+// 			const t = this;
+// 			$( t.what + t.getId( el ) ).css( 'display' ) == 'none' ? t.revert() : t.edit( el );
+// 		},
 
-		edit( id ) {
-			const t = this;
-			t.revert();
+// 		edit( id ) {
+// 			const t = this;
+// 			t.revert();
 
-			if ( typeof id === 'object' ) {
-				id = t.getId( id );
-			}
+// 			if ( typeof id === 'object' ) {
+// 				id = t.getId( id );
+// 			}
 
-			let editRow = $( '#inline-edit' ).clone( true );
-			let rowData = $( '#inline_' + id );
+// 			let editRow = $( '#inline-edit' ).clone( true );
+// 			let rowData = $( '#inline_' + id );
 
-			$( 'td', editRow ).attr( 'colspan', $( '.widefat:first thead th:visible' ).length );
+// 			$( 'td', editRow ).attr( 'colspan', $( '.widefat:first thead th:visible' ).length );
 
-			if ( $( t.what + id ).hasClass( 'alternate' ) ) {
-				$( editRow ).addClass( 'alternate' );
-			}
+// 			if ( $( t.what + id ).hasClass( 'alternate' ) ) {
+// 				$( editRow ).addClass( 'alternate' );
+// 			}
 
-			$( t.what + id )
-				.hide()
-				.after( editRow );
+// 			$( t.what + id )
+// 				.hide()
+// 				.after( editRow );
 
-			const name_text = $( '.name', rowData ).text();
-			$( ':input[name="name"]', editRow ).val( name_text );
-			$( ':input[name="description"]', editRow ).val( $( '.description', rowData ).text() );
+// 			const name_text = $( '.name', rowData ).text();
+// 			$( ':input[name="name"]', editRow ).val( name_text );
+// 			$( ':input[name="description"]', editRow ).val( $( '.description', rowData ).text() );
 
-			$( editRow )
-				.attr( 'id', 'edit-' + id )
-				.addClass( 'inline-editor' )
-				.show();
+// 			$( editRow )
+// 				.attr( 'id', 'edit-' + id )
+// 				.addClass( 'inline-editor' )
+// 				.show();
 
-			const $name_field = $( '.ptitle', editRow ).eq( 0 );
-			if ( 'draft' === name_text.trim().toLowerCase() ) {
-				$name_field.attr( 'readonly', 'readonly' );
-			} else {
-				$name_field.focus();
-			}
+// 			const $name_field = $( '.ptitle', editRow ).eq( 0 );
+// 			if ( 'draft' === name_text.trim().toLowerCase() ) {
+// 				$name_field.attr( 'readonly', 'readonly' );
+// 			} else {
+// 				$name_field.focus();
+// 			}
 
-			return false;
-		},
+// 			return false;
+// 		},
 
-		save( id ) {
-			let params;
-			let fields;
-			const tax = $( 'input[name="taxonomy"]' ).val() || '';
+// 		save( id ) {
+// 			let params;
+// 			let fields;
+// 			const tax = $( 'input[name="taxonomy"]' ).val() || '';
 
-			if ( typeof id === 'object' ) {
-				id = this.getId( id );
-			}
+// 			if ( typeof id === 'object' ) {
+// 				id = this.getId( id );
+// 			}
 
-			$( 'table.widefat .inline-edit-save .waiting' ).show();
+// 			$( 'table.widefat .inline-edit-save .waiting' ).show();
 
-			params = {
-				action: 'inline_save_status',
-				status_id: id,
-			};
+// 			params = {
+// 				action: 'inline_save_status',
+// 				status_id: id,
+// 			};
 
-			fields = $( '#edit-' + id + ' :input' ).serialize();
-			params = fields + '&' + $.param( params );
+// 			fields = $( '#edit-' + id + ' :input' ).serialize();
+// 			params = fields + '&' + $.param( params );
 
-			// make ajax request
-			$.post( ajaxurl, params, function ( r ) {
-				let row;
-				let new_id;
-				$( 'table.widefat .inline-edit-save .waiting' ).hide();
+// 			// make ajax request
+// 			$.post( ajaxurl, params, function ( r ) {
+// 				let row;
+// 				let new_id;
+// 				$( 'table.widefat .inline-edit-save .waiting' ).hide();
 
-				if ( r ) {
-					if ( -1 != r.indexOf( '<tr' ) ) {
-						$( inlineEditCustomStatus.what + id ).remove();
-						new_id = $( r ).attr( 'id' );
+// 				if ( r ) {
+// 					if ( -1 != r.indexOf( '<tr' ) ) {
+// 						$( inlineEditCustomStatus.what + id ).remove();
+// 						new_id = $( r ).attr( 'id' );
 
-						$( '#edit-' + id )
-							.before( r )
-							.remove();
-						row = new_id ? $( '#' + new_id ) : $( inlineEditCustomStatus.what + id );
-						row.hide().fadeIn();
-					} else {
-						$( '#edit-' + id + ' .inline-edit-save .error' )
-							.html( r )
-							.show();
-					}
-				} else {
-					$( '#edit-' + id + ' .inline-edit-save .error' )
-						.html( inlineEditL10n.error )
-						.show();
-				}
-			} );
-			return false;
-		},
+// 						$( '#edit-' + id )
+// 							.before( r )
+// 							.remove();
+// 						row = new_id ? $( '#' + new_id ) : $( inlineEditCustomStatus.what + id );
+// 						row.hide().fadeIn();
+// 					} else {
+// 						$( '#edit-' + id + ' .inline-edit-save .error' )
+// 							.html( r )
+// 							.show();
+// 					}
+// 				} else {
+// 					$( '#edit-' + id + ' .inline-edit-save .error' )
+// 						.html( inlineEditL10n.error )
+// 						.show();
+// 				}
+// 			} );
+// 			return false;
+// 		},
 
-		revert() {
-			let id = $( 'table.widefat tr.inline-editor' ).attr( 'id' );
+// 		revert() {
+// 			let id = $( 'table.widefat tr.inline-editor' ).attr( 'id' );
 
-			if ( id ) {
-				$( 'table.widefat .inline-edit-save .waiting' ).hide();
-				$( '#' + id ).remove();
-				id = id.substr( id.lastIndexOf( '-' ) + 1 );
-				$( this.what + id ).show();
-			}
+// 			if ( id ) {
+// 				$( 'table.widefat .inline-edit-save .waiting' ).hide();
+// 				$( '#' + id ).remove();
+// 				id = id.substr( id.lastIndexOf( '-' ) + 1 );
+// 				$( this.what + id ).show();
+// 			}
 
-			return false;
-		},
+// 			return false;
+// 		},
 
-		getId( o ) {
-			const id = o.tagName == 'TR' ? o.id : $( o ).parents( 'tr' ).attr( 'id' );
-			const parts = id.split( '-' );
-			return parts[ parts.length - 1 ];
-		},
-	};
+// 		getId( o ) {
+// 			const id = o.tagName == 'TR' ? o.id : $( o ).parents( 'tr' ).attr( 'id' );
+// 			const parts = id.split( '-' );
+// 			return parts[ parts.length - 1 ];
+// 		},
+// 	};
 
-	$( document ).ready( function () {
-		inlineEditCustomStatus.init();
-	} );
-} )( jQuery );
+// 	$( document ).ready( function () {
+// 		inlineEditCustomStatus.init();
+// 	} );
+// } )( jQuery );
 
-jQuery( document ).ready( function () {
-	jQuery( '.delete-status a' ).on( 'click', function () {
-		if ( ! confirm( VW_CUSTOM_STATUS_CONFIGURE.delete_status_string ) ) {
-			return false;
-		}
-	} );
-} );
+// jQuery( document ).ready( function () {
+// 	jQuery( '.delete-status a' ).on( 'click', function () {
+// 		if ( ! confirm( VW_CUSTOM_STATUS_CONFIGURE.delete_status_string ) ) {
+// 			return false;
+// 		}
+// 	} );
+// } );
