@@ -8,6 +8,7 @@ namespace VIPWorkflow\Modules\Notifications;
 
  use VIPWorkflow\Modules\VW_Module;
  use VIPWorkflow\Modules\UserGroups\VW_User_Groups;
+ use function VIPWorkflow\Utils\vw_draft_or_post_title;
  use function VIPWorkflow\vip_workflow;
 
 if ( ! defined( 'VW_NOTIFICATION_USE_CRON' ) ) {

@@ -12,8 +12,9 @@
  namespace VIPWorkflow\Modules\CustomStatus;
 
  use VIPWorkflow\Modules\VW_Module;
+ use WP_List_Table;
  use function VIPWorkflow\vip_workflow;
-
+ use function VIPWorkflow\Utils\_vw_wp_link_page;
 class VW_Custom_Status extends VW_Module {
 
 	public $module;

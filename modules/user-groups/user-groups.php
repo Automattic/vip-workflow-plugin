@@ -12,6 +12,7 @@
 namespace VIPWorkflow\Modules\UserGroups;
 
  use VIPWorkflow\Modules\VW_Module;
+ use WP_List_Table;
  use function VIPWorkflow\vip_workflow;
 
 class VW_User_Groups extends VW_Module {
