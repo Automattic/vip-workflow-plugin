@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect } from '@wordpress/element';
+import { useRef, useLayoutEffect, useState } from '@wordpress/element';
 
 export default function WorkflowArrow( { start, end, referenceDimensions } ) {
 	const canvasRef = useRef( null );
@@ -45,6 +45,37 @@ export default function WorkflowArrow( { start, end, referenceDimensions } ) {
 			<h3>{ end }</h3>
 		</div>
 	);
+}
+
+export function useRefDimensions( ref ) {
+	const [ width, setWidth ] = useState( 0 );
+	const [ height, setHeight ] = useState( 0 );
+
+	useLayoutEffect( () => {
+		let sizeObserver = new ResizeObserver( entries => {
+			entries.forEach( entry => {
+				setWidth( Math.floor( entry.contentRect.width ) );
+				setHeight( Math.floor( entry.contentRect.height ) );
+			} );
+		} );
+
+		if ( ref.current ) {
+			const { current } = ref;
+			const boundingRect = current.getBoundingClientRect();
+			const { width, height } = boundingRect;
+
+			setWidth( Math.floor( width ) );
+			setHeight( Math.floor( height ) );
+
+			sizeObserver.observe( ref.current );
+		}
+
+		return () => {
+			sizeObserver.disconnect();
+		};
+	}, [ ref ] );
+
+	return [ width, height ];
 }
 
 function drawArrow( context, width, height ) {

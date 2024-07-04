@@ -4,4 +4,4 @@ defined( 'ABSPATH' ) || exit();
 
 ?>
 
-<div id="workflow-manager"></div>
+<div id="workflow-manager-root"></div>

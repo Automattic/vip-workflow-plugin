@@ -1,9 +1,11 @@
+import './configure.scss';
+
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import domReady from '@wordpress/dom-ready';
 import { createRoot, useState, useRef, useLayoutEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
-import WorkflowArrow from './components/workflow-arrow';
+import WorkflowArrow, { useRefDimensions } from './components/workflow-arrow';
 
 function WorkflowManager() {
 	const [ items, setItems ] = useState( VW_CUSTOM_STATUS_CONFIGURE.custom_statuses );
@@ -23,11 +25,7 @@ function WorkflowManager() {
 	};
 
 	return (
-		<div
-			style={ {
-				display: 'flex',
-			} }
-		>
+		<div className="workflow-manager">
 			<WorkflowArrow
 				start={ __( 'Create' ) }
 				end={ __( 'Publish' ) }
@@ -38,6 +36,7 @@ function WorkflowManager() {
 				<Droppable droppableId="droppable">
 					{ ( provided, snapshot ) => (
 						<div
+							className="status-container"
 							{ ...provided.droppableProps }
 							ref={ el => {
 								statusContainerRef.current = el;
@@ -49,6 +48,7 @@ function WorkflowManager() {
 								<Draggable key={ item.term_id } draggableId={ `${ item.term_id }` } index={ index }>
 									{ ( provided, snapshot ) => (
 										<div
+											className="status-item"
 											ref={ provided.innerRef }
 											{ ...provided.draggableProps }
 											{ ...provided.dragHandleProps }
@@ -73,7 +73,7 @@ function WorkflowManager() {
 }
 
 domReady( () => {
-	const root = createRoot( document.getElementById( 'workflow-manager' ) );
+	const root = createRoot( document.getElementById( 'workflow-manager-root' ) );
 	root.render( <WorkflowManager /> );
 } );
 
@@ -89,59 +89,14 @@ const getItemStyle = ( index, isDragging, draggableStyle ) => {
 	const defaultBackgroundColor = index % 2 ? 'white' : '#f6f7f7';
 
 	return {
-		userSelect: 'none',
-		padding: '16px',
-		margin: `0 0 8px 0`,
 		background: isDragging ? 'lightgreen' : defaultBackgroundColor,
-		border: '1px solid #c3c4c7',
-
 		...draggableStyle,
 	};
 };
 
 const getListStyle = isDraggingOver => ( {
 	background: isDraggingOver ? 'lightblue' : 'white',
-	padding: '8px',
-	width: '250px',
-	height: 'fit-content',
-	border: '1px solid #c3c4c7',
-	boxShadow: '0 1px 1px rgba(0,0,0,.04)',
-	margin: '4.5rem 0 0 1rem',
-
-	resize: 'vertical',
-	overflow: 'auto',
 } );
-
-const useRefDimensions = ref => {
-	const [ width, setWidth ] = useState( 0 );
-	const [ height, setHeight ] = useState( 0 );
-
-	useLayoutEffect( () => {
-		let sizeObserver = new ResizeObserver( entries => {
-			entries.forEach( entry => {
-				setWidth( Math.floor( entry.contentRect.width ) );
-				setHeight( Math.floor( entry.contentRect.height ) );
-			} );
-		} );
-
-		if ( ref.current ) {
-			const { current } = ref;
-			const boundingRect = current.getBoundingClientRect();
-			const { width, height } = boundingRect;
-
-			setWidth( Math.floor( width ) );
-			setHeight( Math.floor( height ) );
-
-			sizeObserver.observe( ref.current );
-		}
-
-		return () => {
-			sizeObserver.disconnect();
-		};
-	}, [ ref ] );
-
-	return [ width, height ];
-};
 
 function updateCustomStatusOrder( reorderedItems ) {
 	// Prepare the POST
