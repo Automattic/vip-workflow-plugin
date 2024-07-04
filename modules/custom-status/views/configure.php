@@ -1,5 +1,7 @@
 <?php
 
+ namespace VIPWorkflow\Modules\CustomStatus;
+
 defined( 'ABSPATH' ) || exit();
 
 // phpcs:disable:WordPress.Security.NonceVerification.Missing -- Disabling nonce verification because that is not available here, it's just rendering it. The actual save is done in helper_settings_validate_and_save and that's guarded well.
@@ -17,7 +19,7 @@ global $vip_workflow;
 </div>
 
 <div id="col-left">
-	<div class="col-wrap">
+	<div class="col-wrap"
 		<div class="form-wrap">
 			<h3 class="nav-tab-wrapper">
 				<?php $add_new_nav_class = empty( $action ) ? 'nav-tab-active' : ''; ?>

@@ -14,6 +14,11 @@
  * @package vip-workflow
  */
 
+ namespace VIPWorkflow;
+
+ use VIPWorkflow\Modules\VW_Module;
+ use stdClass;
+
  /**
   * Print admin notice regarding having an old version of PHP.
   */
