@@ -85,7 +85,6 @@ function drawArrow( context, width, height ) {
 
 function WorkflowManager() {
 	const [ items, setItems ] = useState( VW_CUSTOM_STATUS_CONFIGURE.custom_statuses );
-	console.log( 'Custom statuses:', items );
 
 	const onDragEnd = result => {
 		// dropped outside the list
@@ -95,6 +94,7 @@ function WorkflowManager() {
 
 		const reorderedItems = reorder( items, result.source.index, result.destination.index );
 		setItems( reorderedItems );
+		updateCustomStatusOrder( reorderedItems );
 	};
 
 	return (
@@ -183,6 +183,31 @@ const getListStyle = isDraggingOver => ( {
 	boxShadow: '0 1px 1px rgba(0,0,0,.04)',
 } );
 
+function updateCustomStatusOrder( reorderedItems ) {
+	console.log( 'Have reordered items:', reorderedItems );
+	// Prepare the POST
+	const params = {
+		action: 'update_status_positions',
+		status_positions: reorderedItems.map( item => item.term_id ),
+		custom_status_sortable_nonce: VW_CUSTOM_STATUS_CONFIGURE.reorder_nonce,
+	};
+	// Inform WordPress of our updated positions
+	jQuery.post( VW_CUSTOM_STATUS_CONFIGURE.ajax_url, params, function ( retval ) {
+		// jQuery( '.edit-flow-admin .edit-flow-message' ).remove();
+		// If there's a success message, print it. Otherwise we assume we received an error message
+		if ( retval.status == 'success' ) {
+			var message =
+				'<span class="edit-flow-updated-message edit-flow-message">' + retval.message + '</span>';
+		} else {
+			var message =
+				'<span class="edit-flow-error-message edit-flow-message">' + retval.message + '</span>';
+		}
+		// jQuery( '.edit-flow-admin h2' ).append( message );
+		// // Set a timeout to eventually remove it
+		// setTimeout( edit_flow_hide_message, 8000 );
+	} );
+}
+
 ( function ( $ ) {
 	const inlineEditCustomStatus = {
 		init() {
@@ -223,14 +248,15 @@ const getListStyle = isDraggingOver => ( {
 
 		edit( id ) {
 			const t = this;
-			let editRow;
 			t.revert();
 
 			if ( typeof id === 'object' ) {
 				id = t.getId( id );
 			}
 
-			( editRow = $( '#inline-edit' ).clone( true ) ), ( rowData = $( '#inline_' + id ) );
+			let editRow = $( '#inline-edit' ).clone( true );
+			let rowData = $( '#inline_' + id );
+
 			$( 'td', editRow ).attr( 'colspan', $( '.widefat:first thead th:visible' ).length );
 
 			if ( $( t.what + id ).hasClass( 'alternate' ) ) {

@@ -276,8 +276,10 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 				wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $dependencies, $asset_file['version'], true );
 
 				wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-					'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
+					'ajax_url'              => admin_url( 'admin-ajax.php' ),
 					'custom_statuses'      => array_values( $this->get_custom_statuses() ),
+					'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
+					'reorder_nonce'        => wp_create_nonce( 'custom-status-sortable' ),
 				] );
 			}
 

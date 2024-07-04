@@ -11,7 +11,6 @@ global $vip_workflow;
 <div id="col-right">
 	<div class="col-wrap">
 		<?php $custom_status_list_table->display(); ?>
-		<?php wp_nonce_field( 'custom-status-sortable', 'custom-status-sortable' ); ?>
 		<p class="description" style="padding-top:10px;"><?php esc_html_e( 'Deleting a post status will assign all posts to the default post status.', 'vip-workflow' ); ?></p>
 	</div>
 </div>
