@@ -44,16 +44,7 @@ const WorkflowArrow = ( { start, end, referenceDimensions } ) => {
 			} }
 		>
 			<h3>{ start }</h3>
-			<canvas
-				ref={ canvasRef }
-				style={ {
-					// border: '2px solid red',
-					width: 40,
-					// maxWidth: '100%',
-					// height: '100%',
-					// maxHeight: '100%',
-				} }
-			></canvas>
+			<canvas ref={ canvasRef }></canvas>
 			<h3>{ end }</h3>
 		</div>
 	);
@@ -103,36 +94,9 @@ function drawArrow( context, width, height ) {
 
 function WorkflowManager() {
 	const [ items, setItems ] = useState( VW_CUSTOM_STATUS_CONFIGURE.custom_statuses );
-	const [ statusContainerDimensions, setStatusContainerDimensions ] = useState( null );
+
 	const statusContainerRef = useRef( null );
-
-	useEffect( () => {
-		let sizeObserver = new ResizeObserver( entries => {
-			entries.forEach( entry => {
-				setStatusContainerDimensions( {
-					width: Math.floor( entry.contentRect.width ),
-					height: Math.floor( entry.contentRect.height ),
-				} );
-			} );
-		} );
-
-		if ( statusContainerRef.current ) {
-			const { current } = statusContainerRef;
-			const boundingRect = current.getBoundingClientRect();
-			const { width, height } = boundingRect;
-
-			setStatusContainerDimensions( {
-				width: Math.floor( width ),
-				height: Math.floor( height ),
-			} );
-
-			sizeObserver.observe( statusContainerRef.current );
-		}
-
-		return () => {
-			sizeObserver.disconnect();
-		};
-	}, [ statusContainerRef ] );
+	const [ statusContanerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
 
 	const onDragEnd = result => {
 		// Dropped outside the list
@@ -154,7 +118,7 @@ function WorkflowManager() {
 			<WorkflowArrow
 				start={ __( 'Create' ) }
 				end={ __( 'Publish' ) }
-				referenceDimensions={ statusContainerDimensions }
+				referenceDimensions={ { width: statusContanerWidth, height: statusContainerHeight } }
 			/>
 
 			<DragDropContext onDragEnd={ onDragEnd }>
@@ -200,7 +164,6 @@ domReady( () => {
 	root.render( <WorkflowManager /> );
 } );
 
-// a little function to help us with reordering the result
 const reorder = ( list, startIndex, endIndex ) => {
 	const result = Array.from( list );
 	const [ removed ] = result.splice( startIndex, 1 );
@@ -215,15 +178,12 @@ const getItemStyle = ( index, isDragging, draggableStyle ) => {
 	const defaultBackgroundColor = index % 2 ? 'white' : '#f6f7f7';
 
 	return {
-		// some basic styles to make the items look a bit nicer
 		userSelect: 'none',
 		padding: grid * 2,
 		margin: `0 0 ${ grid }px 0`,
-		// change background colour if dragging
 		background: isDragging ? 'lightgreen' : defaultBackgroundColor,
 		border: '1px solid #c3c4c7',
 
-		// styles we need to apply on draggables
 		...draggableStyle,
 	};
 };
@@ -272,16 +232,7 @@ const useRefDimensions = ref => {
 	return [ width, height ];
 };
 
-const mergeRefs = ( ...refs ) => {
-	return node => {
-		for ( const ref of refs ) {
-			ref.current = node;
-		}
-	};
-};
-
 function updateCustomStatusOrder( reorderedItems ) {
-	console.log( 'Have reordered items:', reorderedItems );
 	// Prepare the POST
 	const params = {
 		action: 'update_status_positions',
