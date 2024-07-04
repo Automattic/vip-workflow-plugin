@@ -35,7 +35,7 @@ class Settings extends Module {
 	public function init() {
 		add_action( 'admin_init', array( $this, 'helper_settings_validate_and_save' ), 100 );
 
-		//add_action( 'admin_print_styles', array( $this, 'action_admin_print_styles' ) );
+		add_action( 'admin_print_styles', array( $this, 'action_admin_print_styles' ) );
 		add_action( 'admin_print_scripts', array( $this, 'action_admin_print_scripts' ) );
 		//add_action( 'admin_enqueue_scripts', array( $this, 'action_admin_enqueue_scripts' ) );
 		add_action( 'admin_menu', array( $this, 'action_admin_menu' ) );
