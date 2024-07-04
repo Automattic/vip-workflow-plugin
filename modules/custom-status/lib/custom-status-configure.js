@@ -1,23 +1,24 @@
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import domReady from '@wordpress/dom-ready';
-import { createRoot, useState, useRef, useEffect } from '@wordpress/element';
+import { createRoot, useState, useRef, useEffect, useLayoutEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
-if ( module.hot ) {
-	module.hot.accept();
-}
-
-const WorkflowArrow = ( { start, end } ) => {
+const WorkflowArrow = ( { start, end, referenceDimensions } ) => {
 	const canvasRef = useRef( null );
-	const width = 40;
-	const height = 350;
 
-	useEffect( () => {
+	useLayoutEffect( () => {
 		const canvas = canvasRef.current;
 		const context = canvas?.getContext( '2d' );
 
 		if ( ! canvas || ! context ) {
 			return;
+		}
+
+		const width = 40;
+
+		let height = 100;
+		if ( referenceDimensions?.height ) {
+			height = referenceDimensions.height + 70;
 		}
 
 		const ratio = window.devicePixelRatio;
@@ -31,7 +32,7 @@ const WorkflowArrow = ( { start, end } ) => {
 		context.fillRect( 0, 0, canvas.width, canvas.height );
 
 		drawArrow( context, width, height );
-	}, [ width, height ] );
+	}, [ referenceDimensions ] );
 
 	return (
 		<div
@@ -43,7 +44,16 @@ const WorkflowArrow = ( { start, end } ) => {
 			} }
 		>
 			<h3>{ start }</h3>
-			<canvas ref={ canvasRef }></canvas>
+			<canvas
+				ref={ canvasRef }
+				style={ {
+					// border: '2px solid red',
+					width: 40,
+					// maxWidth: '100%',
+					// height: '100%',
+					// maxHeight: '100%',
+				} }
+			></canvas>
 			<h3>{ end }</h3>
 		</div>
 	);
@@ -55,23 +65,26 @@ function drawArrow( context, width, height ) {
 	let x1 = width / 2;
 	let y1 = height - 20;
 
-	context.beginPath();
-	const arrowWidth = 1;
-	const headLength = 20;
+	const arrowWidth = 4;
+	const headLength = 10;
 	const headAngle = Math.PI / 6;
 	const angle = Math.atan2( y1 - y0, x1 - x0 );
 
-	context.lineWidth = arrowWidth;
+	context.beginPath();
 
 	/* Adjust the point */
 	x1 -= arrowWidth * Math.cos( angle );
 	y1 -= arrowWidth * Math.sin( angle );
 
+	// Draw line
 	context.beginPath();
 	context.moveTo( x0, y0 );
 	context.lineTo( x1, y1 );
+
+	context.lineWidth = arrowWidth;
 	context.stroke();
 
+	// Draw arrow head
 	context.beginPath();
 	context.lineTo( x1, y1 );
 	context.lineTo(
@@ -83,15 +96,46 @@ function drawArrow( context, width, height ) {
 		y1 - headLength * Math.sin( angle + headAngle )
 	);
 	context.closePath();
+	context.fillStyle = 'black';
 	context.stroke();
 	context.fill();
 }
 
 function WorkflowManager() {
 	const [ items, setItems ] = useState( VW_CUSTOM_STATUS_CONFIGURE.custom_statuses );
+	const [ statusContainerDimensions, setStatusContainerDimensions ] = useState( null );
+	const statusContainerRef = useRef( null );
+
+	useEffect( () => {
+		let sizeObserver = new ResizeObserver( entries => {
+			entries.forEach( entry => {
+				setStatusContainerDimensions( {
+					width: Math.floor( entry.contentRect.width ),
+					height: Math.floor( entry.contentRect.height ),
+				} );
+			} );
+		} );
+
+		if ( statusContainerRef.current ) {
+			const { current } = statusContainerRef;
+			const boundingRect = current.getBoundingClientRect();
+			const { width, height } = boundingRect;
+
+			setStatusContainerDimensions( {
+				width: Math.floor( width ),
+				height: Math.floor( height ),
+			} );
+
+			sizeObserver.observe( statusContainerRef.current );
+		}
+
+		return () => {
+			sizeObserver.disconnect();
+		};
+	}, [ statusContainerRef ] );
 
 	const onDragEnd = result => {
-		// dropped outside the list
+		// Dropped outside the list
 		if ( ! result.destination ) {
 			return;
 		}
@@ -107,14 +151,21 @@ function WorkflowManager() {
 				display: 'flex',
 			} }
 		>
-			<WorkflowArrow start={ __( 'Create' ) } end={ __( 'Publish' ) } />
+			<WorkflowArrow
+				start={ __( 'Create' ) }
+				end={ __( 'Publish' ) }
+				referenceDimensions={ statusContainerDimensions }
+			/>
 
 			<DragDropContext onDragEnd={ onDragEnd }>
 				<Droppable droppableId="droppable">
 					{ ( provided, snapshot ) => (
 						<div
 							{ ...provided.droppableProps }
-							ref={ provided.innerRef }
+							ref={ el => {
+								statusContainerRef.current = el;
+								provided.innerRef( el );
+							} }
 							style={ getListStyle( snapshot.isDraggingOver ) }
 						>
 							{ items.map( ( item, index ) => (
@@ -182,10 +233,52 @@ const getListStyle = isDraggingOver => ( {
 	padding: grid,
 	width: 250,
 	height: 'fit-content',
-	alignSelf: 'center',
 	border: '1px solid #c3c4c7',
 	boxShadow: '0 1px 1px rgba(0,0,0,.04)',
+	margin: '4.5rem 0 0 1rem',
+
+	resize: 'both',
+	overflow: 'auto',
 } );
+
+const useRefDimensions = ref => {
+	const [ width, setWidth ] = useState( 0 );
+	const [ height, setHeight ] = useState( 0 );
+
+	useLayoutEffect( () => {
+		let sizeObserver = new ResizeObserver( entries => {
+			entries.forEach( entry => {
+				setWidth( Math.floor( entry.contentRect.width ) );
+				setHeight( Math.floor( entry.contentRect.height ) );
+			} );
+		} );
+
+		if ( ref.current ) {
+			const { current } = ref;
+			const boundingRect = current.getBoundingClientRect();
+			const { width, height } = boundingRect;
+
+			setWidth( Math.floor( width ) );
+			setHeight( Math.floor( height ) );
+
+			sizeObserver.observe( ref.current );
+		}
+
+		return () => {
+			sizeObserver.disconnect();
+		};
+	}, [ ref ] );
+
+	return [ width, height ];
+};
+
+const mergeRefs = ( ...refs ) => {
+	return node => {
+		for ( const ref of refs ) {
+			ref.current = node;
+		}
+	};
+};
 
 function updateCustomStatusOrder( reorderedItems ) {
 	console.log( 'Have reordered items:', reorderedItems );
@@ -371,3 +464,7 @@ function updateCustomStatusOrder( reorderedItems ) {
 // 		}
 // 	} );
 // } );
+
+if ( module.hot ) {
+	module.hot.accept();
+}
