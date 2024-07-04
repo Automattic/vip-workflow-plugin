@@ -1,21 +1,15 @@
 <?php
 /**
- * class VW_User_Groups
- *
- * @todo all of them PHPdocs
- * @todo Resolve whether the notifications component of this class should be moved to "subscriptions"
- * @todo Decide whether it's functional to store user_ids in the term description array
- * - Argument against: it's going to be expensive to look up usergroups for a user
- *
+ * class User_Groups
  */
 
 namespace VIPWorkflow\Modules\UserGroups;
 
- use VIPWorkflow\Modules\VW_Module;
+ use VIPWorkflow\Modules\VIP_Workflow;
+ use VIPWorkflow\Modules\Module;
  use WP_List_Table;
- use function VIPWorkflow\vip_workflow;
 
-class VW_User_Groups extends VW_Module {
+class User_Groups extends Module {
 
 	public $module;
 
@@ -31,8 +25,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Register the module with VIP Workflow but don't do anything else
-	 *
-	 * @since 0.7
 	 */
 	public function __construct() {
 
@@ -47,7 +39,6 @@ class VW_User_Groups extends VW_Module {
 			'img_url' => $this->module_url . 'lib/usergroups_s128.png',
 			'slug' => 'user-groups',
 			'default_options' => array(
-				'enabled' => 'on',
 				'post_types' => array(
 					'post' => 'on',
 					'page' => 'off',
@@ -61,15 +52,9 @@ class VW_User_Groups extends VW_Module {
 			),
 			'configure_page_cb' => 'print_configure_view',
 			'configure_link_text' => __( 'Manage User Groups', 'vip-workflow' ),
-			'autoload' => false,
-			'settings_help_tab' => array(
-				'id' => 'vw-user-groups-overview',
-				'title' => __( 'Overview', 'vip-workflow' ),
-				'content' => __( '<p>For those with many people involved in the publishing process, user groups helps you keep them organized.</p><p>Currently, user groups are primarily used for subscribing a set of users to a post for notifications.</p>', 'vip-workflow' ),
-			),
-			'settings_help_sidebar' => __( '<p><strong>For more information:</strong></p><p><a href="https://github.com/Automattic/vip-workflow-plugin">VIP Workflow on Github</a></p>', 'vip-workflow' ),
+			'autoload' => true,
 		);
-		$this->module = vip_workflow()->register_module( 'user_groups', $args );
+		$this->module = VIP_Workflow::instance()->register_module( 'user_groups', $args );
 	}
 
 	/**
@@ -78,8 +63,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Initialize the rest of the stuff in the class if the module is active
-	 *
-	 * @since 0.7
 	 */
 	public function init() {
 
@@ -109,8 +92,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Load the capabilities onto users the first time the module is run
-	 *
-	 * @since 0.7
 	 */
 	public function install() {
 
@@ -148,8 +129,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Upgrade our data in case we need to
-	 *
-	 * @since 0.7
 	 */
 	public function upgrade( $previous_version ) {
 		// Nothing to do here yet
@@ -159,8 +138,6 @@ class VW_User_Groups extends VW_Module {
 	 * Individual Usergroups are stored using a custom taxonomy
 	 * Posts are associated with usergroups based on taxonomy relationship
 	 * User associations are stored serialized in the term's description field
-	 *
-	 * @since 0.7
 	 *
 	 * @uses register_taxonomy()
 	 */
@@ -180,8 +157,6 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Enqueue necessary admin scripts
 	 *
-	 * @since 0.7
-	 *
 	 * @uses wp_enqueue_script()
 	 */
 	public function enqueue_admin_scripts() {
@@ -199,8 +174,6 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Enqueue necessary admin styles, but only on the proper pages
 	 *
-	 * @since 0.7
-	 *
 	 * @uses wp_enqueue_style()
 	 */
 	public function enqueue_admin_styles() {
@@ -216,8 +189,6 @@ class VW_User_Groups extends VW_Module {
 	 * Handles a POST request to add a new Usergroup. Redirects to edit view after
 	 * for admin to add users to usergroup
 	 * Hooked into 'admin_init' and kicks out right away if no action
-	 *
-	 * @since 0.7
 	 */
 	public function handle_add_usergroup() {
 
@@ -292,8 +263,6 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Handles a POST request to edit a Usergroup
 	 * Hooked into 'admin_init' and kicks out right away if no action
-	 *
-	 * @since 0.7
 	 */
 	public function handle_edit_usergroup() {
 		if ( ! isset( $_POST['submit'], $_POST['form-action'], $_GET['page'] )
@@ -376,8 +345,6 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Handles a request to delete a Usergroup.
 	 * Hooked into 'admin_init' and kicks out right away if no action
-	 *
-	 * @since 0.7
 	 */
 	public function handle_delete_usergroup() {
 		if ( ! isset( $_GET['page'], $_GET['action'], $_GET['usergroup-id'] )
@@ -405,8 +372,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Handle the request to update a given Usergroup via inline edit
-	 *
-	 * @since 0.7
 	 */
 	public function handle_ajax_inline_save_usergroup() {
 
@@ -460,7 +425,7 @@ class VW_User_Groups extends VW_Module {
 		$return = $this->update_usergroup( $existing_term->term_id, $args );
 		if ( ! is_wp_error( $return ) ) {
 			set_current_screen( 'edit-usergroup' );
-			$wp_list_table = new VW_Usergroups_List_Table();
+			$wp_list_table = new Usergroups_List_Table();
 			$wp_list_table->prepare_items();
 			echo wp_kses_post( $wp_list_table->single_row( $return ) );
 			die();
@@ -475,7 +440,6 @@ class VW_User_Groups extends VW_Module {
 	 * Register settings for notifications so we can partially use the Settings API
 	 * (We use the Settings API for form generation, but not saving)
 	 *
-	 * @since 0.7
 	 * @uses add_settings_section(), add_settings_field()
 	 */
 	public function register_settings() {
@@ -485,8 +449,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Choose the post types for Usergroups
-	 *
-	 * @since 0.7
 	 */
 	public function settings_post_types_option() {
 		global $vip_workflow;
@@ -495,8 +457,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Validate data entered by the user
-	 *
-	 * @since 0.7
 	 *
 	 * @param array $new_options New values that have been entered by the user
 	 * @return array $new_options Form values after they've been sanitized
@@ -516,7 +476,6 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Build a configuration view so we can manage our usergroups
 	 *
-	 * @since 0.7
 	 * Disabling nonce verification because that is not available here, it's just rendering it. The actual save is done in helper_settings_validate_and_save and that's guarded well.
 	 * phpcs:disable:WordPress.Security.NonceVerification.Missing
 	 */
@@ -580,7 +539,7 @@ class VW_User_Groups extends VW_Module {
 				<?php
 		else :
 				/** Full page width view to allow adding a usergroup and edit the existing ones **/
-				$wp_list_table = new VW_Usergroups_List_Table();
+				$wp_list_table = new Usergroups_List_Table();
 				$wp_list_table->prepare_items();
 			?>
 			<script type="text/javascript">
@@ -674,12 +633,10 @@ class VW_User_Groups extends VW_Module {
 	 * Function called when a user's profile is updated
 	 * Adds user to specified usergroups
 	 *
-	 * @since 0.7
-	 *
-	 * @param ???
-	 * @param ???
-	 * @param ???
-	 * @return ???
+	 * @param array $errors
+	 * @param bool $update
+	 * @param WP_User $user
+	 * @return array
 	 */
 	public function user_profile_update( $errors, $update, $user ) {
 
@@ -716,8 +673,6 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Generate a link to one of the usergroups actions
 	 *
-	 * @since 0.7
-	 *
 	 * @param string $action Action we want the user to take
 	 * @param array $args Any query args to add to the URL
 	 * @return string $link Direct link to delete a usergroup
@@ -743,10 +698,8 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Displays a list of usergroups with checkboxes
 	 *
-	 * @since 0.7
-	 *
 	 * @param array $selected List of usergroup keys that should be checked
-	 * @param array $args ???
+	 * @param array $args Additional options for the form
 	 */
 	public function usergroups_select_form( $selected = array(), $args = null ) {
 
@@ -799,8 +752,6 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Get all of the registered usergroups. Returns an array of objects
 	 *
-	 * @since 0.7
-	 *
 	 * @param array $args Arguments to filter/sort by
 	 * @return array|bool $usergroups Array of Usergroups with relevant data, false if none
 	 */
@@ -831,8 +782,6 @@ class VW_User_Groups extends VW_Module {
 	 * - Name
 	 * - Description
 	 * - User IDs (array of IDs)
-	 *
-	 * @since 0.7
 	 *
 	 * @param string $field 'id', 'name', or 'slug'
 	 * @param int|string $value Value for the search field
@@ -867,8 +816,6 @@ class VW_User_Groups extends VW_Module {
 	 * - Slug (prefixed with our special key to avoid conflicts)
 	 * - Description
 	 * - Users
-	 *
-	 * @since 0.7
 	 *
 	 * @param array $args Name (optional), slug and description for the usergroup
 	 * @param array $user_ids IDs for the users to be added to the Usergroup
@@ -911,8 +858,6 @@ class VW_User_Groups extends VW_Module {
 	 * - Description
 	 * - Users
 	 *
-	 * @since 0.7
-	 *
 	 * @param int $id Unique ID for the usergroup
 	 * @param array $args Usergroup meta to update (name, slug, description)
 	 * @param array $users Users to be added to the Usergroup. If set, removes existing users first.
@@ -944,8 +889,6 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Delete a usergroup based on its term ID
 	 *
-	 * @since 0.7
-	 *
 	 * @param int $id Unique ID for the Usergroup
 	 * @param bool|WP_Error Returns true on success, WP_Error on failure
 	 */
@@ -957,8 +900,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Add an array of user logins or IDs to a given usergroup
-	 *
-	 * @since 0.7
 	 *
 	 * @param array $user_ids_or_logins User IDs or logins to be added to the usergroup
 	 * @param int $id Usergroup to perform the action on
@@ -999,8 +940,6 @@ class VW_User_Groups extends VW_Module {
 	/**
 	 * Add a given user to a Usergroup. Can use User ID or user login
 	 *
-	 * @since 0.7
-	 *
 	 * @param int|string $user_id_or_login User ID or login to be added to the Usergroups
 	 * @param int|array $ids ID for the Usergroup(s)
 	 * @return bool|WP_Error $retval Return true on success, WP_Error on error
@@ -1026,8 +965,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Remove a given user from one or more usergroups
-	 *
-	 * @since 0.7
 	 *
 	 * @param int|string $user_id_or_login User ID or login to be removed from the Usergroups
 	 * @param int|array $ids ID for the Usergroup(s)
@@ -1060,8 +997,6 @@ class VW_User_Groups extends VW_Module {
 
 	/**
 	 * Get all of the Usergroup ids or objects for a given user
-	 *
-	 * @since 0.7
 	 *
 	 * @param int|string $user_id_or_login User ID or login to search against
 	 * @param array $ids_or_objects Whether to retrieve an array of IDs or usergroup objects
@@ -1101,10 +1036,8 @@ class VW_User_Groups extends VW_Module {
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
 	/**
 	 * Usergroups uses WordPress' List Table API for generating the Usergroup management table
-	 *
-	 * @since 0.7
 	 */
-class VW_Usergroups_List_Table extends WP_List_Table {
+class Usergroups_List_Table extends WP_List_Table {
 
 
 	protected $callback_args;
@@ -1120,8 +1053,6 @@ class VW_Usergroups_List_Table extends WP_List_Table {
 
 	/**
 	 * @todo Paginate if we have a lot of usergroups
-	 *
-	 * @since 0.7
 	 */
 	public function prepare_items() {
 		global $vip_workflow;
@@ -1142,8 +1073,6 @@ class VW_Usergroups_List_Table extends WP_List_Table {
 
 	/**
 	 * Message to be displayed when there are no usergroups
-	 *
-	 * @since 0.7
 	 */
 	public function no_items() {
 		_e( 'No user groups found.', 'vip-workflow' );
@@ -1151,8 +1080,6 @@ class VW_Usergroups_List_Table extends WP_List_Table {
 
 	/**
 	 * Columns in our Usergroups table
-	 *
-	 * @since 0.7
 	 */
 	public function get_columns() {
 
@@ -1167,8 +1094,6 @@ class VW_Usergroups_List_Table extends WP_List_Table {
 
 	/**
 	 * Process the Usergroup column value for all methods that aren't registered
-	 *
-	 * @since 0.7
 	 */
 	public function column_default( $usergroup, $column_name ) {
 	}
@@ -1176,8 +1101,6 @@ class VW_Usergroups_List_Table extends WP_List_Table {
 	/**
 	 * Process the Usergroup name column value.
 	 * Displays the name of the Usergroup, and action links
-	 *
-	 * @since 0.7
 	 */
 	public function column_name( $usergroup ) {
 		global $vip_workflow;
@@ -1211,8 +1134,6 @@ class VW_Usergroups_List_Table extends WP_List_Table {
 	/**
 	 * Handle the 'description' column for the table of Usergroups
 	 * Don't need to unencode this because we already did when the usergroup was loaded
-	 *
-	 * @since 0.7
 	 */
 	public function column_description( $usergroup ) {
 		return esc_html( $usergroup->description );
@@ -1220,8 +1141,6 @@ class VW_Usergroups_List_Table extends WP_List_Table {
 
 	/**
 	 * Show the "Total Users" in a given usergroup
-	 *
-	 * @since 0.7
 	 */
 	public function column_users( $usergroup ) {
 		global $vip_workflow;
@@ -1233,8 +1152,6 @@ class VW_Usergroups_List_Table extends WP_List_Table {
 
 	/**
 	 * Prepare a single row of information about a usergroup
-	 *
-	 * @since 0.7
 	 */
 	public function single_row( $usergroup ) {
 		static $row_class = '';
@@ -1247,8 +1164,6 @@ class VW_Usergroups_List_Table extends WP_List_Table {
 
 	/**
 	 * If we use this form, we can have inline editing!
-	 *
-	 * @since 0.7
 	 */
 	public function inline_edit() {
 		global $vip_workflow;

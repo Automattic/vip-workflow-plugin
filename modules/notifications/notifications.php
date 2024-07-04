@@ -1,26 +1,27 @@
 <?php
 /**
- * class VW_Notifications
+ * class Notifications
  * Email notifications for VIP Workflow and more
  */
 
 namespace VIPWorkflow\Modules\Notifications;
 
- use VIPWorkflow\Modules\VW_Module;
- use VIPWorkflow\Modules\UserGroups\VW_User_Groups;
+ use VIPWorkflow\Modules\VIP_Workflow;
+ use VIPWorkflow\Modules\Module;
+use VIPWorkflow\Modules\UserGroups\User_Groups;
+
  use function VIPWorkflow\Utils\vw_draft_or_post_title;
- use function VIPWorkflow\vip_workflow;
 
 if ( ! defined( 'VW_NOTIFICATION_USE_CRON' ) ) {
 	define( 'VW_NOTIFICATION_USE_CRON', false );
 }
 
-class VW_Notifications extends VW_Module {
+class Notifications extends Module {
 
 	// Taxonomy name used to store users following posts
 	public $following_users_taxonomy = 'following_users';
 	// Taxonomy name used to store user groups following posts
-	public $following_usergroups_taxonomy = VW_User_Groups::TAXONOMY_KEY;
+	public $following_usergroups_taxonomy = User_Groups::TAXONOMY_KEY;
 
 	public $module;
 
@@ -41,7 +42,6 @@ class VW_Notifications extends VW_Module {
 			'img_url'               => $this->module_url . 'lib/notifications_s128.png',
 			'slug'                  => 'notifications',
 			'default_options'       => [
-				'enabled'             => 'on',
 				'post_types'          => [
 					'post' => 'on',
 					'page' => 'on',
@@ -52,15 +52,9 @@ class VW_Notifications extends VW_Module {
 			],
 			'configure_page_cb'     => 'print_configure_view',
 			'post_type_support'     => 'vw_notification',
-			'autoload'              => false,
-			'settings_help_tab'     => [
-				'id'      => 'vw-notifications-overview',
-				'title'   => __( 'Overview', 'vip-workflow' ),
-				'content' => __( '<p>Notifications ensure you keep up to date with progress your most important content. Users can be subscribed to notifications on a post one by one or by selecting user groups.</p><p>When enabled, email notifications can be sent when a post changes status.</p>', 'vip-workflow' ),
-			],
-			'settings_help_sidebar' => __( '<p><strong>For more information:</strong></p><p><a href="https://github.com/Automattic/vip-workflow-plugin">VIP Workflow on Github</a></p>', 'vip-workflow' ),
+			'autoload'              => true,
 		];
-		$this->module     = vip_workflow()->register_module( 'notifications', $args );
+		$this->module     = VIP_Workflow::instance()->register_module( 'notifications', $args );
 	}
 
 	/**
@@ -110,8 +104,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Load the capabilities onto users the first time the module is run
-	 *
-	 * @since 0.7
 	 */
 	public function install() {
 
@@ -129,8 +121,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Upgrade our data in case we need to
-	 *
-	 * @since 0.7
 	 */
 	public function upgrade( $previous_version ) {
 		// Nothing to do here yet
@@ -138,8 +128,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Register the taxonomies we use to manage relationships
-	 *
-	 * @since 0.7
 	 *
 	 * @uses register_taxonomy()
 	 */
@@ -162,9 +150,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Enqueue necessary admin scripts
-	 *
-	 * @since 0.7
-	 *
 	 * @uses wp_enqueue_script()
 	 */
 	public function enqueue_admin_scripts() {
@@ -186,8 +171,6 @@ class VW_Notifications extends VW_Module {
 	/**
 	 * Enqueue necessary admin styles, but only on the proper pages
 	 *
-	 * @since 0.7
-	 *
 	 * @uses wp_enqueue_style()
 	 */
 	public function enqueue_admin_styles() {
@@ -200,8 +183,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * JS required for the Follow link to work
-	 *
-	 * @since 0.8
 	 */
 	public function action_admin_head_follow_js() {
 		?>
@@ -238,8 +219,6 @@ class VW_Notifications extends VW_Module {
 	/**
 	 * Add a "Follow" link to supported post types Manage Posts view
 	 *
-	 * @since 0.8
-	 *
 	 * @param array      $actions   Any existing item actions
 	 * @param int|object $post      Post id or object
 	 * @return array     $actions   The follow link has been appended
@@ -265,8 +244,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Get an action parts for a user to follow or unfollow a post
-	 *
-	 * @since 0.8
 	 */
 	private function get_follow_action_parts( $post ) {
 		$args = [
@@ -450,8 +427,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Handle a request to update a user's post subscription
-	 *
-	 * @since 0.8
 	 */
 	public function handle_user_post_subscription() {
 
@@ -883,7 +858,6 @@ class VW_Notifications extends VW_Module {
 	 * Check if a user can be notified.
 	 * This is based off of the ability to edit the post/page by default.
 	 *
-	 * @since 0.8.3
 	 * @param WP_User $user
 	 * @param int $post_id
 	 * @return bool True if the user can be notified, false otherwise.
@@ -1190,8 +1164,6 @@ class VW_Notifications extends VW_Module {
 	/**
 	 * Register settings for notifications so we can partially use the Settings API
 	 * (We use the Settings API for form generation, but not saving)
-	 *
-	 * @since 0.7
 	 */
 	public function register_settings() {
 			add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
@@ -1203,8 +1175,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Chose the post types for notifications
-	 *
-	 * @since 0.7
 	 */
 	public function settings_post_types_option() {
 		global $vip_workflow;
@@ -1213,8 +1183,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Option for whether the blog admin email address should be always notified or not
-	 *
-	 * @since 0.7
 	 */
 	public function settings_always_notify_admin_option() {
 		$options = [
@@ -1232,8 +1200,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Option to enable sending notifications to Slack
-	 *
-	 * @since 0.9.9
 	 */
 	public function settings_send_to_webhook() {
 		$options = [
@@ -1251,8 +1217,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Option to set the Slack webhook URL
-	 *
-	 * @since 0.9.9
 	 */
 	public function settings_webhook_url() {
 		echo '<input type="text" id="webhook_url" name="' . esc_attr( $this->module->options_group_name ) . '[webhook_url]" value="' . esc_attr( $this->module->options->webhook_url ) . '" />';
@@ -1260,8 +1224,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Validate our user input as the settings are being saved
-	 *
-	 * @since 0.7
 	 */
 	public function settings_validate( $new_options ) {
 
@@ -1293,8 +1255,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	 * Settings page for notifications
-	 *
-	 * @since 0.7
 	 */
 	public function print_configure_view() {
 		?>
@@ -1311,8 +1271,6 @@ class VW_Notifications extends VW_Module {
 
 	/**
 	* Gets a simple phrase containing the formatted date and time that the post is scheduled for.
-	*
-	* @since 0.8
 	*
 	* @param  obj    $post               Post object
 	* @return str    $scheduled_datetime The scheduled datetime in human-readable format

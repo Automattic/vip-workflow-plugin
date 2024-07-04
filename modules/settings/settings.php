@@ -1,11 +1,11 @@
 <?php
 
- namespace VIPWorkflow\Settings;
+ namespace VIPWorkflow\Modules\Settings;
 
- use VIPWorkflow\Modules\VW_Module;
- use function VIPWorkflow\vip_workflow;
+ use VIPWorkflow\Modules\VIP_Workflow;
+ use VIPWorkflow\Modules\Module;
 
-class VW_Settings extends VW_Module {
+class Settings extends Module {
 
 	public $module;
 
@@ -22,13 +22,11 @@ class VW_Settings extends VW_Module {
 			'module_url' => $this->module_url,
 			'slug' => 'settings',
 			'settings_slug' => 'vw-settings',
-			'default_options' => array(
-				'enabled' => 'on',
-			),
+			'default_options' => array(),
 			'configure_page_cb' => 'print_default_settings',
 			'autoload' => true,
 		);
-		$this->module = vip_workflow()->register_module( 'settings', $args );
+		$this->module = VIP_Workflow::instance()->register_module( 'settings', $args );
 	}
 
 	/**
@@ -76,8 +74,6 @@ class VW_Settings extends VW_Module {
 
 	/**
 	 * Extra data we need on the page for transitions, etc.
-	 *
-	 * @since 0.7
 	 */
 	public function action_admin_print_scripts() {
 		?>
@@ -247,8 +243,6 @@ class VW_Settings extends VW_Module {
 	/**
 	 * Given a form field and a description, prints either the error associated with the field or the description.
 	 *
-	 * @since 0.7
-	 *
 	 * @param string $field The form field for which to check for an error
 	 * @param string $description Unlocalized string to display if there was no error with the given field
 	 */
@@ -269,8 +263,6 @@ class VW_Settings extends VW_Module {
 	 *
 	 * @param object $module VIP Workflow module we're generating the option field for
 	 * @param {missing}
-	 *
-	 * @since 0.7
 	 */
 	public function helper_option_custom_post_type( $module, $args = array() ) {
 
@@ -307,8 +299,6 @@ class VW_Settings extends VW_Module {
 	/**
 	 * Validation and sanitization on the settings field
 	 * This method is called automatically/ doesn't need to be registered anywhere
-	 *
-	 * @since 0.7
 	 */
 	public function helper_settings_validate_and_save() {
 

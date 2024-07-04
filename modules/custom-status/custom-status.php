@@ -1,21 +1,16 @@
 <?php
 /**
- * class VW_Custom_Status
+ * class Custom_Status
  * Custom statuses make it simple to define the different stages in your publishing workflow.
- *
- * @todo for v0.7
- * - Improve the copy
- * - Thoroughly test what happens when the default post statuses 'Draft' and 'Pending Review' no longer exist
- * - Ensure all of the form processing uses our messages functionality
  */
 
  namespace VIPWorkflow\Modules\CustomStatus;
 
- use VIPWorkflow\Modules\VW_Module;
+ use VIPWorkflow\Modules\VIP_Workflow;
+ use VIPWorkflow\Modules\Module;
  use WP_List_Table;
- use function VIPWorkflow\vip_workflow;
  use function VIPWorkflow\Utils\_vw_wp_link_page;
-class VW_Custom_Status extends VW_Module {
+class Custom_Status extends Module {
 
 	public $module;
 
@@ -39,7 +34,6 @@ class VW_Custom_Status extends VW_Module {
 			'img_url'               => $this->module_url . 'lib/custom_status_s128.png',
 			'slug'                  => 'custom-status',
 			'default_options'       => [
-				'enabled'              => 'on',
 				'default_status'       => 'pitch',
 				'always_show_dropdown' => 'off',
 				'post_types'           => [
@@ -58,23 +52,15 @@ class VW_Custom_Status extends VW_Module {
 				'status-deleted'          => __( 'Post status deleted.', 'vip-workflow' ),
 				'status-position-updated' => __( 'Status order updated.', 'vip-workflow' ),
 			],
-			'autoload'              => false,
-			'settings_help_tab'     => [
-				'id'      => 'ef-custom-status-overview',
-				'title'   => __( 'Overview', 'vip-workflow' ),
-				'content' => __( '<p>Custom statuses allow you to define the most important stages of your editorial workflow. Out of the box, WordPress only offers “Draft” and “Pending Review” as post states. With custom statuses, you can create your own post states like “In Progress”, “Pitch”, or “Waiting for Edit” and keep or delete the originals. You can also drag and drop statuses to set the best order for your workflow.</p><p>Custom statuses are fully integrated into the rest of VIP Workflow and the WordPress admin. Email notifications can be sent to a specific group of users when a post changes state as well.</p>', 'vip-workflow' ),
-			],
-			'settings_help_sidebar' => __( '<p><strong>For more information:</strong></p><p><a href="https://github.com/Automattic/vip-workflow-plugin">VIP Workflow on Github</a></p>', 'vip-workflow' ),
+			'autoload'              => true,
 		];
-		$this->module = vip_workflow()->register_module( 'custom_status', $args );
+		$this->module = VIP_Workflow::instance()->register_module( 'custom_status', $args );
 	}
 
 	/**
-	 * Initialize the VW_Custom_Status class if the module is active
+	 * Initialize the Custom_Status class if the module is active
 	 */
 	public function init() {
-		global $vip_workflow;
-
 		// Register custom statuses as a taxonomy
 		$this->register_custom_statuses();
 
@@ -126,8 +112,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Create the default set of custom statuses the first time the module is loaded
-	 *
-	 * @since 0.7
 	 */
 	public function install() {
 
@@ -184,8 +168,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Upgrade our data in case we need to
-	 *
-	 * @since 0.7
 	 */
 	public function upgrade( $previous_version ) {
 		// No upgrades yet
@@ -242,8 +224,6 @@ class VW_Custom_Status extends VW_Module {
 	/**
 	 * Whether custom post statuses should be disabled for this post type.
 	 * Used to stop custom statuses from being registered for post types that don't support them.
-	 *
-	 * @since 0.7.5
 	 *
 	 * @return bool
 	 */
@@ -739,8 +719,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Handles a form's POST request to add a custom status
-	 *
-	 * @since 0.7
 	 */
 	public function handle_add_custom_status() {
 
@@ -811,8 +789,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Handles a POST request to edit an custom status
-	 *
-	 * @since 0.7
 	 */
 	public function handle_edit_custom_status() {
 		if ( ! isset( $_POST['submit'], $_GET['page'], $_GET['action'], $_GET['term-id'] )
@@ -896,8 +872,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Handles a GET request to make the identified status default
-	 *
-	 * @since 0.7
 	 */
 	public function handle_make_default_custom_status() {
 		global $vip_workflow;
@@ -933,8 +907,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Handles a GET request to delete a specific term
-	 *
-	 * @since 0.7
 	 */
 	public function handle_delete_custom_status() {
 
@@ -979,8 +951,6 @@ class VW_Custom_Status extends VW_Module {
 	/**
 	 * Generate a link to one of the custom status actions
 	 *
-	 * @since 0.7
-	 *
 	 * @param array $args (optional) Action and any query args to add to the URL
 	 * @return string $link Direct link to complete the action
 	 */
@@ -1005,8 +975,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Handle an ajax request to update the order of custom statuses
-	 *
-	 * @since 0.7
 	 */
 	public function handle_ajax_update_status_positions() {
 
@@ -1037,8 +1005,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Handle an Inline Edit POST request to update status values
-	 *
-	 * @since 0.7
 	 */
 	public function ajax_inline_save_status() {
 		global $vip_workflow;
@@ -1102,7 +1068,7 @@ class VW_Custom_Status extends VW_Module {
 		$return = $this->update_custom_status( $term_id, $args );
 		if ( ! is_wp_error( $return ) ) {
 			set_current_screen( 'edit-custom-status' );
-			$wp_list_table = new VW_Custom_Status_List_Table();
+			$wp_list_table = new Custom_Status_List_Table();
 			$wp_list_table->prepare_items();
 			echo wp_kses_post( $wp_list_table->single_row( $return ) );
 			die();
@@ -1116,8 +1082,6 @@ class VW_Custom_Status extends VW_Module {
 	/**
 	 * Register settings for notifications so we can partially use the Settings API
 	 * (We use the Settings API for form generation, but not saving)
-	 *
-	 * @since 0.7
 	 */
 	public function register_settings() {
 
@@ -1128,8 +1092,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Choose the post types that should be displayed on the calendar
-	 *
-	 * @since 0.7
 	 */
 	public function settings_post_types_option() {
 		global $vip_workflow;
@@ -1138,8 +1100,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Option for whether the blog admin email address should be always notified or not
-	 *
-	 * @since 0.7
 	 */
 	public function settings_always_show_dropdown_option() {
 		$options = [
@@ -1157,8 +1117,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Validate input from the end user
-	 *
-	 * @since 0.7
 	 */
 	public function settings_validate( $new_options ) {
 
@@ -1217,7 +1175,7 @@ class VW_Custom_Status extends VW_Module {
 
 			include_once __DIR__ . '/views/edit-status.php';
 		} else {
-			$custom_status_list_table = new VW_Custom_Status_List_Table();
+			$custom_status_list_table = new Custom_Status_List_Table();
 			$custom_status_list_table->prepare_items();
 			include_once __DIR__ . '/views/configure.php';
 		}
@@ -1281,8 +1239,6 @@ class VW_Custom_Status extends VW_Module {
 	/**
 	 * PHP < 5.3.x doesn't support anonymous functions
 	 * This helper is only used for the check_timestamp_on_publish method above
-	 *
-	 * @since 0.7.3
 	 */
 	public function helper_timestamp_hack() {
 		return ( 'pre_post_date' == current_filter() ) ? current_time( 'mysql' ) : '';
@@ -1290,8 +1246,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * This is a hack! hack! hack! until core is fixed/better supports custom statuses
-	 *
-	 * @since 0.6.5
 	 *
 	 * Normalize post_date_gmt if it isn't set to the past or the future
 	 * @see Works around this limitation: https://core.trac.wordpress.org/browser/tags/4.5.1/src/wp-includes/post.php#L3182
@@ -1325,8 +1279,6 @@ class VW_Custom_Status extends VW_Module {
 	/**
 	 * A new hack! hack! hack! until core better supports custom statuses`
 	 *
-	 * @since 0.9.4
-	 *
 	 * If the post_name is set, set it, otherwise keep it empty
 	 *
 	 * @see https://github.com/Automattic/Edit-Flow/issues/523
@@ -1354,15 +1306,13 @@ class VW_Custom_Status extends VW_Module {
 	}
 
 	/**
-		 * A new hack! hack! hack! until core better supports custom statuses`
-		 *
-		 * @since 0.9.4
-		 *
-		 * `wp_unique_post_slug` is used to set the `post_name`. When a custom status is used, WordPress will try
-		 * really hard to set `post_name`, and we leverage `wp_unique_post_slug` to prevent it being set
-		 *
-		 * @see: https://github.com/WordPress/WordPress/blob/396647666faebb109d9cd4aada7bb0c7d0fb8aca/wp-includes/post.php#L3932
-		 */
+	 * A new hack! hack! hack! until core better supports custom statuses`
+	 *
+	 * `wp_unique_post_slug` is used to set the `post_name`. When a custom status is used, WordPress will try
+	 * really hard to set `post_name`, and we leverage `wp_unique_post_slug` to prevent it being set
+	 *
+	 * @see: https://github.com/WordPress/WordPress/blob/396647666faebb109d9cd4aada7bb0c7d0fb8aca/wp-includes/post.php#L3932
+	*/
 	public function fix_unique_post_slug( $override_slug, $slug, $post_ID, $post_status, $post_type, $post_parent ) {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
@@ -1388,8 +1338,6 @@ class VW_Custom_Status extends VW_Module {
 	/**
 	 * Another hack! hack! hack! until core better supports custom statuses
 	 *
-	 * @since 0.7.4
-	 *
 	 * The preview link for an unpublished post should always be ?p=
 	 */
 	public function fix_preview_link_part_one( $preview_link ) {
@@ -1414,8 +1362,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Another hack! hack! hack! until core better supports custom statuses
-	 *
-	 * @since 0.7.4
 	 *
 	 * The preview link for an unpublished post should always be ?p=
 	 * The code used to trigger a post preview doesn't also apply the 'preview_post_link' filter
@@ -1463,8 +1409,6 @@ class VW_Custom_Status extends VW_Module {
 	/**
 	 * Another hack! hack! hack! until core better supports custom statuses
 	 *
-	 * @since 0.9
-	 *
 	 * The preview link for a saved unpublished post with a custom status returns a 'preview_nonce'
 	 * in it and needs to be removed when previewing it to return a viewable preview link.
 	 * @see https://github.com/Automattic/Edit-Flow/issues/513
@@ -1488,7 +1432,6 @@ class VW_Custom_Status extends VW_Module {
 	 * the `get_sample_permalink` filter was added which allows greater flexibility in
 	 * manipulating the slug. Critical for cases like editing the sample permalink on
 	 * hierarchical post types.
-	 * @since 0.8.2
 	 *
 	 * @param string  $permalink Sample permalink
 	 * @param int     $post_id   Post ID
@@ -1533,8 +1476,6 @@ class VW_Custom_Status extends VW_Module {
 	 * We need to do the same work it's doing for custom statuses in order
 	 * to support this link
 	 * @see https://core.trac.wordpress.org/browser/tags/4.5.2/src/wp-admin/includes/post.php#L1296
-	 *
-	 * @since 0.8.2
 	 *
 	 * @param string  $return    Sample permalink HTML markup.
 	 * @param int     $post_id   Post ID.
@@ -1602,8 +1543,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Get the proper preview link for a post
-	 *
-	 * @since 0.8
 	 */
 	private function get_preview_link( $post ) {
 
@@ -1629,8 +1568,6 @@ class VW_Custom_Status extends VW_Module {
 
 	/**
 	 * Another hack! hack! hack! until core better supports custom statuses
-	 *
-	 * @since 0.7.4
 	 *
 	 * The preview link for an unpublished post should always be ?p=, even in the list table
 	 * @see http://core.trac.wordpress.org/ticket/19378
@@ -1679,10 +1616,8 @@ class VW_Custom_Status extends VW_Module {
 
 /**
  * Custom Statuses uses WordPress' List Table API for generating the custom status management table
- *
- * @since 0.7
  */
-class VW_Custom_Status_List_Table extends WP_List_Table {
+class Custom_Status_List_Table extends WP_List_Table {
 
 	protected $callback_args;
 	protected $default_status;
@@ -1701,8 +1636,6 @@ class VW_Custom_Status_List_Table extends WP_List_Table {
 
 	/**
 	 * Pull in the data we'll be displaying on the table
-	 *
-	 * @since 0.7
 	 */
 	public function prepare_items() {
 		global $vip_workflow;
@@ -1727,8 +1660,6 @@ class VW_Custom_Status_List_Table extends WP_List_Table {
 	/**
 	 * Message to be displayed when there are no custom statuses. Should never be displayed, but we'll customize it
 	 * just in case.
-	 *
-	 * @since 0.7
 	 */
 	public function no_items() {
 		_e( 'No custom statuses found.', 'vip-workflow' );
@@ -1737,8 +1668,6 @@ class VW_Custom_Status_List_Table extends WP_List_Table {
 	/**
 	 * Table shows (hidden) position, status name, status description, and the post count for each activated
 	 * post type
-	 *
-	 * @since 0.7
 	 *
 	 * @return array $columns Columns to be registered with the List Table
 	 */
@@ -1765,8 +1694,6 @@ class VW_Custom_Status_List_Table extends WP_List_Table {
 	/**
 	 * Fallback column callback.
 	 * Primarily used to display post count for each post type
-	 *
-	 * @since 0.7
 	 *
 	 * @param object $item Custom status as an object
 	 * @param string $column_name Name of the column as registered in $this->prepare_items()
@@ -1800,8 +1727,6 @@ class VW_Custom_Status_List_Table extends WP_List_Table {
 	/**
 	 * Hidden column for storing the status position
 	 *
-	 * @since 0.7
-	 *
 	 * @param object $item Custom status as an object
 	 * @return string $output What will be rendered
 	 */
@@ -1811,8 +1736,6 @@ class VW_Custom_Status_List_Table extends WP_List_Table {
 
 	/**
 	 * Displayed column showing the name of the status
-	 *
-	 * @since 0.7
 	 *
 	 * @param object $item Custom status as an object
 	 * @return string $output What will be rendered
@@ -1864,8 +1787,6 @@ class VW_Custom_Status_List_Table extends WP_List_Table {
 	/**
 	 * Displayed column showing the description of the status
 	 *
-	 * @since 0.7
-	 *
 	 * @param object $item Custom status as an object
 	 * @return string $output What will be rendered
 	 */
@@ -1875,8 +1796,6 @@ class VW_Custom_Status_List_Table extends WP_List_Table {
 
 	/**
 	 * Prepare and echo a single custom status row
-	 *
-	 * @since 0.7
 	 */
 	public function single_row( $item ) {
 		static $alternate_class = '';
@@ -1890,8 +1809,6 @@ class VW_Custom_Status_List_Table extends WP_List_Table {
 
 	/**
 	 * Hidden form used for inline editing functionality
-	 *
-	 * @since 0.7
 	 */
 	public function inline_edit() {
 		global $vip_workflow;

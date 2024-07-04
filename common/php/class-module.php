@@ -1,15 +1,13 @@
 <?php
 /**
- * class VW_Module
+ * class Module
  *
  * @desc Base class any module should extend
  */
 
 namespace VIPWorkflow\Modules;
 
- use function VIPWorkflow\vip_workflow;
-
-class VW_Module {
+class Module {
 
 	public $published_statuses = array(
 		'publish',
@@ -221,7 +219,7 @@ class VW_Module {
 	 */
 	public function get_default_post_status() {
 		// Check if custom status module is enabled
-		$custom_status_module = vip_workflow()->custom_status->module->options;
+		$custom_status_module = VIP_Workflow::instance()->custom_status->module->options;
 
 		if ( 'on' == $custom_status_module->enabled ) {
 			return $custom_status_module->default_status;

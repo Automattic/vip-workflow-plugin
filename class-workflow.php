@@ -2,7 +2,8 @@
 
 namespace VIPWorkflow\Modules;
 
- use VIPWorkflow\Modules\VW_Module;
+ use VIPWorkflow\Modules\Module;
+;
  use stdClass;
 
 // Core class
@@ -101,16 +102,18 @@ class VIP_Workflow {
 					$slug_name  .= $word . '_';
 				}
 				$slug_name                 = rtrim( $slug_name, '_' );
-				$class_names[ $slug_name ] = 'VW_' . rtrim( $class_name, '_' );
+				$class_names[ $slug_name ] = 'VIPWorkflow\Modules\\' . str_replace( '_', '', $class_name ) . '\\' . rtrim( $class_name, '_' );
 			}
 		}
 
 		// Instantiate VW_Module as $helpers for back compat and so we can
 		// use it in this class
-		$this->helpers = new VW_Module();
+		$this->helpers = new Module();
 
 		// Other utils
 		require_once VIP_WORKFLOW_ROOT . '/common/php/util.php';
+
+		$classes = get_declared_classes();
 
 		// Instantiate all of our classes onto the VIP Workflow object
 		// but make sure they exist too
@@ -124,8 +127,6 @@ class VIP_Workflow {
 	/**
 	 * Setup the default hooks and actions
 	 *
-	 * @since EditFlow 0.7.4
-	 * @access private
 	 * @uses add_action() To add various actions
 	 */
 	private function setup_actions() {
@@ -339,3 +340,15 @@ class VIP_Workflow {
 }
 
 VIP_Workflow::instance();
+
+/**
+ * Caps don't get loaded on install on VIP Go. Instead, let's add
+ * them via filters.
+ */
+add_filter( 'vw_kill_add_caps_to_role', '__return_true' );
+add_filter( 'vw_edit_post_subscriptions_cap', function () {
+	return 'edit_others_posts';
+} );
+add_filter( 'vw_manage_usergroups_cap', function () {
+	return 'manage_options';
+} );
