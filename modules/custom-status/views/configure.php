@@ -19,7 +19,7 @@ global $vip_workflow;
 </div>
 
 <div id="col-left">
-	<div class="col-wrap"
+	<div class="col-wrap">
 		<div class="form-wrap">
 			<h3 class="nav-tab-wrapper">
 				<?php $add_new_nav_class = empty( $action ) ? 'nav-tab-active' : ''; ?>
