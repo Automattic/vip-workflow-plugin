@@ -24,8 +24,6 @@ class Module {
 	/**
 	 * Returns whether the current module is enabled.
 	 *
-	 * @since 0.9.1
-	 *
 	 * @return <code>true</code> if the module is enabled, <code>false</code> otherwise
 	 */
 	public function is_enabled() {
@@ -33,25 +31,9 @@ class Module {
 	}
 
 	/**
-	 * Returns whether the module with the given name is enabled.
-	 *
-	 * @since 0.7
-	 *
-	 * @param string module Slug of the module to check
-	 * @return <code>true</code> if the module is enabled, <code>false</code> otherwise
-	 */
-	public function module_enabled( $slug ) {
-		global $vip_workflow;
-
-		return isset( $vip_workflow->$slug ) && $vip_workflow->$slug->is_enabled();
-	}
-
-	/**
 	 * Returns whether analytics has been enabled or not.
 	 *
 	 * It's only enabled if the site is a production WPVIP site.
-	 *
-	 * @since 0.10.0
 	 *
 	 * @return true, if analytics is enabled, false otherwise
 	 */
@@ -60,7 +42,6 @@ class Module {
 		$is_analytics_enabled = $this->is_vip_site( true );
 
 		// filter to disable it.
-		// ToDo: Update the ef prefix.
 		$is_analytics_enabled = apply_filters( 'vw_should_analytics_be_enabled', $is_analytics_enabled );
 
 		return $is_analytics_enabled;
@@ -68,8 +49,6 @@ class Module {
 
 	/**
 	 * Check if the site is a WPVIP site.
-	 *
-	 * @since 0.10.0
 	 *
 	 * @param bool $only_production Whether to only allow production sites to be considered WPVIP sites
 	 * @return true, if it is a WPVIP site, false otherwise
@@ -113,8 +92,6 @@ class Module {
 	 * @param array $module_post_types Current state of post type options for the module
 	 * @param string $post_type_support What the feature is called for post_type_support (e.g. 'vw_calendar')
 	 * @return array $normalized_post_type_options The setting for each post type, normalized based on rules
-	 *
-	 * @since 0.7
 	 */
 	public function clean_post_type_options( $module_post_types = array(), $post_type_support = null ) {
 		$normalized_post_type_options = array();
@@ -134,8 +111,6 @@ class Module {
 	 *
 	 * @param object $module The full module
 	 * @return array $post_types An array of post type objects
-	 *
-	 * @since 0.7.2
 	 */
 	public function get_supported_post_types_for_module( $module = null ) {
 
@@ -143,7 +118,6 @@ class Module {
 			'_builtin' => false,
 			'public' => true,
 		);
-		// ToDo: Update the ef prefix.
 		$pt_args = apply_filters( 'vip_workflow_supported_module_post_types_args', $pt_args, $module );
 		return get_post_types( $pt_args, 'objects' );
 	}
@@ -153,8 +127,6 @@ class Module {
 	 *
 	 * @param object $module Module's data
 	 * @return array $post_types All of the post types that are 'on'
-	 *
-	 * @since 0.7
 	 */
 	public function get_post_types_for_module( $module ) {
 
@@ -173,23 +145,15 @@ class Module {
 	 * Get all of the currently available post statuses
 	 *
 	 * @return array $post_statuses All of the post statuses that aren't a published state
-	 *
-	 * @since 0.7
 	 */
 	public function get_post_statuses() {
 		global $vip_workflow;
 
-		if ( $this->module_enabled( 'custom_status' ) ) {
-			return $vip_workflow->custom_status->get_custom_statuses();
-		} else {
-			return $this->get_core_post_statuses();
-		}
+		return $vip_workflow->custom_status->get_custom_statuses();
 	}
 
 	/**
 	 * Get core's 'draft' and 'pending' post statuses, but include our special attributes
-	 *
-	 * @since 0.8.1
 	 *
 	 * @return array
 	 */
@@ -231,8 +195,6 @@ class Module {
 	/**
 	 * Filter to all posts with a given post status (can be a custom status or a built-in status) and optional custom post type.
 	 *
-	 * @since 0.7
-	 *
 	 * @param string $slug The slug for the post status to which to filter
 	 * @param string $post_type Optional post type to which to filter
 	 * @return an edit.php link to all posts with the given post status and, optionally, the given post type
@@ -248,7 +210,6 @@ class Module {
 	/**
 	 * Checks for the current post type
 	 *
-	 * @since 0.7
 	 * @return string|null $post_type The post type we've found, or null if no post type
 	 */
 	public function get_current_post_type() {
@@ -280,8 +241,6 @@ class Module {
 	/**
 	 * Wrapper for the get_user_meta() function so we can replace it if we need to
 	 *
-	 * @since 0.7
-	 *
 	 * @param int $user_id Unique ID for the user
 	 * @param string $key Key to search against
 	 * @param bool $single Whether or not to return just one value
@@ -290,7 +249,6 @@ class Module {
 	public function get_user_meta( $user_id, $key, $string = true ) {
 
 		$response = null;
-		// ToDo: Update the ef prefix.
 		$response = apply_filters( 'vw_get_user_meta', $response, $user_id, $key, $string );
 		if ( ! is_null( $response ) ) {
 			return $response;
@@ -302,8 +260,6 @@ class Module {
 	/**
 	 * Wrapper for the update_user_meta() function so we can replace it if we need to
 	 *
-	 * @since 0.7
-	 *
 	 * @param int $user_id Unique ID for the user
 	 * @param string $key Key to search against
 	 * @param string|bool|array $value Whether or not to return just one value
@@ -313,7 +269,6 @@ class Module {
 	public function update_user_meta( $user_id, $key, $value, $previous = null ) {
 
 		$response = null;
-		// ToDo: Update the ef prefix.
 		$response = apply_filters( 'vw_update_user_meta', $response, $user_id, $key, $value, $previous );
 		if ( ! is_null( $response ) ) {
 			return $response;
@@ -324,8 +279,6 @@ class Module {
 
 	/**
 	 * Take a status and a message, JSON encode and print
-	 *
-	 * @since 0.7
 	 *
 	 * @param string $status Whether it was a 'success' or an 'error'
 	 */
@@ -345,8 +298,6 @@ class Module {
 	 * Whether or not the current page is a user-facing Edit Flow View
 	 * @todo Think of a creative way to make this work
 	 *
-	 * @since 0.7
-	 *
 	 * @param string $module_name (Optional) Module name to check against
 	 */
 	public function is_whitelisted_functional_view( $module_name = null ) {
@@ -360,8 +311,6 @@ class Module {
 	 * Whether or not the current page is an Edit Flow settings view (either main or module)
 	 * Determination is based on $pagenow, $_GET['page'], and the module's $settings_slug
 	 * If there's no module name specified, it will return true against all Edit Flow settings views
-	 *
-	 * @since 0.7
 	 *
 	 * @param string $module_name (Optional) Module name to check against
 	 * @return bool $is_settings_view Return true if it is
@@ -399,8 +348,6 @@ class Module {
 	 * Encode all of the given arguments as a serialized array, and then base64_encode
 	 * Used to store extra data in a term's description field
 	 *
-	 * @since 0.7
-	 *
 	 * @param array $args The arguments to encode
 	 * @return string Arguments encoded in base64
 	 */
@@ -412,8 +359,6 @@ class Module {
 	 * If given an encoded string from a term's description field,
 	 * return an array of values. Otherwise, return the original string
 	 *
-	 * @since 0.7
-	 *
 	 * @param string $string_to_unencode Possibly encoded string
 	 * @return array Array if string was encoded, otherwise the string as the 'description' field
 	 */
@@ -423,8 +368,6 @@ class Module {
 
 	/**
 	 * Get the publicly accessible URL for the module based on the filename
-	 *
-	 * @since 0.7
 	 *
 	 * @param string $filepath File path for the module
 	 * @return string $module_url Publicly accessible URL for the module
@@ -437,15 +380,12 @@ class Module {
 	/**
 	 * Displays a list of users that can be selected!
 	 *
-	 * @since 0.7
-	 *
 	 * @todo Add pagination support for blogs with billions of users
 	 *
-	 * @param ???
-	 * @param ???
+	 * @param array $selected An array of user IDs that are selected
+	 * @param array $args An array of arguments to pass to get_users()
 	 */
 	public function users_select_form( $selected = null, $args = null ) {
-		// ToDo: Update the ef prefix.
 		// Set up arguments
 		$defaults = array(
 			'list_class' => 'vw-users-select-form',
@@ -505,13 +445,10 @@ class Module {
 	/**
 	 * Adds an array of capabilities to a role.
 	 *
-	 * @since 0.7
-	 *
 	 * @param string $role A standard WP user role like 'administrator' or 'author'
 	 * @param array $caps One or more user caps to add
 	 */
 	public function add_caps_to_role( $role, $caps ) {
-		// ToDo: Update the ef prefix.
 		// In some contexts, we don't want to add caps to roles
 		if ( apply_filters( 'vw_kill_add_caps_to_role', false, $role, $caps ) ) {
 			return;
@@ -530,8 +467,6 @@ class Module {
 	/**
 	 * Add settings help menus to our module screens if the values exist
 	 * Auto-registered in vip-workflow::register_module()
-	 *
-	 * @since 0.7
 	 */
 	public function action_settings_help_menu() {
 

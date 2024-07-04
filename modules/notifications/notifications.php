@@ -310,7 +310,7 @@ class Notifications extends Module {
 				?>
 				</div>
 
-				<?php if ( $this->module_enabled( 'user_groups' ) && in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) ) ) : ?>
+				<?php if ( in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) ) ) : ?>
 				<div id="vw-post_following_usergroups_box">
 					<h4><?php _e( 'User Groups', 'vip-workflow' ); ?></h4>
 					<?php
@@ -417,7 +417,7 @@ class Notifications extends Module {
 			remove_filter( 'vw_notification_auto_subscribe_current_user', '__return_false', PHP_INT_MAX );
 		}
 
-		$groups_enabled = $this->module_enabled( 'user_groups' ) && in_array( get_post_type( $post_id ), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) );
+		$groups_enabled = in_array( get_post_type( $post_id ), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) );
 		if ( 'following_usergroups[]' === $_POST['vw_notifications_name'] && $groups_enabled ) {
 			$this->save_post_following_usergroups( $post, $user_group_ids );
 		}
@@ -476,7 +476,7 @@ class Notifications extends Module {
 			$users      = isset( $_POST['vw-selected-users'] ) ? $_POST['vw-selected-users'] : [];
 			$usergroups = isset( $_POST['following_usergroups'] ) ? $_POST['following_usergroups'] : [];
 			$this->save_post_following_users( $post, $users );
-			if ( $this->module_enabled( 'user_groups' ) && in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) ) ) {
+			if ( in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) ) ) {
 				$this->save_post_following_usergroups( $post, $usergroups );
 			}
 		}
@@ -805,15 +805,13 @@ class Notifications extends Module {
 		}
 
 		$usergroup_recipients = [];
-		if ( $this->module_enabled( 'user_groups' ) ) {
 			$usergroups = $this->get_following_usergroups( $post_id, 'ids' );
-			foreach ( (array) $usergroups as $usergroup_id ) {
-				$usergroup = $vip_workflow->user_groups->get_usergroup_by( 'id', $usergroup_id );
-				foreach ( (array) $usergroup->user_ids as $user_id ) {
-					$usergroup_user = get_user_by( 'id', $user_id );
-					if ( $this->user_can_be_notified( $usergroup_user, $post_id ) ) {
-						$usergroup_recipients[] = $usergroup_user->user_email;
-					}
+		foreach ( (array) $usergroups as $usergroup_id ) {
+			$usergroup = $vip_workflow->user_groups->get_usergroup_by( 'id', $usergroup_id );
+			foreach ( (array) $usergroup->user_ids as $user_id ) {
+				$usergroup_user = get_user_by( 'id', $user_id );
+				if ( $this->user_can_be_notified( $usergroup_user, $post_id ) ) {
+					$usergroup_recipients[] = $usergroup_user->user_email;
 				}
 			}
 		}
@@ -987,9 +985,6 @@ class Notifications extends Module {
 	 *
 	 */
 	public function follow_post_usergroups( $post, $usergroups = 0, $append = true ) {
-		if ( ! $this->module_enabled( 'user_groups' ) ) {
-			return;
-		}
 
 		$post_id = ( is_int( $post ) ) ? $post : $post->ID;
 

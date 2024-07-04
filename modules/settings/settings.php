@@ -18,7 +18,7 @@ class Settings extends Module {
 		$args = array(
 			'title' => __( 'VIP Workflow', 'vip-workflow' ),
 			'short_description' => __( 'VIP Workflow redefines your WordPress publishing workflow.', 'vip-workflow' ),
-			'extended_description' => __( 'Enable any of the features below to take control of your workflow. Custom statuses, email notifications, and more help you and your team save time so everyone can focus on what matters most: the content.', 'vip-workflow' ),
+			'extended_description' => __( 'Check out custom status and notifications, to help you and your team save time so everyone can focus on what matters most: the content.', 'vip-workflow' ),
 			'module_url' => $this->module_url,
 			'slug' => 'settings',
 			'settings_slug' => 'vw-settings',
@@ -35,9 +35,9 @@ class Settings extends Module {
 	public function init() {
 		add_action( 'admin_init', array( $this, 'helper_settings_validate_and_save' ), 100 );
 
-		add_action( 'admin_print_styles', array( $this, 'action_admin_print_styles' ) );
+		//add_action( 'admin_print_styles', array( $this, 'action_admin_print_styles' ) );
 		add_action( 'admin_print_scripts', array( $this, 'action_admin_print_scripts' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'action_admin_enqueue_scripts' ) );
+		//add_action( 'admin_enqueue_scripts', array( $this, 'action_admin_enqueue_scripts' ) );
 		add_action( 'admin_menu', array( $this, 'action_admin_menu' ) );
 	}
 
@@ -97,13 +97,6 @@ class Settings extends Module {
 
 		$configure_callback = $requested_module->configure_page_cb;
 		$requested_module_name = $requested_module->name;
-
-		// Don't show the settings page for the module if the module isn't activated
-		if ( ! $this->module_enabled( $requested_module_name ) ) {
-			/* translators: 1: link to the settings page for VIP Workflow */
-			echo '<div class="message error"><p>' . wp_kses( sprintf( __( 'Module not enabled. Please enable it from the <a href="%1$s">VIP Workflow settings page</a>.', 'vip-workflow' ), esc_url( VIP_WORKFLOW_SETTINGS_PAGE ) ), 'a' ) . '</p></div>';
-			return;
-		}
 
 		$this->print_default_header( $requested_module );
 		$vip_workflow->$requested_module_name->$configure_callback();
@@ -173,71 +166,7 @@ class Settings extends Module {
 	 * Adds Settings page for VIP Workflow.
 	 */
 	public function print_default_settings() {
-		?>
-		<div class="vip-workflow-modules">
-		<?php $this->print_modules(); ?>
-		</div>
-		<form class="basic-settings" action="<?php echo esc_url( menu_page_url( $this->module->settings_slug, false ) ); ?>" method="post">
-			<?php settings_fields( $this->module->options_group_name ); ?>
-			<?php do_settings_sections( $this->module->options_group_name ); ?>
-			<?php
-			echo '<input id="vip_workflow_module_name" name="vip_workflow_module_name" type="hidden" value="' . esc_attr( $this->module->name ) . '" />';
-			?>
-			<p class="submit"><?php submit_button( null, 'primary', 'submit', false ); ?></p>
-		</form>
-			<?php
-	}
-
-	public function print_modules() {
-		global $vip_workflow;
-
-		if ( ! $vip_workflow->modules_count ) {
-			echo '<div class="message error">' . esc_html__( 'There are no VIP Workflow modules registered', 'vip-workflow' ) . '</div>';
-		} else {
-
-			foreach ( $vip_workflow->modules as $mod_name => $mod_data ) {
-				if ( $mod_data->autoload ) {
-					continue;
-				}
-
-				$classes = array(
-					'vip-workflow-module',
-				);
-				if ( 'on' == $mod_data->options->enabled ) {
-					$classes[] = 'module-enabled';
-				} elseif ( 'off' == $mod_data->options->enabled ) {
-					$classes[] = 'module-disabled';
-				}
-				if ( $mod_data->configure_page_cb ) {
-					$classes[] = 'has-configure-link';
-				}
-				echo '<div class="' . esc_attr( implode( ' ', $classes ) ) . '" id="' . esc_attr( $mod_data->slug ) . '">';
-				if ( $mod_data->img_url ) {
-					echo '<img src="' . esc_url( $mod_data->img_url ) . '" height="24px" width="24px" class="float-right module-icon" />';
-				}
-				echo '<form method="get" action="' . esc_url( get_admin_url( null, 'options.php' ) ) . '">';
-				echo '<h4>' . esc_html( $mod_data->title ) . '</h4>';
-				if ( 'on' == $mod_data->options->enabled ) {
-					echo '<p>' . wp_kses( $mod_data->short_description, 'a' ) . '</p>';
-				} else {
-					echo '<p>' . esc_html( $mod_data->short_description ) . '</p>';
-				}
-				echo '<p class="vip-workflow-module-actions">';
-				if ( $mod_data->configure_page_cb ) {
-					$configure_url = add_query_arg( 'page', $mod_data->settings_slug, get_admin_url( null, 'admin.php' ) );
-					echo '<a href="' . esc_url( $configure_url ) . '" class="configure-vip-workflow-module button button-primary';
-					if ( 'off' == $mod_data->options->enabled ) {
-						echo ' hidden" style="display:none;';
-					}
-					// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
-					echo '">' . esc_html__( $mod_data->configure_link_text ) . '</a>';
-				}
-				echo '</p>';
-				wp_nonce_field( 'change-vip-workflow-module-nonce', 'change-module-nonce-' . $mod_data->slug, false );
-				echo '</form>';
-				echo '</div>';
-			}
-		}
+		// Nothing
 	}
 
 	/**
