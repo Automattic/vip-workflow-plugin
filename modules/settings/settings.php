@@ -1,9 +1,9 @@
 <?php
 
- namespace VIPWorkflow\Modules\Settings;
+namespace VIPWorkflow\Modules;
 
- use VIPWorkflow\Modules\VIP_Workflow;
- use VIPWorkflow\Modules\Module;
+use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Common\PHP\Module;
 
 class Settings extends Module {
 

@@ -1,10 +1,9 @@
 <?php
 
-namespace VIPWorkflow\Modules;
+namespace VIPWorkflow;
 
- use VIPWorkflow\Modules\Module;
-;
- use stdClass;
+use VIPWorkflow\Common\PHP\Module;
+use stdClass;
 
 // Core class
 #[\AllowDynamicProperties]
@@ -102,7 +101,7 @@ class VIP_Workflow {
 					$slug_name  .= $word . '_';
 				}
 				$slug_name                 = rtrim( $slug_name, '_' );
-				$class_names[ $slug_name ] = 'VIPWorkflow\Modules\\' . str_replace( '_', '', $class_name ) . '\\' . rtrim( $class_name, '_' );
+				$class_names[ $slug_name ] = 'VIPWorkflow\Modules\\' . rtrim( $class_name, '_' );
 			}
 		}
 

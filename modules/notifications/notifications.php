@@ -3,14 +3,12 @@
  * class Notifications
  * Email notifications for VIP Workflow and more
  */
+namespace VIPWorkflow\Modules;
 
-namespace VIPWorkflow\Modules\Notifications;
-
- use VIPWorkflow\Modules\VIP_Workflow;
- use VIPWorkflow\Modules\Module;
-use VIPWorkflow\Modules\UserGroups\User_Groups;
-
- use function VIPWorkflow\Utils\vw_draft_or_post_title;
+use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\User_Groups;
+use function VIPWorkflow\Common\PHP\vw_draft_or_post_title;
 
 if ( ! defined( 'VW_NOTIFICATION_USE_CRON' ) ) {
 	define( 'VW_NOTIFICATION_USE_CRON', false );

@@ -2,12 +2,11 @@
 /**
  * class User_Groups
  */
+namespace VIPWorkflow\Modules;
 
-namespace VIPWorkflow\Modules\UserGroups;
-
- use VIPWorkflow\Modules\VIP_Workflow;
- use VIPWorkflow\Modules\Module;
- use WP_List_Table;
+use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Common\PHP\Module;
+use WP_List_Table;
 
 class User_Groups extends Module {
 

@@ -4,12 +4,13 @@
  * Custom statuses make it simple to define the different stages in your publishing workflow.
  */
 
- namespace VIPWorkflow\Modules\CustomStatus;
+namespace VIPWorkflow\Modules;
 
- use VIPWorkflow\Modules\VIP_Workflow;
- use VIPWorkflow\Modules\Module;
- use WP_List_Table;
- use function VIPWorkflow\Utils\_vw_wp_link_page;
+use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Common\PHP\Module;
+use WP_List_Table;
+use function VIPWorkflow\Common\PHP\_vw_wp_link_page;
+
 class Custom_Status extends Module {
 
 	public $module;
@@ -1811,7 +1812,6 @@ class Custom_Status_List_Table extends WP_List_Table {
 	 * Hidden form used for inline editing functionality
 	 */
 	public function inline_edit() {
-		global $vip_workflow;
 		?>
 	<form method="get" action=""><table style="display: none"><tbody id="inlineedit">
 		<tr id="inline-edit" class="inline-edit-row" style="display: none"><td colspan="<?php echo esc_attr( $this->get_column_count() ); ?>" class="colspanchange">

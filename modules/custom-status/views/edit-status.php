@@ -1,6 +1,6 @@
 <?php
 
- namespace VIPWorkflow\Modules\CustomStatus;
+namespace VIPWorkflow\Modules\CustomStatus;
 
 defined( 'ABSPATH' ) || exit();
 

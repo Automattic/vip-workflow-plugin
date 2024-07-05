@@ -14,11 +14,13 @@
  * @package vip-workflow
  */
 
- namespace VIPWorkflow;
+namespace VIPWorkflow;
 
- /**
-  * Print admin notice regarding having an old version of PHP.
-  */
+/**
+ * Print admin notice regarding having an old version of PHP.
+ *
+ * @return void
+ */
 function vip_workflow_print_incompatibility_notice() {
 	?>
 	<div class="notice notice-error">
