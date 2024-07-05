@@ -11,7 +11,7 @@
 
 if ( ! class_exists( 'VW_Custom_Status' ) ) {
 
-	require_once( __DIR__ . '/class-custom-status-list-table.php' );
+	require_once __DIR__ . '/class-custom-status-list-table.php';
 
 	class VW_Custom_Status extends VW_Module {
 
