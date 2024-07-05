@@ -458,8 +458,6 @@ class Notifications extends Module {
 		// White list validation for the 'send_to_slack' option
 		if ( ! isset( $new_options['send_to_webhook'] ) || 'on' != $new_options['send_to_webhook'] ) {
 			$new_options['send_to_webhook'] = 'off';
-			// Reset the webhook URL if it's not turned on.
-			$new_options['webhook_url'] = '';
 		}
 
 		// White list validation for the 'slack_webhook_url' option
