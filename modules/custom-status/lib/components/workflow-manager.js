@@ -26,9 +26,9 @@ export default function WorkflowManager( { customStatuses } ) {
 	};
 
 	return (
-		<Flex direction={ [ 'column', 'row' ] }>
+		<Flex direction={ [ 'column', 'row' ] } justify={ 'start' } wrap={ true }>
 			<FlexItem>
-				<Flex align={ 'start' } justify={ 'flex-start' }>
+				<Flex align={ 'start' } justify={ 'start' }>
 					<WorkflowArrow
 						start={ __( 'Create', 'vip-workflow' ) }
 						end={ __( 'Publish', 'vip-workflow' ) }

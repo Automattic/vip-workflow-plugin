@@ -60,5 +60,9 @@
 }
 
 .custom-status-editor {
-	// min-width: 26rem;
+	max-width: 40rem;
+
+	.components-base-control:not(:last-child) {
+		margin-bottom: 1rem;
+	}
 }
