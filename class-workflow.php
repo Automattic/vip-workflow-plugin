@@ -112,8 +112,6 @@ class VIP_Workflow {
 		// Other utils
 		require_once VIP_WORKFLOW_ROOT . '/common/php/util.php';
 
-		$classes = get_declared_classes();
-
 		// Instantiate all of our classes onto the VIP Workflow object
 		// but make sure they exist too
 		foreach ( $class_names as $slug => $class_name ) {
@@ -148,9 +146,7 @@ class VIP_Workflow {
 		// Load all of the modules that are enabled.
 		// Modules won't have an options value if they aren't enabled
 		foreach ( $this->modules as $mod_name => $mod_data ) {
-			if ( isset( $mod_data->options->enabled ) && 'on' == $mod_data->options->enabled ) {
-				$this->$mod_name->init();
-			}
+			$this->$mod_name->init();
 		}
 	}
 
