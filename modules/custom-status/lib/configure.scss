@@ -11,11 +11,35 @@
 		resize: vertical;
 		overflow: auto;
 	}
+}
 
-	.status-item {
-		user-select: none;
-		padding: 16px;
-		margin: 0 0 8px 0;
-		border: 1px solid #c3c4c7;
+.custom-status-item {
+	display: flex;
+	cursor: move;
+	padding: 16px 4px 16px 16px;
+	margin: 0 0 8px 0;
+	border: 1px solid #c3c4c7;
+	user-select: none;
+	align-items: center;
+
+	.name {
+		flex-grow: 1;
+	}
+
+	.drag-handle {
+		visibility: hidden;
+		fill: #777;
+	}
+
+	&.dragging {
+		.drag-handle {
+			visibility: visible;
+		}
+	}
+
+	&:hover {
+		.drag-handle {
+			visibility: visible;
+		}
 	}
 }

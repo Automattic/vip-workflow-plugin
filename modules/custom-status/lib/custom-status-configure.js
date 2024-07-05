@@ -2,9 +2,10 @@ import './configure.scss';
 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import domReady from '@wordpress/dom-ready';
-import { createRoot, useState, useRef, useLayoutEffect } from '@wordpress/element';
+import { createRoot, useState, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
+import DraggableCustomStatus from './components/draggable-custom-status';
 import WorkflowArrow, { useRefDimensions } from './components/workflow-arrow';
 
 function WorkflowManager() {
@@ -47,19 +48,12 @@ function WorkflowManager() {
 							{ items.map( ( item, index ) => (
 								<Draggable key={ item.term_id } draggableId={ `${ item.term_id }` } index={ index }>
 									{ ( provided, snapshot ) => (
-										<div
-											className="status-item"
-											ref={ provided.innerRef }
-											{ ...provided.draggableProps }
-											{ ...provided.dragHandleProps }
-											style={ getItemStyle(
-												index,
-												snapshot.isDragging,
-												provided.draggableProps.style
-											) }
-										>
-											{ item.name }
-										</div>
+										<DraggableCustomStatus
+											customStatus={ item }
+											index={ index }
+											provided={ provided }
+											snapshot={ snapshot }
+										/>
 									) }
 								</Draggable>
 							) ) }
@@ -73,8 +67,12 @@ function WorkflowManager() {
 }
 
 domReady( () => {
-	const root = createRoot( document.getElementById( 'workflow-manager-root' ) );
-	root.render( <WorkflowManager /> );
+	const workflowManagerRoot = document.getElementById( 'workflow-manager-root' );
+
+	if ( workflowManagerRoot ) {
+		const root = createRoot( workflowManagerRoot );
+		root.render( <WorkflowManager /> );
+	}
 } );
 
 const reorder = ( list, startIndex, endIndex ) => {
@@ -83,15 +81,6 @@ const reorder = ( list, startIndex, endIndex ) => {
 	result.splice( endIndex, 0, removed );
 
 	return result;
-};
-
-const getItemStyle = ( index, isDragging, draggableStyle ) => {
-	const defaultBackgroundColor = index % 2 ? 'white' : '#f6f7f7';
-
-	return {
-		background: isDragging ? 'lightgreen' : defaultBackgroundColor,
-		...draggableStyle,
-	};
 };
 
 const getListStyle = isDraggingOver => ( {
