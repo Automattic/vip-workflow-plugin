@@ -11,8 +11,25 @@ import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 export default function WorkflowManager( { customStatuses } ) {
 	const [ items, setItems ] = useState( customStatuses );
 
+	const [ editStatus, setEditStatus ] = useState( null );
+	const [ isNewStatus, setIsNewStatus ] = useState( false );
+
 	const statusContainerRef = useRef( null );
 	const [ statusContanerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
+
+	const handleNewStatus = () => {
+		setIsNewStatus( true );
+		setEditStatus( {} );
+	};
+
+	const handleEditStatus = customStatus => {
+		setIsNewStatus( false );
+		setEditStatus( customStatus );
+	};
+
+	const handleCancelEditStatus = () => {
+		setEditStatus( null );
+	};
 
 	const onDragEnd = result => {
 		// Dropped outside the list
@@ -26,7 +43,7 @@ export default function WorkflowManager( { customStatuses } ) {
 	};
 
 	return (
-		<Flex direction={ [ 'column', 'row' ] } justify={ 'start' } wrap={ true }>
+		<Flex direction={ [ 'column', 'row' ] } justify={ 'start' } align={ 'start' }>
 			<FlexItem>
 				<Flex align={ 'start' } justify={ 'start' }>
 					<WorkflowArrow
@@ -60,6 +77,7 @@ export default function WorkflowManager( { customStatuses } ) {
 														index={ index }
 														provided={ provided }
 														snapshot={ snapshot }
+														handleEditStatus={ handleEditStatus }
 													/>
 												) }
 											</Draggable>
@@ -71,16 +89,21 @@ export default function WorkflowManager( { customStatuses } ) {
 						</DragDropContext>
 
 						<div className="add-status">
-							<Button variant="secondary" icon={ plusCircle }>
+							<Button variant="secondary" icon={ plusCircle } onClick={ handleNewStatus }>
 								{ __( 'Add new', 'vip-workflow' ) }
 							</Button>
 						</div>
 					</div>
 				</Flex>
 			</FlexItem>
-
 			<FlexBlock>
-				<CustomStatusEditor status={ items[ 0 ] } />
+				{ editStatus && (
+					<CustomStatusEditor
+						status={ editStatus }
+						isNew={ isNewStatus }
+						onCancel={ handleCancelEditStatus }
+					/>
+				) }
 			</FlexBlock>
 		</Flex>
 	);

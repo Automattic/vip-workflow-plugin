@@ -3,13 +3,23 @@ import { __ } from '@wordpress/i18n';
 import { Icon, dragHandle } from '@wordpress/icons';
 import clsx from 'clsx';
 
-export default function DraggableCustomStatus( { customStatus, index, provided, snapshot } ) {
+export default function DraggableCustomStatus( {
+	customStatus,
+	index,
+	provided,
+	snapshot,
+	handleEditStatus,
+} ) {
 	const className = clsx(
 		{
 			dragging: snapshot.isDragging,
 		},
 		'custom-status-item'
 	);
+
+	const handleClick = () => {
+		handleEditStatus( customStatus );
+	};
 
 	return (
 		<>
@@ -23,7 +33,7 @@ export default function DraggableCustomStatus( { customStatus, index, provided, 
 				<div className="name">{ customStatus.name }</div>
 
 				<div className="edit">
-					<Button variant="secondary" size="small">
+					<Button variant="secondary" size="small" onClick={ handleClick }>
 						{ __( 'Edit', 'vip-workflow' ) }
 					</Button>
 				</div>

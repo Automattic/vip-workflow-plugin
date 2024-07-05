@@ -91,7 +91,7 @@ function drawArrow( context, width, height ) {
 
 	context.beginPath();
 
-	/* Adjust the point */
+	// Adjust point
 	x1 -= arrowWidth * Math.cos( angle );
 	y1 -= arrowWidth * Math.sin( angle );
 
