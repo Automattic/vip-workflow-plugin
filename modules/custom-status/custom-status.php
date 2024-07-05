@@ -1672,8 +1672,38 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 			$actions['view'] = '<a href="' . esc_url( $preview_link ) . '" title="' . esc_attr( sprintf( __( 'Preview &#8220;%s&#8221;' ), $post->post_title ) ) . '" rel="permalink">' . __( 'Preview' ) . '</a>';
 			return $actions;
 		}
-	}
 
+		/**
+		 * Given a post ID, return true if the extended post status allows for publishing.
+		 *
+		 * @param int $post_id The post ID being queried.
+		 * @return bool True if the post is publishable based on the extended post status, or false otherwise.
+		 */
+		public function workflow_is_publishable( $post_id ) {
+			$post = get_post( $post_id );
+
+			if ( null === $post ) {
+				return false;
+			}
+
+			$custom_statuses = $this->get_custom_statuses();
+			$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
+
+			if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+				// Post is not using a custom status, or is not a supported post type
+				return false;
+			}
+
+			$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
+
+			if ( $status_before_publish->slug == $post->post_status ) {
+				// Post is in the last status, so it can be published
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
 }
 
 
