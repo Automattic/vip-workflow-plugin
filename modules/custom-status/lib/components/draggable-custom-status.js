@@ -1,4 +1,6 @@
-import { dragHandle, Icon } from '@wordpress/icons';
+import { Button } from '@wordpress/components';
+import { __ } from '@wordpress/i18n';
+import { Icon, dragHandle } from '@wordpress/icons';
 import clsx from 'clsx';
 
 export default function DraggableCustomStatus( { customStatus, index, provided, snapshot } ) {
@@ -19,6 +21,12 @@ export default function DraggableCustomStatus( { customStatus, index, provided, 
 				style={ getItemStyle( index, snapshot.isDragging, provided.draggableProps.style ) }
 			>
 				<div className="name">{ customStatus.name }</div>
+
+				<div className="edit">
+					<Button variant="secondary" size="small">
+						{ __( 'Edit', 'vip-workflow' ) }
+					</Button>
+				</div>
 
 				<div className="drag-handle">
 					<Icon icon={ dragHandle } size={ 20 } />

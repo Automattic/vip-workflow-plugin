@@ -1,7 +1,10 @@
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { Button, Flex, FlexItem, FlexBlock } from '@wordpress/components';
 import { useState, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import { plusCircle } from '@wordpress/icons';
 
+import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 
@@ -23,43 +26,63 @@ export default function WorkflowManager( { customStatuses } ) {
 	};
 
 	return (
-		<div className="workflow-manager">
-			<WorkflowArrow
-				start={ __( 'Create' ) }
-				end={ __( 'Publish' ) }
-				referenceDimensions={ { width: statusContanerWidth, height: statusContainerHeight } }
-			/>
+		<Flex direction={ [ 'column', 'row' ] }>
+			<FlexItem>
+				<Flex align={ 'start' } justify={ 'flex-start' }>
+					<WorkflowArrow
+						start={ __( 'Create', 'vip-workflow' ) }
+						end={ __( 'Publish', 'vip-workflow' ) }
+						referenceDimensions={ { width: statusContanerWidth, height: statusContainerHeight } }
+					/>
 
-			<DragDropContext onDragEnd={ onDragEnd }>
-				<Droppable droppableId="droppable">
-					{ ( provided, snapshot ) => (
-						<div
-							className="status-container"
-							{ ...provided.droppableProps }
-							ref={ el => {
-								statusContainerRef.current = el;
-								provided.innerRef( el );
-							} }
-							style={ getListStyle( snapshot.isDraggingOver ) }
-						>
-							{ items.map( ( item, index ) => (
-								<Draggable key={ item.term_id } draggableId={ `${ item.term_id }` } index={ index }>
-									{ ( provided, snapshot ) => (
-										<DraggableCustomStatus
-											customStatus={ item }
-											index={ index }
-											provided={ provided }
-											snapshot={ snapshot }
-										/>
-									) }
-								</Draggable>
-							) ) }
-							{ provided.placeholder }
+					<div className="status-section">
+						<DragDropContext onDragEnd={ onDragEnd }>
+							<Droppable droppableId="droppable">
+								{ ( provided, snapshot ) => (
+									<div
+										className="status-container"
+										{ ...provided.droppableProps }
+										ref={ el => {
+											statusContainerRef.current = el;
+											provided.innerRef( el );
+										} }
+										style={ getListStyle( snapshot.isDraggingOver ) }
+									>
+										{ items.map( ( item, index ) => (
+											<Draggable
+												key={ item.term_id }
+												draggableId={ `${ item.term_id }` }
+												index={ index }
+											>
+												{ ( provided, snapshot ) => (
+													<DraggableCustomStatus
+														customStatus={ item }
+														index={ index }
+														provided={ provided }
+														snapshot={ snapshot }
+													/>
+												) }
+											</Draggable>
+										) ) }
+										{ provided.placeholder }
+									</div>
+								) }
+							</Droppable>
+						</DragDropContext>
+
+						<div className="add-status">
+							<Button variant="secondary" icon={ plusCircle }>
+								{ __( 'Add new', 'vip-workflow' ) }
+							</Button>
 						</div>
-					) }
-				</Droppable>
-			</DragDropContext>
-		</div>
+					</div>
+				</Flex>
+			</FlexItem>
+
+			<FlexBlock>
+				<CustomStatusEditor status={ items[ 0 ] } />
+			</FlexBlock>
+		</Flex>
 	);
 }
 
