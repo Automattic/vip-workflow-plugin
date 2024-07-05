@@ -21,7 +21,7 @@ export default function DraggableCustomStatus( { customStatus, index, provided, 
 				<div className="name">{ customStatus.name }</div>
 
 				<div className="drag-handle">
-					<Icon icon={ dragHandle } size={ 24 } />
+					<Icon icon={ dragHandle } size={ 20 } />
 				</div>
 			</div>
 		</>
