@@ -44,6 +44,7 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 						'post' => 'on',
 						'page' => 'on',
 					],
+					'publish_guard'        => 'on',
 				],
 				'post_type_support'     => 'vw_custom_statuses', // This has been plural in all of our docs
 				'configure_page_cb'     => 'print_configure_view',
@@ -100,9 +101,12 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 			add_action( 'admin_init', [ $this, 'handle_edit_custom_status' ] );
 			add_action( 'admin_init', [ $this, 'handle_make_default_custom_status' ] );
 			add_action( 'admin_init', [ $this, 'handle_delete_custom_status' ] );
-			add_action( 'admin_head', [ $this, 'hide_publish_button' ] );
 			add_action( 'wp_ajax_update_status_positions', [ $this, 'handle_ajax_update_status_positions' ] );
 			add_action( 'wp_ajax_inline_save_status', [ $this, 'ajax_inline_save_status' ] );
+
+			if ( 'on' === $this->module->options->publish_guard ) {
+				add_action( 'admin_head', [ $this, 'hide_publish_button' ] );
+			}
 
 			// These seven-ish methods are hacks for fixing bugs in WordPress core
 			add_action( 'admin_init', [ $this, 'check_timestamp_on_publish' ] );
@@ -1123,6 +1127,7 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 			add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
 			add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ $this, 'settings_post_types_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 			add_settings_field( 'always_show_dropdown', __( 'Always show dropdown:', 'vip-workflow' ), [ $this, 'settings_always_show_dropdown_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+			add_settings_field( 'publish_guard', __( 'Publish Guard:', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 		}
 
 		/**
@@ -1155,6 +1160,25 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 		}
 
 		/**
+		 * Option for whether the publish guard feature should be enabled
+		 *
+		 * @since 0.7
+		 */
+		public function settings_publish_guard() {
+			$options = [
+				'off' => __( 'Disabled', 'vip-workflow' ),
+				'on'  => __( 'Enabled', 'vip-workflow' ),
+			];
+			echo '<select id="publish_guard" name="' . esc_attr( $this->module->options_group_name ) . '[publish_guard]">';
+			foreach ( $options as $value => $label ) {
+				echo '<option value="' . esc_attr( $value ) . '"';
+				echo selected( $this->module->options->publish_guard, $value );
+				echo '>' . esc_html( $label ) . '</option>';
+			}
+			echo '</select>';
+		}
+
+		/**
 		 * Validate input from the end user
 		 *
 		 * @since 0.7
@@ -1170,6 +1194,11 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 			// Whitelist validation for the 'always_show_dropdown' optoins
 			if ( ! isset( $new_options['always_show_dropdown'] ) || 'on' != $new_options['always_show_dropdown'] ) {
 				$new_options['always_show_dropdown'] = 'off';
+			}
+
+			// Whitelist validation for the 'publish_guard' optoins
+			if ( ! isset( $new_options['publish_guard'] ) || 'on' != $new_options['publish_guard'] ) {
+				$new_options['publish_guard'] = 'off';
 			}
 
 			return $new_options;
