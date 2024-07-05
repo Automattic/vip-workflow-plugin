@@ -98,6 +98,7 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 			add_action( 'admin_init', [ $this, 'handle_edit_custom_status' ] );
 			add_action( 'admin_init', [ $this, 'handle_make_default_custom_status' ] );
 			add_action( 'admin_init', [ $this, 'handle_delete_custom_status' ] );
+			add_action( 'admin_head', [ $this, 'hide_publish_button' ] );
 			add_action( 'wp_ajax_update_status_positions', [ $this, 'handle_ajax_update_status_positions' ] );
 			add_action( 'wp_ajax_inline_save_status', [ $this, 'ajax_inline_save_status' ] );
 
@@ -1667,6 +1668,31 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 			/* translators: %s: post title */
 			$actions['view'] = '<a href="' . esc_url( $preview_link ) . '" title="' . esc_attr( sprintf( __( 'Preview &#8220;%s&#8221;' ), $post->post_title ) ) . '" rel="permalink">' . __( 'Preview' ) . '</a>';
 			return $actions;
+		}
+
+		/**
+		 * Hide the publish button if the post is not in the final custom status
+		 *
+		 * @since 0.9.9
+		 */
+		public function hide_publish_button() {
+			global $post;
+
+			if ( $this->should_hide_publish_button( $post ) ) {
+				?>
+				<style>
+					.edit-post-header__settings .components-button.editor-post-publish-panel__toggle {
+						display: none;
+					}
+				</style>
+				<?php
+			}
+		}
+
+		private function should_hide_publish_button( $post ) {
+			// Check next valid custom status
+			// get_next_valid_status( $post->ID );
+			return true;
 		}
 	}
 
