@@ -22,15 +22,6 @@ class Module {
 	public function __construct() {}
 
 	/**
-	 * Returns whether the current module is enabled.
-	 *
-	 * @return <code>true</code> if the module is enabled, <code>false</code> otherwise
-	 */
-	public function is_enabled() {
-		return 'on' === $this->module->options->enabled;
-	}
-
-	/**
 	 * Returns whether analytics has been enabled or not.
 	 *
 	 * It's only enabled if the site is a production WPVIP site.
@@ -176,23 +167,6 @@ class Module {
 	}
 
 	/**
-	 * Gets the name of the default custom status. If custom statuses are disabled,
-	 * returns 'draft'.
-	 *
-	 * @return str Name of the status
-	 */
-	public function get_default_post_status() {
-		// Check if custom status module is enabled
-		$custom_status_module = VIP_Workflow::instance()->custom_status->module->options;
-
-		if ( 'on' == $custom_status_module->enabled ) {
-			return $custom_status_module->default_status;
-		} else {
-			return 'draft';
-		}
-	}
-
-	/**
 	 * Filter to all posts with a given post status (can be a custom status or a built-in status) and optional custom post type.
 	 *
 	 * @param string $slug The slug for the post status to which to filter
@@ -325,7 +299,7 @@ class Module {
 
 		// Load all of the modules that have a settings slug/ callback for the settings page
 		foreach ( $vip_workflow->modules as $mod_name => $mod_data ) {
-			if ( isset( $mod_data->options->enabled ) && 'on' == $mod_data->options->enabled && $mod_data->configure_page_cb ) {
+			if ( $mod_data->configure_page_cb ) {
 				$settings_view_slugs[] = $mod_data->settings_slug;
 			}
 		}

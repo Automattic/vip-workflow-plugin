@@ -50,8 +50,7 @@ class Settings extends Module {
 		add_menu_page( $this->module->title, $this->module->title, 'manage_options', $this->module->settings_slug, array( $this, 'settings_page_controller' ) );
 
 		foreach ( $vip_workflow->modules as $mod_name => $mod_data ) {
-			if ( isset( $mod_data->options->enabled ) && 'on' == $mod_data->options->enabled
-			&& $mod_data->configure_page_cb && $mod_name != $this->module->name ) {
+			if ( $mod_data->configure_page_cb && $mod_name != $this->module->name ) {
 				add_submenu_page( $this->module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, array( $this, 'settings_page_controller' ) );
 			}
 		}
