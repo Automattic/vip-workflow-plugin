@@ -7,7 +7,6 @@ namespace VIPWorkflow\Modules;
 
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
-use VIPWorkflow\Modules\User_Groups;
 use function VIPWorkflow\Common\PHP\vw_draft_or_post_title;
 
 if ( ! defined( 'VW_NOTIFICATION_USE_CRON' ) ) {
@@ -15,11 +14,6 @@ if ( ! defined( 'VW_NOTIFICATION_USE_CRON' ) ) {
 }
 
 class Notifications extends Module {
-
-	// Taxonomy name used to store users following posts
-	public $following_users_taxonomy = 'following_users';
-	// Taxonomy name used to store user groups following posts
-	public $following_usergroups_taxonomy = User_Groups::TAXONOMY_KEY;
 
 	public $module;
 
@@ -35,7 +29,7 @@ class Notifications extends Module {
 		$args             = [
 			'title'                 => __( 'Notifications', 'vip-workflow' ),
 			'short_description'     => __( 'Update your team of important changes to your content.', 'vip-workflow' ),
-			'extended_description'  => __( 'With email notifications, you can keep everyone updated about what’s happening with a given content. Each status change sends out an email notification to users subscribed to a post. User groups can be used to manage who receives notifications on what. With webhook notifications, all notifications will also be sent to the specified webhook URL(i.e.: Slack incoming webhooks) but will ignore specific user or user groups subscription settings.', 'vip-workflow' ),
+			'extended_description'  => __( 'You can keep everyone updated about what is happening with a given content. This is possible through webhook notifications, and emails to admins. Each status change sends out a notification to the specified webhook URL(i.e.: Slack incoming webhooks) and/or email notifications to the admin.', 'vip-workflow' ),
 			'module_url'            => $this->module_url,
 			'img_url'               => $this->module_url . 'lib/notifications_s128.png',
 			'slug'                  => 'notifications',
@@ -44,7 +38,7 @@ class Notifications extends Module {
 					'post' => 'on',
 					'page' => 'on',
 				],
-				'always_notify_admin' => 'off',
+				'always_notify_admin' => 'on',
 				'send_to_webhook'     => 'off',
 				'webhook_url'         => '',
 			],
@@ -59,25 +53,9 @@ class Notifications extends Module {
 	 * Initialize the notifications class if the plugin is enabled
 	 */
 	public function init() {
-
-		// Register our taxonomies for managing relationships
-		$this->register_taxonomies();
-
-		// Allow users to use a different user capability for editing post subscriptions
-		$this->edit_post_subscriptions_cap = apply_filters( 'vw_edit_post_subscriptions_cap', $this->edit_post_subscriptions_cap );
-
-		// Set up metabox and related actions
-		add_action( 'add_meta_boxes', [ $this, 'add_post_meta_box' ] );
-
-		// Add "access badge" to the subscribers list.
-		add_action( 'vw_user_subscribe_actions', [ $this, 'display_subscriber_warning_badges' ], 10, 2 );
-
-		// Saving post actions
-		// self::save_post_subscriptions() is hooked into transition_post_status so we can ensure usergroup data
-		// is properly saved before sending notifs
-		add_action( 'transition_post_status', [ $this, 'save_post_subscriptions' ], 0, 3 );
+		// Send notifications on post status change
 		add_action( 'transition_post_status', [ $this, 'notification_status_change' ], 10, 3 );
-		add_action( 'delete_user', [ $this, 'delete_user_action' ] );
+		// Schedule email sending
 		add_action( 'vw_send_scheduled_email', [ $this, 'send_single_email' ], 10, 4 );
 
 		add_action( 'admin_init', [ $this, 'register_settings' ] );
@@ -85,36 +63,13 @@ class Notifications extends Module {
 		// Javascript and CSS if we need it
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_scripts' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_styles' ] );
-
-		// Add a "Follow" link to posts
-		if ( apply_filters( 'vw_notifications_show_follow_link', true ) ) {
-			// A little extra JS for the follow button
-			add_action( 'admin_head', [ $this, 'action_admin_head_follow_js' ] );
-			// Manage Posts
-			add_filter( 'post_row_actions', [ $this, 'filter_post_row_actions' ], 10, 2 );
-			add_filter( 'page_row_actions', [ $this, 'filter_post_row_actions' ], 10, 2 );
-		}
-
-		//Ajax for saving notifiction updates
-		add_action( 'wp_ajax_save_notifications', [ $this, 'ajax_save_post_subscriptions' ] );
-		add_action( 'wp_ajax_vw_notifications_user_post_subscription', [ $this, 'handle_user_post_subscription' ] );
 	}
 
 	/**
 	 * Load the capabilities onto users the first time the module is run
 	 */
 	public function install() {
-
-		// Add necessary capabilities to allow management of notifications
-		$notifications_roles = [
-			'administrator' => [ 'edit_post_subscriptions' ],
-			'editor'        => [ 'edit_post_subscriptions' ],
-			'author'        => [ 'edit_post_subscriptions' ],
-		];
-
-		foreach ( $notifications_roles as $role => $caps ) {
-			$this->add_caps_to_role( $role, $caps );
-		}
+		// Nothing to do here yet
 	}
 
 	/**
@@ -125,44 +80,12 @@ class Notifications extends Module {
 	}
 
 	/**
-	 * Register the taxonomies we use to manage relationships
-	 *
-	 * @uses register_taxonomy()
-	 */
-	public function register_taxonomies() {
-
-		// Load the currently supported post types so we only register against those
-		$supported_post_types = $this->get_post_types_for_module( $this->module );
-
-		$args = [
-			'hierarchical'          => false,
-			'update_count_callback' => '_update_post_term_count',
-			'label'                 => false,
-			'query_var'             => false,
-			'rewrite'               => false,
-			'public'                => false,
-			'show_ui'               => false,
-		];
-		register_taxonomy( $this->following_users_taxonomy, $supported_post_types, $args );
-	}
-
-	/**
 	 * Enqueue necessary admin scripts
 	 * @uses wp_enqueue_script()
 	 */
 	public function enqueue_admin_scripts() {
-
 		if ( $this->is_whitelisted_functional_view() ) {
-			wp_enqueue_script( 'jquery-listfilterizer' );
-			wp_enqueue_script( 'vip-workflow-notifications-js', $this->module_url . 'lib/notifications.js', [ 'jquery', 'jquery-listfilterizer' ], VIP_WORKFLOW_VERSION, true );
-			wp_localize_script(
-				'vip-workflow-notifications-js',
-				'vw_notifications_localization',
-				[
-					'no_access' => esc_html__( 'No Access', 'vip-workflow' ),
-					'no_email'  => esc_html__( 'No Email', 'vip-workflow' ),
-				]
-			);
+			wp_enqueue_script( 'vip-workflow-notifications-js', $this->module_url . 'lib/notifications.js', [ 'jquery' ], VIP_WORKFLOW_VERSION, true );
 		}
 	}
 
@@ -172,367 +95,15 @@ class Notifications extends Module {
 	 * @uses wp_enqueue_style()
 	 */
 	public function enqueue_admin_styles() {
-
 		if ( $this->is_whitelisted_functional_view() || $this->is_whitelisted_settings_view() ) {
-			wp_enqueue_style( 'jquery-listfilterizer' );
 			wp_enqueue_style( 'vip-workflow-notifications-css', $this->module->module_url . 'lib/notifications.css', false, VIP_WORKFLOW_VERSION );
 		}
-	}
-
-	/**
-	 * JS required for the Follow link to work
-	 */
-	public function action_admin_head_follow_js() {
-		?>
-	<script type='text/Javascript'>
-	jQuery(document).ready(function($) {
-		/**
-		 * Action to Follow / Unfollow posts on the manage posts screen
-		 */
-		$('.wp-list-table').on( 'click', '.vw_follow_link a', function(e){
-
-			e.preventDefault();
-
-			var link = $(this);
-
-			$.ajax({
-				type : 'GET',
-				url : link.attr( 'href' ),
-				success : function( data ) {
-					if ( 'success' == data.status ) {
-						link.attr( 'href', data.message.link );
-						link.attr( 'title', data.message.title );
-						link.text( data.message.text );
-					}
-					// @todo expose the error somehow
-				}
-			});
-			return false;
-		});
-	});
-	</script>
-		<?php
-	}
-
-	/**
-	 * Add a "Follow" link to supported post types Manage Posts view
-	 *
-	 * @param array      $actions   Any existing item actions
-	 * @param int|object $post      Post id or object
-	 * @return array     $actions   The follow link has been appended
-	 */
-	public function filter_post_row_actions( $actions, $post ) {
-
-		$post = get_post( $post );
-
-		if ( ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
-			return $actions;
-		}
-
-		if ( ! current_user_can( $this->edit_post_subscriptions_cap ) || ! current_user_can( 'edit_post', $post->ID ) ) {
-			return $actions;
-		}
-
-		$parts = $this->get_follow_action_parts( $post );
-
-		$actions['vw_follow_link'] = '<a title="' . esc_attr( $parts['title'] ) . '" href="' . esc_url( $parts['link'] ) . '">' . $parts['text'] . '</a>';
-
-		return $actions;
-	}
-
-	/**
-	 * Get an action parts for a user to follow or unfollow a post
-	 */
-	private function get_follow_action_parts( $post ) {
-		$args = [
-			'action'  => 'vw_notifications_user_post_subscription',
-			'post_id' => $post->ID,
-		];
-
-		$following_users = $this->get_following_users( $post->ID );
-		if ( in_array( wp_get_current_user()->user_login, $following_users ) ) {
-			$args['method'] = 'unfollow';
-			$title_text     = __( 'Click to unfollow updates to this post', 'vip-workflow' );
-			$follow_text    = __( 'Following', 'vip-workflow' );
-		} else {
-			$args['method'] = 'follow';
-			$title_text     = __( 'Follow updates to this post', 'vip-workflow' );
-			$follow_text    = __( 'Follow', 'vip-workflow' );
-		}
-
-		// wp_nonce_url() has encoding issues: http://core.trac.wordpress.org/ticket/20771
-		$args['_wpnonce'] = wp_create_nonce( 'vw_notifications_user_post_subscription' );
-
-		return [
-			'title' => $title_text,
-			'text'  => $follow_text,
-			'link'  => add_query_arg( $args, admin_url( 'admin-ajax.php' ) ),
-		];
-	}
-
-	/**
-	 * Add the subscriptions meta box to relevant post types
-	 */
-	public function add_post_meta_box() {
-
-		if ( ! current_user_can( $this->edit_post_subscriptions_cap ) ) {
-			return;
-		}
-
-		$usergroup_post_types = $this->get_post_types_for_module( $this->module );
-		foreach ( $usergroup_post_types as $post_type ) {
-			add_meta_box( 'vip-workflow-notifications', __( 'Notifications', 'vip-workflow' ), [ $this, 'notifications_meta_box' ], $post_type, 'advanced' );
-		}
-	}
-
-	/**
-	 * Outputs box used to subscribe users and usergroups to Posts
-	 *
-	 * @todo add_cap to set subscribers for posts; default to Admin and editors
-	 */
-	public function notifications_meta_box() {
-		global $post, $post_ID, $vip_workflow;
-		?>
-			<div id="vw-post_following_box">
-				<a name="subscriptions"></a>
-
-				<p><?php _e( 'Select the users and user groups that should receive email notifications when the status of this post is updated.', 'vip-workflow' ); ?></p>
-				<div id="vw-post_following_users_box">
-					<h4><?php _e( 'Users', 'vip-workflow' ); ?></h4>
-				<?php
-				$followers        = $this->get_following_users( $post->ID, 'id' );
-				$select_form_args = [
-					'list_class' => 'vw-post_following_list',
-				];
-				$this->users_select_form( $followers, $select_form_args );
-				?>
-				</div>
-
-				<?php if ( in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) ) ) : ?>
-				<div id="vw-post_following_usergroups_box">
-					<h4><?php _e( 'User Groups', 'vip-workflow' ); ?></h4>
-					<?php
-					$following_usergroups = $this->get_following_usergroups( $post->ID, 'ids' );
-					$vip_workflow->user_groups->usergroups_select_form( $following_usergroups );
-					?>
-				</div>
-				<?php endif; ?>
-				<div class="clear"></div>
-				<input type="hidden" name="vw-save_followers" value="1" /> <?php // Extra protection against autosaves ?>
-				<?php wp_nonce_field( 'save_user_usergroups', 'vw_notifications_nonce', false ); ?>
-			</div>
-
-			<?php
-	}
-
-	/**
-	 * Show warning badges next to a subscriber's name if they won't receive notifications
-	 *
-	 * Applies on initial loading of list via. PHP. JS will set these spans based on AJAX response when box is ticked/unticked.
-	 *
-	 * @param int $user_id
-	 * @param bool $checked True if the user is subscribed already, false otherwise.
-	 * @return void
-	 */
-	public function display_subscriber_warning_badges( $user_id, $checked ) {
-		global $post;
-
-		if ( ! isset( $post ) || ! $checked ) {
-			return;
-		}
-
-		// Add No Access span if they won't be notified
-		if ( ! $this->user_can_be_notified( get_user_by( 'id', $user_id ), $post->ID ) ) {
-			// span.post_following_list-no_access is also added in notifications.js after AJAX that ticks/unticks a user
-			echo '<span class="post_following_list-no_access">' . esc_html__( 'No Access', 'vip-workflow' ) . '</span>';
-		}
-
-		// Add No Email span if they have no email
-		$user_object = get_user_by( 'id', $user_id );
-		if ( ! is_a( $user_object, 'WP_User' ) || empty( $user_object->user_email ) ) {
-			// span.post_following_list-no_email is also added in notifications.js after AJAX that ticks/unticks a user
-			echo '<span class="post_following_list-no_email">' . esc_html__( 'No Email', 'vip-workflow' ) . '</span>';
-		}
-	}
-
-	/**
-	 * Called when a notification editorial metadata checkbox is checked. Handles saving of a user/usergroup to a post.
-	 */
-	public function ajax_save_post_subscriptions() {
-		global $vip_workflow;
-
-		// Verify nonce.
-		if ( ! isset( $_POST['_nonce'] ) || ! wp_verify_nonce( $_POST['_nonce'], 'save_user_usergroups' ) ) {
-			die( esc_html__( 'Nonce check failed. Please ensure you can add users or user groups to a post.', 'vip-workflow' ) );
-		}
-
-		$post_id = isset( $_POST['post_id'] ) ? (int) $_POST['post_id'] : 0;
-		$post    = get_post( $post_id );
-
-		$valid_post = ! is_null( $post ) && ! wp_is_post_revision( $post_id ) && ! wp_is_post_autosave( $post_id );
-		if ( ! isset( $_POST['vw_notifications_name'] ) || ! $valid_post || ! current_user_can( $this->edit_post_subscriptions_cap ) ) {
-			die();
-		}
-
-		$user_group_ids = [];
-		if ( isset( $_POST['user_group_ids'] ) && is_array( $_POST['user_group_ids'] ) ) {
-			$user_group_ids = array_map( 'intval', $_POST['user_group_ids'] );
-		}
-
-		if ( 'vw-selected-users[]' === $_POST['vw_notifications_name'] ) {
-			// Prevent auto-subscribing users that have opted out of notifications.
-			add_filter( 'vw_notification_auto_subscribe_current_user', '__return_false', PHP_INT_MAX );
-			$this->save_post_following_users( $post, $user_group_ids );
-
-			if ( defined( 'DOING_AJAX' ) && DOING_AJAX && isset( $_POST['post_id'] ) ) {
-
-				// Determine if any of the selected users won't have notification access
-				$subscribers_with_no_access = array_filter(
-					$user_group_ids,
-					function ( $user_id ) use ( $post_id ) {
-						return ! $this->user_can_be_notified( get_user_by( 'id', $user_id ), $post_id );
-					}
-				);
-
-				// Determine if any of the selected users are missing their emails
-				$subscribers_with_no_email = [];
-				foreach ( $user_group_ids as $user_id ) {
-					$user_object = get_user_by( 'id', $user_id );
-					if ( ! is_a( $user_object, 'WP_User' ) || empty( $user_object->user_email ) ) {
-						$subscribers_with_no_email[] = $user_id;
-					}
-				}
-
-				// Assemble the json reply with various lists of problematic users
-				$json_success = [
-					'subscribers_with_no_access' => array_values( $subscribers_with_no_access ),
-					'subscribers_with_no_email'  => array_values( $subscribers_with_no_email ),
-				];
-
-				wp_send_json_success( $json_success );
-			}
-			// Remove auto-subscribe prevention behavior from earlier.
-			remove_filter( 'vw_notification_auto_subscribe_current_user', '__return_false', PHP_INT_MAX );
-		}
-
-		$groups_enabled = in_array( get_post_type( $post_id ), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) );
-		if ( 'following_usergroups[]' === $_POST['vw_notifications_name'] && $groups_enabled ) {
-			$this->save_post_following_usergroups( $post, $user_group_ids );
-		}
-
-		die();
-	}
-
-	/**
-	 * Handle a request to update a user's post subscription
-	 */
-	public function handle_user_post_subscription() {
-
-		if ( ! empty( $_GET['_wpnonce'] ) && ! wp_verify_nonce( $_GET['_wpnonce'], 'vw_notifications_user_post_subscription' ) ) {
-			$this->print_ajax_response( 'error', $this->module->messages['nonce-failed'] );
-		}
-
-		if ( ! current_user_can( $this->edit_post_subscriptions_cap ) ) {
-			$this->print_ajax_response( 'error', $this->module->messages['invalid-permissions'] );
-		}
-
-		$post_id = isset( $_GET['post_id'] ) ? (int) $_GET['post_id'] : 0;
-		$post    = get_post( $post_id );
-
-		if ( ! $post ) {
-			$this->print_ajax_response( 'error', $this->module->messages['missing-post'] );
-		}
-
-		if ( isset( $_GET['method'] ) && 'follow' == $_GET['method'] ) {
-			$retval = $this->follow_post_user( $post, get_current_user_id() );
-		} else {
-			$retval = $this->unfollow_post_user( $post, get_current_user_id() );
-		}
-
-		if ( is_wp_error( $retval ) ) {
-			$this->print_ajax_response( 'error', $retval->get_error_message() );
-		}
-
-		$this->print_ajax_response( 'success', (object) $this->get_follow_action_parts( $post ) );
-	}
-
-
-	/**
-	 * Called when post is saved. Handles saving of user/usergroup followers
-	 *
-	 * @param int $post ID of the post
-	 */
-	public function save_post_subscriptions( $new_status, $old_status, $post ) {
-		global $vip_workflow;
-
-		if ( ! empty( $_POST['_wpnonce'] ) && ! wp_verify_nonce( $_POST['_wpnonce'], 'editpost' ) ) {
-			$this->print_ajax_response( 'error', $this->module->messages['nonce-failed'] );
-		}
-
-		// only if has edit_post_subscriptions cap
-		if ( ( ! wp_is_post_revision( $post ) && ! wp_is_post_autosave( $post ) ) && isset( $_POST['vw-save_followers'] ) && current_user_can( $this->edit_post_subscriptions_cap ) ) {
-			$users      = isset( $_POST['vw-selected-users'] ) ? $_POST['vw-selected-users'] : [];
-			$usergroups = isset( $_POST['following_usergroups'] ) ? $_POST['following_usergroups'] : [];
-			$this->save_post_following_users( $post, $users );
-			if ( in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $vip_workflow->user_groups->module ) ) ) {
-				$this->save_post_following_usergroups( $post, $usergroups );
-			}
-		}
-	}
-
-	/**
-	 * Sets users to follow specified post
-	 *
-	 * @param int|Object $post ID of the post
-	 */
-	public function save_post_following_users( $post, $users = null ) {
-		if ( ! is_array( $users ) ) {
-			$users = [];
-		}
-
-		// Add current user to following users
-		$user = wp_get_current_user();
-		if ( $user && apply_filters( 'vw_notification_auto_subscribe_current_user', true, 'subscription_action' ) ) {
-			$users[] = $user->ID;
-		}
-
-		// Add post author to following users
-		if ( apply_filters( 'vw_notification_auto_subscribe_post_author', true, 'subscription_action' ) ) {
-			$users[] = $post->post_author;
-		}
-
-		$users = array_unique( array_map( 'intval', $users ) );
-
-		$follow = $this->follow_post_user( $post, $users, false );
-	}
-
-	/**
-	 * Sets usergroups to follow specified post
-	 *
-	 * @param int $post ID of the post
-	 * @param array $usergroups Usergroups to follow posts
-	 */
-	public function save_post_following_usergroups( $post, $usergroups = null ) {
-
-		if ( ! is_array( $usergroups ) ) {
-			$usergroups = [];
-		}
-		$usergroups = array_map( 'intval', $usergroups );
-
-		$follow = $this->follow_post_usergroups( $post, $usergroups, false );
 	}
 
 	/**
 	 * Set up and send post status change notification email
 	 */
 	public function notification_status_change( $new_status, $old_status, $post ) {
-		global $vip_workflow;
-
-		// Kill switch for notification
-		if ( ! apply_filters( 'vw_notification_status_change', $new_status, $old_status, $post ) || ! apply_filters( "vw_notification_{$post->post_type}_status_change", $new_status, $old_status, $post ) ) {
-			return false;
-		}
-
 		$supported_post_types = $this->get_post_types_for_module( $this->module );
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
@@ -542,12 +113,10 @@ class Notifications extends Module {
 		$ignored_statuses = apply_filters( 'vw_notification_ignored_statuses', [ $old_status, 'inherit', 'auto-draft' ], $post->post_type );
 
 		if ( ! in_array( $new_status, $ignored_statuses ) ) {
-
 			// Get current user
 			$current_user = wp_get_current_user();
 
 			$post_author = get_userdata( $post->post_author );
-			//$duedate = $vip_workflow->post_metadata->get_post_meta($post->ID, 'duedate', true);
 
 			$blogname = get_option( 'blogname' );
 
@@ -699,6 +268,7 @@ class Notifications extends Module {
 			$recipients = explode( ',', $recipients );
 		}
 
+		// ToDo: Do we want to keep these filters for these email parts?
 		$subject         = apply_filters( 'vw_notification_send_email_subject', $subject, $action, $post );
 		$message         = apply_filters( 'vw_notification_send_email_message', $message, $action, $post );
 		$message_headers = apply_filters( 'vw_notification_send_email_message_headers', $message_headers, $action, $post );
@@ -789,8 +359,6 @@ class Notifications extends Module {
 	 * @return string|array Recipients to receive notification.
 	 */
 	private function _get_notification_recipients( $post, $string = false ) {
-		global $vip_workflow;
-
 		$post_id = $post->ID;
 		if ( ! $post_id ) {
 			return $string ? '' : [];
@@ -802,356 +370,12 @@ class Notifications extends Module {
 			$admins[] = get_option( 'admin_email' );
 		}
 
-		$usergroup_recipients = [];
-			$usergroups = $this->get_following_usergroups( $post_id, 'ids' );
-		foreach ( (array) $usergroups as $usergroup_id ) {
-			$usergroup = $vip_workflow->user_groups->get_usergroup_by( 'id', $usergroup_id );
-			foreach ( (array) $usergroup->user_ids as $user_id ) {
-				$usergroup_user = get_user_by( 'id', $user_id );
-				if ( $this->user_can_be_notified( $usergroup_user, $post_id ) ) {
-					$usergroup_recipients[] = $usergroup_user->user_email;
-				}
-			}
-		}
-
-		$user_recipients = $this->get_following_users( $post_id, 'user_email' );
-		foreach ( $user_recipients as $key => $user ) {
-			$user_object = get_user_by( 'email', $user );
-			if ( ! $this->user_can_be_notified( $user_object, $post_id ) ) {
-				unset( $user_recipients[ $key ] );
-			}
-		}
-
-		// Merge arrays, filter any duplicates, and remove empty entries.
-		$recipients = array_filter( array_unique( array_merge( $admins, $user_recipients, $usergroup_recipients ) ) );
-
-		// Process the recipients for this email to be sent.
-		foreach ( $recipients as $key => $user_email ) {
-			// Don't send the email to the current user unless we've explicitly indicated they should receive it.
-			if ( false === apply_filters( 'vw_notification_email_current_user', false ) && wp_get_current_user()->user_email == $user_email ) {
-				unset( $recipients[ $key ] );
-			}
-		}
-
-		/**
-		 * Filters the list of notification recipients.
-		 *
-		 * @param array $recipients List of recipient email addresses.
-		 * @param WP_Post $post
-		 * @param bool $string True if the recipients list will later be returned as a string.
-		 */
-		$recipients = apply_filters( 'vw_notification_recipients', $recipients, $post, $string );
-
 		// If string set to true, return comma-delimited.
-		if ( $string && is_array( $recipients ) ) {
-			return implode( ',', $recipients );
+		if ( $string && is_array( $admins ) ) {
+			return implode( ',', $admins );
 		} else {
-			return $recipients;
+			return $admins;
 		}
-	}
-
-	/**
-	 * Check if a user can be notified.
-	 * This is based off of the ability to edit the post/page by default.
-	 *
-	 * @param WP_User $user
-	 * @param int $post_id
-	 * @return bool True if the user can be notified, false otherwise.
-	 */
-	public function user_can_be_notified( $user, $post_id ) {
-		$can_be_notified = false;
-
-		if ( $user instanceof WP_User && is_user_member_of_blog( $user->ID ) && is_numeric( $post_id ) ) {
-			// The 'edit_post' cap check also covers the undocumented 'edit_page' cap.
-			$can_be_notified = $user->has_cap( 'edit_post', $post_id );
-		}
-
-		/**
-		 * Filters if a user can be notified. Defaults to true if they can edit the post/page.
-		 *
-		 * @param bool $can_be_notified True if the user can be notified.
-		 * @param WP_User|bool $user The user object, otherwise false.
-		 * @param int $post_id The post the user will be notified about.
-		 */
-		return (bool) apply_filters( 'vw_notification_user_can_be_notified', $can_be_notified, $user, $post_id );
-	}
-
-	/**
-	 * Set a user or users to follow a post
-	 *
-	 * @param int|object         $post      Post object or ID
-	 * @param string|array       $users     User or users to subscribe to post updates
-	 * @param bool               $append    Whether users should be added to following_users list or replace existing list
-	 *
-	 * @return true|WP_Error     $response  True on success, WP_Error on failure
-	 */
-	public function follow_post_user( $post, $users, $append = true ) {
-
-		$post = get_post( $post );
-		if ( ! $post ) {
-			return new WP_Error( 'missing-post', $this->module->messages['missing-post'] );
-		}
-
-		if ( ! is_array( $users ) ) {
-			$users = [ $users ];
-		}
-
-		$user_terms = [];
-		foreach ( $users as $user ) {
-
-			if ( is_int( $user ) ) {
-				$user = get_user_by( 'id', $user );
-			} elseif ( is_string( $user ) ) {
-				$user = get_user_by( 'login', $user );
-			}
-
-			if ( ! is_object( $user ) ) {
-				continue;
-			}
-
-			$name = $user->user_login;
-
-			// Add user as a term if they don't exist
-			$term = $this->add_term_if_not_exists( $name, $this->following_users_taxonomy );
-
-			if ( ! is_wp_error( $term ) ) {
-				$user_terms[] = $name;
-			}
-		}
-		$set = wp_set_object_terms( $post->ID, $user_terms, $this->following_users_taxonomy, $append );
-
-		if ( is_wp_error( $set ) ) {
-			return $set;
-		} else {
-			return true;
-		}
-	}
-
-	/**
-	 * Removes user from following_users taxonomy for the given Post,
-	 * so they no longer receive future notifications.
-	 *
-	 * @param object             $post      Post object or ID
-	 * @param int|string|array   $users     One or more users to unfollow from the post
-	 * @return true|WP_Error     $response  True on success, WP_Error on failure
-	 */
-	public function unfollow_post_user( $post, $users ) {
-
-		$post = get_post( $post );
-		if ( ! $post ) {
-			return new WP_Error( 'missing-post', $this->module->messages['missing-post'] );
-		}
-
-		if ( ! is_array( $users ) ) {
-			$users = [ $users ];
-		}
-
-		$terms = get_the_terms( $post->ID, $this->following_users_taxonomy );
-		if ( is_wp_error( $terms ) ) {
-			return $terms;
-		}
-
-		$user_terms = wp_list_pluck( $terms, 'slug' );
-		foreach ( $users as $user ) {
-
-			if ( is_int( $user ) ) {
-				$user = get_user_by( 'id', $user );
-			} elseif ( is_string( $user ) ) {
-				$user = get_user_by( 'login', $user );
-			}
-
-			if ( ! is_object( $user ) ) {
-				continue;
-			}
-
-			$key = array_search( $user->user_login, $user_terms );
-			if ( false !== $key ) {
-				unset( $user_terms[ $key ] );
-			}
-		}
-		$set = wp_set_object_terms( $post->ID, $user_terms, $this->following_users_taxonomy, false );
-
-		if ( is_wp_error( $set ) ) {
-			return $set;
-		} else {
-			return true;
-		}
-	}
-
-	/**
-	 * follow_post_usergroups()
-	 *
-	 */
-	public function follow_post_usergroups( $post, $usergroups = 0, $append = true ) {
-
-		$post_id = ( is_int( $post ) ) ? $post : $post->ID;
-
-		if ( ! is_array( $usergroups ) ) {
-			$usergroups = [ $usergroups ];
-		}
-
-		// make sure each usergroup id is an integer and not a number stored as a string
-		foreach ( $usergroups as $key => $usergroup ) {
-			$usergroups[ $key ] = intval( $usergroup );
-		}
-
-		wp_set_object_terms( $post_id, $usergroups, $this->following_usergroups_taxonomy, $append );
-		return;
-	}
-
-	/**
-	 * Removes users that are deleted from receiving future notifications (i.e. makes them unfollow posts FOREVER!)
-	 *
-	 * @param $id int ID of the user
-	 */
-	public function delete_user_action( $id ) {
-		if ( ! $id ) {
-			return;
-		}
-
-		// get user data
-		$user = get_userdata( $id );
-
-		if ( $user ) {
-			// Delete term from the following_users taxonomy
-			$user_following_term = get_term_by( 'name', $user->user_login, $this->following_users_taxonomy );
-			if ( $user_following_term ) {
-				wp_delete_term( $user_following_term->term_id, $this->following_users_taxonomy );
-			}
-		}
-	}
-
-	/**
-	 * Add user as a term if they aren't already
-	 * @param $term string term to be added
-	 * @param $taxonomy string taxonomy to add term to
-	 * @return WP_error if insert fails, true otherwise
-	 */
-	public function add_term_if_not_exists( $term, $taxonomy ) {
-		if ( ! term_exists( $term, $taxonomy ) ) {
-			$args = [ 'slug' => sanitize_title( $term ) ];
-			return wp_insert_term( $term, $taxonomy, $args );
-		}
-		return true;
-	}
-
-	/**
-	 * Gets a list of the users following the specified post
-	 *
-	 * @param int $post_id The ID of the post
-	 * @param string $return The field to return
-	 * @return array $users Users following the specified posts
-	 */
-	public function get_following_users( $post_id, $return = 'user_login' ) {
-
-		// Get following_users terms for the post
-		$users = wp_get_object_terms( $post_id, $this->following_users_taxonomy, [ 'fields' => 'names' ] );
-
-		// Don't have any following users
-		if ( ! $users || is_wp_error( $users ) ) {
-			return [];
-		}
-
-		// if just want user_login, return as is
-		if ( 'user_login' == $return ) {
-			return $users;
-		}
-
-		foreach ( (array) $users as $key => $user ) {
-			switch ( $user ) {
-				case is_int( $user ):
-					$search = 'id';
-					break;
-				case is_email( $user ):
-					$search = 'email';
-					break;
-				default:
-					$search = 'login';
-					break;
-			}
-			$new_user = get_user_by( $search, $user );
-			if ( ! $new_user || ! is_user_member_of_blog( $new_user->ID ) ) {
-				unset( $users[ $key ] );
-				continue;
-			}
-			switch ( $return ) {
-				case 'user_login':
-					$users[ $key ] = $new_user->user_login;
-					break;
-				case 'id':
-					$users[ $key ] = $new_user->ID;
-					break;
-				case 'user_email':
-					$users[ $key ] = $new_user->user_email;
-					break;
-			}
-		}
-		if ( ! $users || is_wp_error( $users ) ) {
-			$users = [];
-		}
-		return $users;
-	}
-
-	/**
-	 * Gets a list of the usergroups that are following specified post
-	 *
-	 * @param int $post_id
-	 * @return array $usergroups All of the usergroup slugs
-	 */
-	public function get_following_usergroups( $post_id, $return = 'all' ) {
-		global $vip_workflow;
-
-		// Workaround for the fact that get_object_terms doesn't return just slugs
-		if ( 'slugs' == $return ) {
-			$fields = 'all';
-		} else {
-			$fields = $return;
-		}
-
-		$usergroups = wp_get_object_terms( $post_id, $this->following_usergroups_taxonomy, [ 'fields' => $fields ] );
-
-		if ( 'slugs' == $return ) {
-			$slugs = [];
-			foreach ( $usergroups as $usergroup ) {
-				$slugs[] = $usergroup->slug;
-			}
-			$usergroups = $slugs;
-		}
-		return $usergroups;
-	}
-
-	/**
-	 * Gets a list of posts that a user is following
-	 *
-	 * @param string|int $user user_login or id of user
-	 * @param array $args
-	 * @return array $posts Posts a user is following
-	 */
-	public function get_user_following_posts( $user = 0, $args = null ) {
-		if ( ! $user ) {
-			$user = (int) wp_get_current_user()->ID;
-		}
-
-		if ( is_int( $user ) ) {
-			$user = get_userdata( $user )->user_login;
-		}
-
-		$post_args = [
-			'tax_query'      => [
-				[
-					'taxonomy' => $this->following_users_taxonomy,
-					'field'    => 'slug',
-					'terms'    => $user,
-				],
-			],
-			'posts_per_page' => '10',
-			'orderby'        => 'modified',
-			'order'          => 'DESC',
-			'post_status'    => 'any',
-		];
-		$post_args = apply_filters( 'vw_user_following_posts_query_args', $post_args );
-		$posts     = get_posts( $post_args );
-		return $posts;
 	}
 
 	/**
@@ -1234,6 +458,8 @@ class Notifications extends Module {
 		// White list validation for the 'send_to_slack' option
 		if ( ! isset( $new_options['send_to_webhook'] ) || 'on' != $new_options['send_to_webhook'] ) {
 			$new_options['send_to_webhook'] = 'off';
+			// Reset the webhook URL if it's not turned on.
+			$new_options['webhook_url'] = '';
 		}
 
 		// White list validation for the 'slack_webhook_url' option
