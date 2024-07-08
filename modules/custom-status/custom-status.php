@@ -1161,8 +1161,6 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 
 		/**
 		 * Option for whether the publish guard feature should be enabled
-		 *
-		 * @since 0.7
 		 */
 		public function settings_publish_guard() {
 			$options = [
@@ -1703,8 +1701,6 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 
 		/**
 		 * Hide the publish button if the post is not in the final custom status
-		 *
-		 * @since 0.9.9
 		 */
 		public function hide_publish_button() {
 			global $post;
@@ -1722,8 +1718,6 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 
 		/**
 		 * Determines if the publish button should be hidden based on post custom status
-		 *
-		 * @since 0.9.9
 		 */
 		private function should_hide_publish_button( $post ) {
 			// Check next valid custom status

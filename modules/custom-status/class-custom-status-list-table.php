@@ -2,8 +2,6 @@
 
 /**
  * Custom Statuses uses WordPress' List Table API for generating the custom status management table
- *
- * @since 0.7
  */
 class VW_Custom_Status_List_Table extends WP_List_Table {
 
