@@ -34,5 +34,11 @@ module.exports = {
 		"no-unused-expressions": 0,
 		"no-alert": 0,
 		"no-lonely-if": 0,
+	},
+	"parser": "@babel/eslint-parser",
+	"parserOptions": {
+		"babelOptions": {
+			"presets": ["@babel/preset-react"]
+		},
 	}
 };

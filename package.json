@@ -25,6 +25,7 @@
   "homepage": "https://github.com/Automattic/vip-workflow-plugin#readme",
   "devDependencies": {
     "@automattic/eslint-plugin-wpvip": "0.11.0",
+    "@babel/preset-react": "^7.24.7",
     "@hello-pangea/dnd": "^16.6.0",
     "@wordpress/components": "^27.6.0",
     "@wordpress/compose": "^7.2.0",
