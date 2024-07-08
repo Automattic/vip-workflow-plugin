@@ -1,5 +1,7 @@
 <?php
 
+namespace VIPWorkflow\Modules\CustomStatus;
+
 defined( 'ABSPATH' ) || exit();
 
 // phpcs:disable:WordPress.Security.NonceVerification.Missing -- Disabling nonce verification because that is not available here, it's just rendering it. The actual save is done in helper_settings_validate_and_save and that's guarded well.
