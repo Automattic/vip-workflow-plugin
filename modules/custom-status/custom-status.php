@@ -6,6 +6,8 @@
 
 namespace VIPWorkflow\Modules;
 
+include_once __DIR__ . '/class-custom-status-list-table.php'; // autoloading doesn't seem to be working for this file
+
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
 use VIPWorkflow\Modules\Custom_Status_List_Table;

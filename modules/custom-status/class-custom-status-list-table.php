@@ -3,7 +3,11 @@
 /**
  * Custom Statuses uses WordPress' List Table API for generating the custom status management table
  */
-class VW_Custom_Status_List_Table extends WP_List_Table {
+namespace VIPWorkflow\Modules;
+
+use WP_List_Table;
+
+class Custom_Status_List_Table extends WP_List_Table {
 
 	protected $callback_args;
 	protected $default_status;
