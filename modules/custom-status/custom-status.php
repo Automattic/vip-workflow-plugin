@@ -1674,12 +1674,12 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 		}
 
 		/**
-		 * Given a post ID, return true if the extended post status allows for publishing.
+		 * Given a post ID, return true if the custom post status indicates the post should be blocked from publishing, or false otherwise.
 		 *
 		 * @param int $post_id The post ID being queried.
-		 * @return bool True if the post is publishable based on the extended post status, or false otherwise.
+		 * @return bool True if the post should not be published based on the extended post status, false otherwise.
 		 */
-		public function workflow_is_publishable( $post_id ) {
+		public function workflow_is_publish_blocked( $post_id ) {
 			$post = get_post( $post_id );
 
 			if ( null === $post ) {
@@ -1694,14 +1694,10 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 				return false;
 			}
 
-			$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
+			$status_before_publish     = $custom_statuses[ array_key_last( $custom_statuses ) ];
+			$is_in_final_custom_status = $status_before_publish->slug === $post->post_status;
 
-			if ( $status_before_publish->slug == $post->post_status ) {
-				// Post is in the last status, so it can be published
-				return true;
-			} else {
-				return false;
-			}
+			return ! $is_in_final_custom_status;
 		}
 	}
 }
