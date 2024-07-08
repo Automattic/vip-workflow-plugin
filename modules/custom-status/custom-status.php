@@ -44,7 +44,7 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 						'post' => 'on',
 						'page' => 'on',
 					],
-					'publish_guard'        => 'on',
+					'publish_guard'        => 'off', // TODO: should default this to 'on' once everything hbeen implemented
 				],
 				'post_type_support'     => 'vw_custom_statuses', // This has been plural in all of our docs
 				'configure_page_cb'     => 'print_configure_view',
