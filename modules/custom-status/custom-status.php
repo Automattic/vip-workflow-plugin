@@ -1648,7 +1648,7 @@ class Custom_Status extends Module {
 	public function hide_publish_button() {
 		global $post;
 
-		if ( $this->should_hide_publish_button( $post ) ) {
+		if ( ! $this->workflow_is_publishable( $post->ID ) ) {
 			?>
 			<style>
 				.edit-post-header__settings .components-button.editor-post-publish-panel__toggle {
@@ -1659,10 +1659,35 @@ class Custom_Status extends Module {
 		}
 	}
 
-	private function should_hide_publish_button( $post ) {
-		// Check next valid custom status
-		// get_next_valid_status( $post->ID );
-		return true;
+	/**
+	 * Given a post ID, return true if the extended post status allows for publishing.
+	 *
+	 * @param int $post_id The post ID being queried.
+	 * @return bool True if the post is publishable based on the extended post status, or false otherwise.
+	 */
+	public function workflow_is_publishable( $post_id ) {
+		$post = get_post( $post_id );
+
+		if ( null === $post ) {
+			return false;
+		}
+
+		$custom_statuses = $this->get_custom_statuses();
+		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
+
+		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+			// Post is not using a custom status, or is not a supported post type
+			return false;
+		}
+
+		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
+
+		if ( $status_before_publish->slug == $post->post_status ) {
+			// Post is in the last status, so it can be published
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
 
