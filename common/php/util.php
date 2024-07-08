@@ -1,5 +1,7 @@
 <?php
 
+namespace VIPWorkflow\Common\PHP;
+
 if ( ! function_exists( 'vw_draft_or_post_title' ) ) :
 	/**
 	 * Copy of core's _draft_or_post_title without the filters
