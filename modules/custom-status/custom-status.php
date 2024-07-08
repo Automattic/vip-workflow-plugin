@@ -269,7 +269,7 @@ if ( ! class_exists( 'VW_Custom_Status' ) ) {
 		 * - We have other custom code for Quick Edit and JS niceties
 		 */
 		public function action_admin_enqueue_scripts() {
-			// Load Javascript we need to use on the configuration views (jQuery Sortable and Quick Edit)
+			// Load Javascript we need to use on the configuration views
 			if ( $this->is_whitelisted_settings_view( $this->module->name ) ) {
 				$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
 				$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'jquery-ui-sortable', 'vip-workflow-settings-js' ];

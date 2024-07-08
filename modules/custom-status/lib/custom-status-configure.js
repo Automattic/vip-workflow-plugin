@@ -20,6 +20,8 @@ if ( module.hot ) {
 	module.hot.accept();
 }
 
+// ToDo: Ensure the prior jQuery edit functionality is replicated in React
+
 // ( function ( $ ) {
 // 	const inlineEditCustomStatus = {
 // 		init() {
