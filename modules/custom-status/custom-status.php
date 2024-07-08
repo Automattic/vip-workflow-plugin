@@ -254,7 +254,7 @@ class Custom_Status extends Module {
 		// Load Javascript we need to use on the configuration views
 		if ( $this->is_whitelisted_settings_view( $this->module->name ) ) {
 			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
-			$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'jquery-ui-sortable', 'vip-workflow-settings-js' ];
+			$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'jquery-ui-sortable' ];
 			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $dependencies, $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 

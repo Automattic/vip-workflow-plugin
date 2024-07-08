@@ -47,6 +47,7 @@ export default function WorkflowArrow( { start, end, referenceDimensions } ) {
 	);
 }
 
+// Given a reference to a DOM element, hook and return the [ width, height ] of the element
 export function useRefDimensions( ref ) {
 	const [ width, setWidth ] = useState( 0 );
 	const [ height, setHeight ] = useState( 0 );
@@ -78,41 +79,43 @@ export function useRefDimensions( ref ) {
 	return [ width, height ];
 }
 
+// Given a canvas context, draw an arrow from the top to the bottom of the canvas, pointing down
 function drawArrow( context, width, height ) {
+	// Arrow properties
+	const arrowWidthPx = 4;
+	const headLengthPx = 10;
+	const headAngle = Math.PI / 6; // 30 degrees
+
+	// Set (x0, y0) to 20px below the top center of the canvas
 	const x0 = width / 2;
 	const y0 = 20;
+
+	// Set (x1, y1) to 20px above the bottom center of the canvas
 	let x1 = width / 2;
 	let y1 = height - 20;
 
-	const arrowWidth = 4;
-	const headLength = 10;
-	const headAngle = Math.PI / 6;
+	// Adjust point upward to account for the arrow width
 	const angle = Math.atan2( y1 - y0, x1 - x0 );
+	x1 -= arrowWidthPx * Math.cos( angle );
+	y1 -= arrowWidthPx * Math.sin( angle );
 
-	context.beginPath();
-
-	// Adjust point
-	x1 -= arrowWidth * Math.cos( angle );
-	y1 -= arrowWidth * Math.sin( angle );
-
-	// Draw line
+	// Draw line part of arrow
 	context.beginPath();
 	context.moveTo( x0, y0 );
 	context.lineTo( x1, y1 );
-
-	context.lineWidth = arrowWidth;
+	context.lineWidth = arrowWidthPx;
 	context.stroke();
 
 	// Draw arrow head
 	context.beginPath();
 	context.lineTo( x1, y1 );
 	context.lineTo(
-		x1 - headLength * Math.cos( angle - headAngle ),
-		y1 - headLength * Math.sin( angle - headAngle )
+		x1 - headLengthPx * Math.cos( angle - headAngle ),
+		y1 - headLengthPx * Math.sin( angle - headAngle )
 	);
 	context.lineTo(
-		x1 - headLength * Math.cos( angle + headAngle ),
-		y1 - headLength * Math.sin( angle + headAngle )
+		x1 - headLengthPx * Math.cos( angle + headAngle ),
+		y1 - headLengthPx * Math.sin( angle + headAngle )
 	);
 	context.closePath();
 	context.fillStyle = 'black';
