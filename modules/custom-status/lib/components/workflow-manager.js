@@ -130,6 +130,8 @@ function updateCustomStatusOrder( reorderedItems ) {
 	};
 	// Inform WordPress of our updated positions
 	jQuery.post( VW_CUSTOM_STATUS_CONFIGURE.ajax_url, params, function ( retval ) {
+		// ToDo: Ensure there's a message shown to the user on success/failure. Use Gutenberg Snackbar/Notice components?
+
 		// jQuery( '.edit-flow-admin .edit-flow-message' ).remove();
 		// If there's a success message, print it. Otherwise we assume we received an error message
 		if ( retval.status == 'success' ) {
@@ -139,6 +141,7 @@ function updateCustomStatusOrder( reorderedItems ) {
 			var message =
 				'<span class="edit-flow-error-message edit-flow-message">' + retval.message + '</span>';
 		}
+
 		// jQuery( '.edit-flow-admin h2' ).append( message );
 		// // Set a timeout to eventually remove it
 		// setTimeout( edit_flow_hide_message, 8000 );
