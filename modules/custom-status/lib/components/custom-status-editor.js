@@ -1,9 +1,9 @@
 import {
+	Button,
 	Card,
-	CardHeader,
 	CardBody,
 	CardFooter,
-	Button,
+	CardHeader,
 	TextControl,
 	TextareaControl,
 } from '@wordpress/components';
@@ -28,8 +28,6 @@ export default function CustomStatusEditor( { status, isNew, onCancel } ) {
 	} else {
 		saveButtonText = sprintf( __( 'Update Status', 'vip-workflow' ), status.name );
 	}
-
-	console.log( 'status:', status );
 
 	return (
 		<Card className="custom-status-editor">
