@@ -1,12 +1,6 @@
 require( '@automattic/eslint-plugin-wpvip/init' );
 
 module.exports = {
-	parser: '@babel/eslint-parser',
-	parserOptions: {
-		babelOptions: {
-			presets: [ '@wordpress/babel-preset-default', '@babel/preset-react' ],
-		},
-	},
 	extends: [ 'plugin:@automattic/wpvip/recommended' ],
 	root: true,
 	env: {
@@ -29,5 +23,11 @@ module.exports = {
 		'no-unused-vars': 0,
 		'prefer-const': 0,
 		'id-length': 0,
+	},
+	parser: '@babel/eslint-parser',
+	parserOptions: {
+		babelOptions: {
+			presets: [ '@babel/preset-react' ],
+		},
 	},
 };

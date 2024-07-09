@@ -1,9 +1,9 @@
 import {
+	Button,
 	Card,
-	CardHeader,
 	CardBody,
 	CardFooter,
-	Button,
+	CardHeader,
 	TextControl,
 	TextareaControl,
 } from '@wordpress/components';
