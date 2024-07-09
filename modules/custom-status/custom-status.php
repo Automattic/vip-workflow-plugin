@@ -28,13 +28,13 @@ class Custom_Status extends Module {
 		$this->module_url = $this->get_module_url( __FILE__ );
 		// Register the module with VIP Workflow
 		$args         = [
-			'title'                 => __( 'Custom Statuses', 'vip-workflow' ),
-			'short_description'     => __( 'Create custom post statuses to define the stages of your workflow.', 'vip-workflow' ),
-			'extended_description'  => __( 'Create your own post statuses to add structure your publishing workflow. You can change existing or add new ones anytime, and drag and drop to change their order.', 'vip-workflow' ),
-			'module_url'            => $this->module_url,
-			'img_url'               => $this->module_url . 'lib/custom_status_s128.png',
-			'slug'                  => 'custom-status',
-			'default_options'       => [
+			'title'                => __( 'Custom Statuses', 'vip-workflow' ),
+			'short_description'    => __( 'Create custom post statuses to define the stages of your workflow.', 'vip-workflow' ),
+			'extended_description' => __( 'Create your own post statuses to add structure your publishing workflow. You can change existing or add new ones anytime, and drag and drop to change their order.', 'vip-workflow' ),
+			'module_url'           => $this->module_url,
+			'img_url'              => $this->module_url . 'lib/custom_status_s128.png',
+			'slug'                 => 'custom-status',
+			'default_options'      => [
 				'default_status'       => 'pitch',
 				'always_show_dropdown' => 'off',
 				'post_types'           => [
@@ -42,10 +42,10 @@ class Custom_Status extends Module {
 					'page' => 'on',
 				],
 			],
-			'post_type_support'     => 'vw_custom_statuses', // This has been plural in all of our docs
-			'configure_page_cb'     => 'print_configure_view',
-			'configure_link_text'   => __( 'Edit Statuses', 'vip-workflow' ),
-			'messages'              => [
+			'post_type_support'    => 'vw_custom_statuses', // This has been plural in all of our docs
+			'configure_page_cb'    => 'print_configure_view',
+			'configure_link_text'  => __( 'Edit Statuses', 'vip-workflow' ),
+			'messages'             => [
 				'status-added'            => __( 'Post status created.', 'vip-workflow' ),
 				'status-missing'          => __( "Post status doesn't exist.", 'vip-workflow' ),
 				'default-status-changed'  => __( 'Default post status has been changed.', 'vip-workflow' ),
@@ -53,7 +53,7 @@ class Custom_Status extends Module {
 				'status-deleted'          => __( 'Post status deleted.', 'vip-workflow' ),
 				'status-position-updated' => __( 'Status order updated.', 'vip-workflow' ),
 			],
-			'autoload'              => true,
+			'autoload'             => true,
 		];
 		$this->module = VIP_Workflow::instance()->register_module( 'custom_status', $args );
 	}
@@ -248,25 +248,30 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Enqueue Javascript resources that we need in the admin:
-	 * - Primary use of Javascript is to manipulate the post status dropdown on Edit Post and Manage Posts
-	 * - jQuery Sortable plugin is used for drag and dropping custom statuses
-	 * - We have other custom code for Quick Edit and JS niceties
+	 * Enqueue resources that we need in the admin settings page
 	 */
 	public function action_admin_enqueue_scripts() {
-		// Load Javascript we need to use on the configuration views (jQuery Sortable and Quick Edit)
+		// Load Javascript we need to use on the configuration views
 		if ( $this->is_whitelisted_settings_view( $this->module->name ) ) {
-			wp_enqueue_script( 'jquery-ui-sortable' );
-			wp_enqueue_script( 'vip-workflow-custom-status-configure', $this->module_url . 'lib/custom-status-configure.js', [ 'jquery', 'jquery-ui-sortable', 'vip-workflow-settings-js' ], VIP_WORKFLOW_VERSION, true );
+			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
+			$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'jquery-ui-sortable' ];
+			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $dependencies, $asset_file['version'], true );
+			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
-			wp_localize_script( 'vip-workflow-custom-status-configure', '__vw_localize_custom_status_configure', [
+			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
+				'ajax_url'             => admin_url( 'admin-ajax.php' ),
+				'custom_statuses'      => array_values( $this->get_custom_statuses() ),
 				'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
+				'reorder_nonce'        => wp_create_nonce( 'custom-status-sortable' ),
 			] );
 		}
 
 		// Custom javascript to modify the post status dropdown where it shows up
 		if ( $this->is_whitelisted_page() ) {
-			wp_enqueue_script( 'vip_workflow-custom_status', $this->module_url . 'lib/custom-status.js', [ 'jquery', 'post' ], VIP_WORKFLOW_VERSION, true );
+			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status.asset.php';
+			$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'post' ];
+			wp_enqueue_script( 'vip_workflow-custom_status', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status.js', $dependencies, $asset_file['version'], true );
+
 			wp_localize_script('vip_workflow-custom_status', '__vw_localize_custom_status', [
 				'no_change' => esc_html__( '&mdash; No Change &mdash;', 'vip-workflow' ),
 				'published' => esc_html__( 'Published', 'vip-workflow' ),
@@ -280,17 +285,17 @@ class Custom_Status extends Module {
 	}
 
 	public function load_scripts_for_block_editor() {
-		global $post;
+		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
+		wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-		wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/custom-status.build.js', [ 'wp-blocks', 'wp-element', 'wp-edit-post', 'wp-plugins', 'wp-components' ], VIP_WORKFLOW_VERSION );
-
-		$custom_statuses = apply_filters( 'vw_custom_status_list', $this->get_custom_statuses(), $post );
-
-		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', array_values( $custom_statuses ) );
+		$custom_statuses = array_values( $this->get_custom_statuses() );
+		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', $custom_statuses );
 	}
 
 	public function load_styles_for_block_editor() {
-		wp_enqueue_style( 'vip-workflow-block-custom-status-styles', VIP_WORKFLOW_URL . 'dist/custom-status.editor.build.css', false, VIP_WORKFLOW_VERSION );
+		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
+
+		wp_enqueue_style( 'edit-flow-workflow-manager-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.css', [ 'wp-components' ], $asset_file['version'] );
 	}
 
 	/**
@@ -355,8 +360,6 @@ class Custom_Status extends Module {
 					}
 				}
 			}
-
-			$custom_statuses = apply_filters( 'vw_custom_status_list', $custom_statuses, $post );
 
 			// All right, we want to set up the JS var which contains all custom statuses
 			$all_statuses = [];
@@ -540,20 +543,16 @@ class Custom_Status extends Module {
 	 * Get all custom statuses as an ordered array
 	 *
 	 * @param array|string $statuses
-	 * @param array $args
 	 * @return array $statuses All of the statuses
 	 */
-	public function get_custom_statuses( $args = [] ) {
-		global $wp_post_statuses;
-
+	public function get_custom_statuses() {
 		if ( $this->disable_custom_statuses_for_post_type() ) {
 			return $this->get_core_post_statuses();
 		}
 
 		// Internal object cache for repeat requests
-		$arg_hash = md5( serialize( $args ) );
-		if ( ! empty( $this->custom_statuses_cache[ $arg_hash ] ) ) {
-			return $this->custom_statuses_cache[ $arg_hash ];
+		if ( ! empty( $this->custom_statuses_cache ) ) {
+			return $this->custom_statuses_cache;
 		}
 
 		// Handle if the requested taxonomy doesn't exist
@@ -596,8 +595,7 @@ class Custom_Status extends Module {
 			$ordered_statuses[] = $unpositioned_status;
 		}
 
-		$this->custom_statuses_cache[ $arg_hash ] = $ordered_statuses;
-
+		$this->custom_statuses_cache = $ordered_statuses;
 		return $ordered_statuses;
 	}
 
@@ -1145,7 +1143,7 @@ class Custom_Status extends Module {
 	 */
 	public function print_configure_view() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- No verification required for unprivileged URL check.
-		$action = isset( $_GET['action'] ) && in_array( $_GET['action'], [ 'edit-status', 'change-options' ] ) ? $_GET['action'] : '';
+		$action = isset( $_GET['action'] ) && in_array( $_GET['action'], [ 'edit-status', 'change-options', 'manage-workflow' ] ) ? $_GET['action'] : '';
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- No verification required for unprivileged URL check.
 		$term_id = isset( $_GET['term-id'] ) ? absint( $_GET['term-id'] ) : false;
@@ -1175,6 +1173,8 @@ class Custom_Status extends Module {
 			}
 
 			include_once __DIR__ . '/views/edit-status.php';
+		} elseif ( 'manage-workflow' === $action ) {
+			include_once __DIR__ . '/views/manage-workflow.php';
 		} else {
 			$custom_status_list_table = new Custom_Status_List_Table();
 			$custom_status_list_table->prepare_items();
@@ -1609,6 +1609,33 @@ class Custom_Status extends Module {
 		/* translators: %s: post title */
 		$actions['view'] = '<a href="' . esc_url( $preview_link ) . '" title="' . esc_attr( sprintf( __( 'Preview &#8220;%s&#8221;' ), $post->post_title ) ) . '" rel="permalink">' . __( 'Preview' ) . '</a>';
 		return $actions;
+	}
+
+	/**
+	 * Given a post ID, return true if the custom post status indicates the post should be blocked from publishing, or false otherwise.
+	 *
+	 * @param int $post_id The post ID being queried.
+	 * @return bool True if the post should not be published based on the extended post status, false otherwise.
+	 */
+	public function workflow_is_publish_blocked( $post_id ) {
+		$post = get_post( $post_id );
+
+		if ( null === $post ) {
+			return false;
+		}
+
+		$custom_statuses = $this->get_custom_statuses();
+		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
+
+		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+			// Post is not using a custom status, or is not a supported post type
+			return false;
+		}
+
+		$status_before_publish     = $custom_statuses[ array_key_last( $custom_statuses ) ];
+		$is_in_final_custom_status = $status_before_publish->slug === $post->post_status;
+
+		return ! $is_in_final_custom_status;
 	}
 }
 

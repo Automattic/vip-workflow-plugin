@@ -1,0 +1,68 @@
+.workflow-manager {
+	display: flex;
+}
+
+.status-section {
+	margin: 4.5rem 2rem 0 1rem;
+}
+
+.status-container {
+	padding: 8px;
+	min-width: 16rem;
+	height: fit-content;
+	border: 1px solid #c3c4c7;
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.custom-status-item {
+	display: flex;
+	cursor: move;
+	padding: 16px 4px 16px 16px;
+	margin: 0 0 8px 0;
+	border: 1px solid #c3c4c7;
+	user-select: none;
+	align-items: center;
+
+	.name {
+		flex-grow: 1;
+	}
+
+	.edit {
+		margin: 0 1rem;
+		visibility: hidden;
+	}
+
+	.drag-handle {
+		visibility: hidden;
+		fill: #777;
+	}
+
+	&.dragging {
+		.drag-handle {
+			visibility: visible;
+		}
+	}
+
+	&:hover {
+		.drag-handle {
+			visibility: visible;
+		}
+
+		.edit {
+			visibility: visible;
+		}
+	}
+}
+
+.add-status {
+	text-align: right;
+	margin-top: 0.5rem;
+}
+
+.custom-status-editor {
+	max-width: 40rem;
+
+	.components-base-control:not(:last-child) {
+		margin-bottom: 1rem;
+	}
+}

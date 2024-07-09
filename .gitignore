@@ -8,3 +8,7 @@ vendor
 # Test files
 .phpunit.result.cache
 artifacts/
+
+# Build files
+*.hot-update.js
+*.hot-update.json
