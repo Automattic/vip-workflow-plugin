@@ -6,8 +6,12 @@
 
 namespace VIPWorkflow\Modules;
 
+require_once __DIR__ . '/rest/edit-status.php';
+
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\CustomStatus\REST\EditStatus;
+use WP_Error;
 use WP_List_Table;
 use function VIPWorkflow\Common\PHP\_vw_wp_link_page;
 
@@ -109,6 +113,9 @@ class Custom_Status extends Module {
 
 		// Pagination for custom post statuses when previewing posts
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
+
+		// REST endpoints
+		EditStatus::init();
 	}
 
 	/**
@@ -259,10 +266,11 @@ class Custom_Status extends Module {
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'ajax_url'             => admin_url( 'admin-ajax.php' ),
 				'custom_statuses'      => array_values( $this->get_custom_statuses() ),
 				'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
-				'reorder_nonce'        => wp_create_nonce( 'custom-status-sortable' ),
+				'nonce_reorder'        => wp_create_nonce( 'custom-status-sortable' ),
+				'url_ajax'             => admin_url( 'admin-ajax.php' ),
+				'url_edit_status'      => EditStatus::get_url(),
 			] );
 		}
 
@@ -494,6 +502,9 @@ class Custom_Status extends Module {
 
 		$updated_status_array = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
 		$updated_status       = $this->get_custom_status_by( 'id', $updated_status_array['term_id'] );
+
+		// Reset status cache again, as reassign_post_status() will recache prior statuses
+		$this->custom_statuses_cache = [];
 
 		return $updated_status;
 	}
@@ -1865,5 +1876,9 @@ class Custom_Status_List_Table extends WP_List_Table {
 		</td></tr>
 		</tbody></table></form>
 		<?php
+	}
+
+	public function register_rest_endpoints() {
+		EditStatus::init();
 	}
 }

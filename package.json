@@ -23,6 +23,7 @@
     "@automattic/eslint-plugin-wpvip": "^0.13.0",
     "@babel/preset-react": "^7.24.7",
     "@hello-pangea/dnd": "^16.6.0",
+    "@wordpress/api-fetch": "^7.2.0",
     "@wordpress/components": "^27.6.0",
     "@wordpress/compose": "^7.2.0",
     "@wordpress/data": "^10.2.0",

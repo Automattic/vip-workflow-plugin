@@ -9,7 +9,7 @@ import DraggableCustomStatus from './draggable-custom-status';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 
 export default function WorkflowManager( { customStatuses } ) {
-	const [ items, setItems ] = useState( customStatuses );
+	const [ statuses, setStatuses ] = useState( customStatuses );
 
 	const [ editStatus, setEditStatus ] = useState( null );
 	const [ isNewStatus, setIsNewStatus ] = useState( false );
@@ -31,14 +31,20 @@ export default function WorkflowManager( { customStatuses } ) {
 		setEditStatus( null );
 	};
 
+	const handleStatusesUpdated = newStatuses => {
+		// ToDo: Show a success message
+		setStatuses( newStatuses );
+		setEditStatus( null );
+	};
+
 	const onDragEnd = result => {
 		// Dropped outside the list
 		if ( ! result.destination ) {
 			return;
 		}
 
-		const reorderedItems = reorder( items, result.source.index, result.destination.index );
-		setItems( reorderedItems );
+		const reorderedItems = reorder( statuses, result.source.index, result.destination.index );
+		setStatuses( reorderedItems );
 		updateCustomStatusOrder( reorderedItems );
 	};
 
@@ -65,7 +71,7 @@ export default function WorkflowManager( { customStatuses } ) {
 										} }
 										style={ getListStyle( snapshot.isDraggingOver ) }
 									>
-										{ items.map( ( item, index ) => (
+										{ statuses.map( ( item, index ) => (
 											<Draggable
 												key={ item.term_id }
 												draggableId={ `${ item.term_id }` }
@@ -102,6 +108,7 @@ export default function WorkflowManager( { customStatuses } ) {
 						status={ editStatus }
 						isNew={ isNewStatus }
 						onCancel={ handleCancelEditStatus }
+						onStatusesUpdated={ handleStatusesUpdated }
 					/>
 				) }
 			</FlexBlock>
@@ -126,10 +133,10 @@ function updateCustomStatusOrder( reorderedItems ) {
 	const params = {
 		action: 'update_status_positions',
 		status_positions: reorderedItems.map( item => item.term_id ),
-		custom_status_sortable_nonce: VW_CUSTOM_STATUS_CONFIGURE.reorder_nonce,
+		custom_status_sortable_nonce: VW_CUSTOM_STATUS_CONFIGURE.nonce_reorder,
 	};
 	// Inform WordPress of our updated positions
-	jQuery.post( VW_CUSTOM_STATUS_CONFIGURE.ajax_url, params, function ( retval ) {
+	jQuery.post( VW_CUSTOM_STATUS_CONFIGURE.url_ajax, params, function ( retval ) {
 		// ToDo: Ensure there's a message shown to the user on success/failure. Use Gutenberg Snackbar/Notice components?
 
 		// jQuery( '.edit-flow-admin .edit-flow-message' ).remove();

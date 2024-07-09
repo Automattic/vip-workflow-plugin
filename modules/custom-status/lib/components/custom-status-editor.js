@@ -1,3 +1,4 @@
+import apiFetch from '@wordpress/api-fetch';
 import {
 	Card,
 	CardHeader,
@@ -11,7 +12,7 @@ import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect } from 'react';
 
-export default function CustomStatusEditor( { status, isNew, onCancel } ) {
+export default function CustomStatusEditor( { status, isNew, onCancel, onStatusesUpdated } ) {
 	const [ name, setName ] = useState( status?.name || '' );
 	const [ slug, setSlug ] = useState( status?.slug || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
@@ -35,6 +36,32 @@ export default function CustomStatusEditor( { status, isNew, onCancel } ) {
 	} else {
 		saveButtonText = sprintf( __( 'Update Status', 'vip-workflow' ), status.name );
 	}
+
+	const handleSave = async () => {
+		let data = {
+			name,
+			description,
+		};
+
+		if ( ! isNew ) {
+			data.status_id = status.term_id;
+		}
+
+		let result;
+
+		try {
+			result = await apiFetch( {
+				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status,
+				method: 'POST',
+				data,
+			} );
+		} catch ( error ) {
+			// ToDo: Ensure this turns into a UI status update
+			console.error( 'Error saving status:', error );
+		}
+
+		onStatusesUpdated( result.updated_statuses );
+	};
 
 	return (
 		<Card className="custom-status-editor">
@@ -80,7 +107,9 @@ export default function CustomStatusEditor( { status, isNew, onCancel } ) {
 				<Button variant="secondary" onClick={ onCancel }>
 					{ __( 'Cancel', 'vip-workflow' ) }
 				</Button>
-				<Button variant="primary">{ saveButtonText }</Button>
+				<Button variant="primary" onClick={ handleSave }>
+					{ saveButtonText }
+				</Button>
 			</CardFooter>
 		</Card>
 	);
