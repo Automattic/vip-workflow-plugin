@@ -4,11 +4,11 @@ jQuery( document ).ready( function () {
 	jQuery( 'label[for=post_status]' ).show();
 	jQuery( '#post-status-display' ).show();
 
-	if ( jQuery( 'select[name="_status"]' ).length == 0 ) {
+	if ( jQuery( 'select[name="_status"]' ).length === 0 ) {
 		// not on quick edit
 		if (
 			current_user_can_publish_posts ||
-			( current_status == 'publish' && current_user_can_edit_published_posts )
+			( current_status === 'publish' && current_user_can_edit_published_posts )
 		) {
 			// show publish button if allowed to publish
 			jQuery( '#publish' ).show();
@@ -120,7 +120,7 @@ jQuery( document ).ready( function () {
 			.remove();
 
 		// Add "Published" status to quick-edit for users that can publish
-		if ( id == 'select[name="_status"]' && current_user_can_publish_posts ) {
+		if ( id === 'select[name="_status"]' && current_user_can_publish_posts ) {
 			jQuery( id ).append(
 				jQuery( '<option></option' ).attr( 'value', 'publish' ).text( i18n.published )
 			);
@@ -128,11 +128,11 @@ jQuery( document ).ready( function () {
 
 		// Add remaining statuses to dropdown. 'private' is always handled by a checkbox, and 'future' already exists if we need it
 		jQuery.each( custom_statuses, function () {
-			if ( this.slug == 'private' || this.slug == 'future' ) {
+			if ( this.slug === 'private' || this.slug === 'future' ) {
 				return;
 			}
 
-			if ( current_status != 'publish' && this.slug == 'publish' ) {
+			if ( current_status !== 'publish' && this.slug === 'publish' ) {
 				return;
 			}
 
@@ -140,7 +140,7 @@ jQuery( document ).ready( function () {
 				.text( this.name )
 				.attr( 'value', this.slug )
 				.attr( 'title', this.description ? this.description : '' );
-			if ( current_status == this.slug ) {
+			if ( current_status === this.slug ) {
 				$option.attr( 'selected', 'selected' );
 			}
 
@@ -152,11 +152,11 @@ jQuery( document ).ready( function () {
 		let change = false;
 
 		jQuery.each( custom_statuses, function () {
-			if ( this.slug == slug ) {
+			if ( this.slug === slug ) {
 				change = true;
 			}
 		} );
-		if ( slug == 'publish' && ! current_user_can_publish_posts ) {
+		if ( slug === 'publish' && ! current_user_can_publish_posts ) {
 			change = false;
 		}
 		return change;
@@ -180,7 +180,7 @@ jQuery( document ).ready( function () {
 	function vw_get_status_name( slug ) {
 		let name = '';
 		jQuery.each( custom_statuses, function () {
-			if ( this.slug == slug ) {
+			if ( this.slug === slug ) {
 				name = this.name;
 			}
 		} );

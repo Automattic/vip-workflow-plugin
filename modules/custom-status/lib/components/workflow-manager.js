@@ -1,6 +1,6 @@
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Button, Flex, FlexItem, FlexBlock } from '@wordpress/components';
-import { useState, useRef } from '@wordpress/element';
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
+import { Button, Flex, FlexBlock, FlexItem } from '@wordpress/components';
+import { useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { plusCircle } from '@wordpress/icons';
 
@@ -134,11 +134,11 @@ function updateCustomStatusOrder( reorderedItems ) {
 
 		// jQuery( '.edit-flow-admin .edit-flow-message' ).remove();
 		// If there's a success message, print it. Otherwise we assume we received an error message
-		if ( retval.status == 'success' ) {
-			var message =
+		if ( retval.status === 'success' ) {
+			let message =
 				'<span class="edit-flow-updated-message edit-flow-message">' + retval.message + '</span>';
 		} else {
-			var message =
+			let message =
 				'<span class="edit-flow-error-message edit-flow-message">' + retval.message + '</span>';
 		}
 

@@ -11,7 +11,7 @@
     "dev": "webpack --watch",
     "dev:hot": "wp-scripts start -c webpack.config.js --hot",
     "wp-env": "wp-env",
-    "lint-js": "eslint --quiet modules"
+    "lint-js": "eslint modules"
   },
   "repository": {
     "type": "git",
@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/Automattic/vip-workflow-plugin#readme",
   "devDependencies": {
-    "@automattic/eslint-plugin-wpvip": "0.11.0",
+    "@automattic/eslint-plugin-wpvip": "^0.13.0",
     "@babel/preset-react": "^7.24.7",
     "@hello-pangea/dnd": "^16.6.0",
     "@wordpress/components": "^27.6.0",
@@ -44,7 +44,7 @@
     "@wordpress/scripts": "^27.9.0",
     "@wordpress/url": "^3.59.0",
     "clsx": "^2.1.1",
-    "eslint": "8.56.0",
+    "eslint": "^8.56.0",
     "glob": "^10.4.2",
     "prettier": "npm:wp-prettier@2.8.5",
     "webpack": "^5.91.0",

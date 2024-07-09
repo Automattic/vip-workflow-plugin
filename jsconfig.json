@@ -1,9 +1,10 @@
 
 {
 	"compilerOptions": {
-		"module": "ES6",
+		"module": "nodenext",
 		"jsx": "preserve",
-		"checkJs": true
+		"checkJs": true,
+		"moduleResolution": "nodenext",
 	},
-	"include": ["modules/**/*.js"]
+	"exclude": [ "node_modules" ],
 }
