@@ -1,5 +1,6 @@
 const defaultScriptsConfig = require( '@wordpress/scripts/config/webpack.config' );
 const glob = require( 'glob' );
+require( 'dotenv' ).config();
 
 const wpScriptsModules = [ 'custom-status' ];
 const wpScriptsModulesGlob =
