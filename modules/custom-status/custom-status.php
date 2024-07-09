@@ -111,10 +111,6 @@ class Custom_Status extends Module {
 		add_filter( 'post_row_actions', [ $this, 'fix_post_row_actions' ], 10, 2 );
 		add_filter( 'page_row_actions', [ $this, 'fix_post_row_actions' ], 10, 2 );
 
-		if ( 'on' === $this->module->options->publish_guard ) {
-			add_action( 'admin_head', [ $this, 'hide_publish_button' ] );
-		}
-
 		// Pagination for custom post statuses when previewing posts
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
 	}
@@ -399,6 +395,7 @@ class Custom_Status extends Module {
 			}
 
 			$always_show_dropdown = ( 'on' == $this->module->options->always_show_dropdown ) ? 1 : 0;
+			$publish_guard_enabled = ( 'on' == $this->module->options->publish_guard ) ? 1 : 0;
 
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
 
@@ -412,6 +409,7 @@ class Custom_Status extends Module {
 				var status_dropdown_visible = <?php echo esc_js( $always_show_dropdown ); ?>;
 				var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
 				var current_user_can_edit_published_posts = <?php echo current_user_can( $post_type_obj->cap->edit_published_posts ) ? 1 : 0; ?>;
+				const vw_publish_guard_enabled = <?php echo esc_js( $publish_guard_enabled ); ?>;
 			</script>
 
 				<?php
@@ -1639,28 +1637,6 @@ class Custom_Status extends Module {
 		/* translators: %s: post title */
 		$actions['view'] = '<a href="' . esc_url( $preview_link ) . '" title="' . esc_attr( sprintf( __( 'Preview &#8220;%s&#8221;' ), $post->post_title ) ) . '" rel="permalink">' . __( 'Preview' ) . '</a>';
 		return $actions;
-	}
-
-	/**
-	 * Hide the publish button if the post is not in the final custom status
-	 */
-	public function hide_publish_button() {
-		global $post;
-
-		// exit early if we're not on a post edit screen
-		if ( ! $post ) {
-			return;
-		}
-
-		if ( ! $this->workflow_is_publish_blocked( $post->ID ) ) {
-			?>
-			<style>
-				.edit-post-header__settings .components-button.editor-post-publish-panel__toggle {
-					display: none;
-				}
-			</style>
-			<?php
-		}
 	}
 
 	/**
