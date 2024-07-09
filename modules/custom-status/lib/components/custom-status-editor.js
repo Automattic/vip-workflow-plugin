@@ -7,6 +7,7 @@ import {
 	Button,
 	TextControl,
 	TextareaControl,
+	Notice,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
@@ -16,6 +17,7 @@ export default function CustomStatusEditor( { status, isNew, onCancel, onStatuse
 	const [ name, setName ] = useState( status?.name || '' );
 	const [ slug, setSlug ] = useState( status?.slug || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
+	const [ error, setError ] = useState( null );
 
 	useEffect( () => {
 		setName( status?.name || '' );
@@ -50,67 +52,75 @@ export default function CustomStatusEditor( { status, isNew, onCancel, onStatuse
 		let result;
 
 		try {
-			result = await apiFetch( {
+			const result = await apiFetch( {
 				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status,
 				method: 'POST',
 				data,
 			} );
-		} catch ( error ) {
-			// ToDo: Ensure this turns into a UI status update
-			console.error( 'Error saving status:', error );
-		}
 
-		onStatusesUpdated( result.updated_statuses );
+			onStatusesUpdated( result.updated_statuses );
+		} catch ( error ) {
+			setError( error.message );
+		}
 	};
 
 	return (
-		<Card className="custom-status-editor">
-			<CardHeader>
-				<h3>{ titleText }</h3>
-			</CardHeader>
+		<>
+			{ error && (
+				<div style={ { marginBottom: '1rem' } }>
+					<Notice status="error" isDismissible={ true }>
+						<p>{ error }</p>
+					</Notice>
+				</div>
+			) }
+			<Card className="custom-status-editor">
+				<CardHeader>
+					<h3>{ titleText }</h3>
+				</CardHeader>
 
-			<CardBody>
-				<TextControl
-					help={ __( 'The name is used to identify the status.', 'vip-workflow' ) }
-					label={ __( 'Custom Status', 'vip-workflow' ) }
-					onChange={ value => {
-						setName( value );
-					} }
-					value={ name }
-				/>
-
-				{ ! isNew && (
+				<CardBody>
 					<TextControl
+						help={ __( 'The name is used to identify the status.', 'vip-workflow' ) }
+						label={ __( 'Custom Status', 'vip-workflow' ) }
+						onChange={ value => {
+							setName( value );
+						} }
+						value={ name }
+					/>
+
+					{ ! isNew && (
+						<TextControl
+							help={ __(
+								'The slug is the unique ID for the status and is changed when the name is changed.',
+								'vip-workflow'
+							) }
+							label={ __( 'Slug', 'vip-workflow' ) }
+							value={ slug }
+							disabled
+						/>
+					) }
+					<TextareaControl
 						help={ __(
-							'The slug is the unique ID for the status and is changed when the name is changed.',
+							'The description is primarily for administrative use, to give you some context on what the custom status is to be used for.',
 							'vip-workflow'
 						) }
-						label={ __( 'Slug', 'vip-workflow' ) }
-						value={ slug }
-						disabled
+						label={ __( 'Description', 'vip-workflow' ) }
+						onChange={ value => {
+							setDescription( value );
+						} }
+						value={ description }
 					/>
-				) }
-				<TextareaControl
-					help={ __(
-						'The description is primarily for administrative use, to give you some context on what the custom status is to be used for.',
-						'vip-workflow'
-					) }
-					label={ __( 'Description', 'vip-workflow' ) }
-					onChange={ value => {
-						setDescription( value );
-					} }
-					value={ description }
-				/>
-			</CardBody>
+				</CardBody>
 
-			<CardFooter justify={ 'end' }>
-				<Button variant="secondary" onClick={ onCancel }>
-					{ __( 'Cancel', 'vip-workflow' ) }
-				</Button>
-				<Button variant="primary" onClick={ handleSave }>
-					{ saveButtonText }
-				</Button>
-			</CardFooter>
-		</Card>
+				<CardFooter justify={ 'end' }>
+					<Button variant="secondary" onClick={ onCancel }>
+						{ __( 'Cancel', 'vip-workflow' ) }
+					</Button>
+					<Button variant="primary" onClick={ handleSave }>
+						{ saveButtonText }
+					</Button>
+				</CardFooter>
+			</Card>
+		</>
 	);
 }

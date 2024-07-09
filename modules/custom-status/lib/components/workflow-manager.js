@@ -37,7 +37,7 @@ export default function WorkflowManager( { customStatuses } ) {
 		setEditStatus( null );
 	};
 
-	const onDragEnd = result => {
+	const handleDragEnd = result => {
 		// Dropped outside the list
 		if ( ! result.destination ) {
 			return;
@@ -59,7 +59,7 @@ export default function WorkflowManager( { customStatuses } ) {
 					/>
 
 					<div className="status-section">
-						<DragDropContext onDragEnd={ onDragEnd }>
+						<DragDropContext onDragEnd={ handleDragEnd }>
 							<Droppable droppableId="droppable">
 								{ ( provided, snapshot ) => (
 									<div
