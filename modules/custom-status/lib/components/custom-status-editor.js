@@ -9,11 +9,18 @@ import {
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
+import { useEffect } from 'react';
 
 export default function CustomStatusEditor( { status, isNew, onCancel } ) {
 	const [ name, setName ] = useState( status?.name || '' );
 	const [ slug, setSlug ] = useState( status?.slug || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
+
+	useEffect( () => {
+		setName( status?.name || '' );
+		setSlug( status?.slug || '' );
+		setDescription( status?.description || '' );
+	}, [ status ] );
 
 	let titleText;
 	if ( isNew ) {
@@ -39,7 +46,9 @@ export default function CustomStatusEditor( { status, isNew, onCancel } ) {
 				<TextControl
 					help={ __( 'The name is used to identify the status.', 'vip-workflow' ) }
 					label={ __( 'Custom Status', 'vip-workflow' ) }
-					onChange={ function noRefCheck() {} }
+					onChange={ value => {
+						setName( value );
+					} }
 					value={ name }
 				/>
 
@@ -50,7 +59,6 @@ export default function CustomStatusEditor( { status, isNew, onCancel } ) {
 							'vip-workflow'
 						) }
 						label={ __( 'Slug', 'vip-workflow' ) }
-						onChange={ function noRefCheck() {} }
 						value={ slug }
 						disabled
 					/>
@@ -61,7 +69,9 @@ export default function CustomStatusEditor( { status, isNew, onCancel } ) {
 						'vip-workflow'
 					) }
 					label={ __( 'Description', 'vip-workflow' ) }
-					onChange={ function noRefCheck() {} }
+					onChange={ value => {
+						setDescription( value );
+					} }
 					value={ description }
 				/>
 			</CardBody>
