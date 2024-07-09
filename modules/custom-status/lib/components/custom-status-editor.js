@@ -29,8 +29,6 @@ export default function CustomStatusEditor( { status, isNew, onCancel } ) {
 		saveButtonText = sprintf( __( 'Update Status', 'vip-workflow' ), status.name );
 	}
 
-	console.log( 'status:', status );
-
 	return (
 		<Card className="custom-status-editor">
 			<CardHeader>
