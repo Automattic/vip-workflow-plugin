@@ -6,16 +6,6 @@ module.exports = {
 	env: {
 		jest: true,
 	},
-	settings: {
-		'import/resolver': {
-			node: {
-				extensions: [ '.js', '.jsx', '.ts', '.tsx' ],
-			},
-			webpack: {
-				config: 'webpack.config.js',
-			},
-		},
-	},
 	rules: {
 		camelcase: 0,
 		'no-undef': 0,
