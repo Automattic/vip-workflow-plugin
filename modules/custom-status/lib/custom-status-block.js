@@ -122,6 +122,9 @@ const VIPWorkflowCustomPostStati = ( { onUpdate, status } ) => (
 			{ status !== 'publish'
 				? __( 'Note: this will override all status settings above.', 'vip-workflow' )
 				: __( 'To select a custom status, please unpublish the content first.', 'vip-workflow' ) }
+			{ status !== statuses[ statuses.length - 1 ].value
+				? __( " This post is currently locked from publishing due to it's status.", 'vip-workflow' )
+				: '' }
 		</small>
 	</PluginPostStatusInfo>
 );

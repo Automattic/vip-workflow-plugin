@@ -283,7 +283,7 @@ const VIPWorkflowCustomPostStati = ({
   onChange: onUpdate
 }) : null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("small", {
   className: "vip-workflow-extended-post-status-note"
-}, status !== 'publish' ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__.__)('Note: this will override all status settings above.', 'vip-workflow') : (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__.__)('To select a custom status, please unpublish the content first.', 'vip-workflow')));
+}, status !== 'publish' ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__.__)('Note: this will override all status settings above.', 'vip-workflow') : (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__.__)('To select a custom status, please unpublish the content first.', 'vip-workflow'), status !== statuses[statuses.length - 1].value ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__.__)(" This post is currently locked from publishing due to it's status.", 'vip-workflow') : ''));
 const mapSelectToProps = select => {
   return {
     status: select('core/editor').getEditedPostAttribute('status')
