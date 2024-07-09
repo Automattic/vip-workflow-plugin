@@ -1647,7 +1647,12 @@ class Custom_Status extends Module {
 	public function hide_publish_button() {
 		global $post;
 
-		if ( ! $this->workflow_is_publishable( $post->ID ) ) {
+		// exit early if we're not on a post edit screen
+		if ( ! $post ) {
+			return;
+		}
+
+		if ( ! $this->workflow_is_publish_blocked( $post->ID ) ) {
 			?>
 			<style>
 				.edit-post-header__settings .components-button.editor-post-publish-panel__toggle {
