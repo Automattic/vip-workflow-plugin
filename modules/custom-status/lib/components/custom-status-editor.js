@@ -14,7 +14,8 @@ import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect } from 'react';
 
-import ConfirmDeleteDialog from './confirm-delete-dialog';
+import ConfirmStatusDeleteModal from './modals/confirm-status-delete-modal';
+import DenyStatusDeleteModal from './modals/deny-status-delete-modal';
 
 export default function CustomStatusEditor( {
 	status,
@@ -88,6 +89,21 @@ export default function CustomStatusEditor( {
 
 		setIsConfirmingDelete( false );
 	};
+
+	let deleteModal;
+	if ( status?.is_default ) {
+		deleteModal = (
+			<DenyStatusDeleteModal status={ status } onCancel={ () => setIsConfirmingDelete( false ) } />
+		);
+	} else {
+		deleteModal = (
+			<ConfirmStatusDeleteModal
+				status={ status }
+				onCancel={ () => setIsConfirmingDelete( false ) }
+				onConfirmDelete={ handleDelete }
+			/>
+		);
+	}
 
 	return (
 		<>
@@ -164,13 +180,7 @@ export default function CustomStatusEditor( {
 				</CardFooter>
 			</Card>
 
-			{ isConfirmingDelete && (
-				<ConfirmDeleteDialog
-					status={ status }
-					onCancel={ () => setIsConfirmingDelete( false ) }
-					onConfirmDelete={ handleDelete }
-				/>
-			) }
+			{ isConfirmingDelete && deleteModal }
 		</>
 	);
 }

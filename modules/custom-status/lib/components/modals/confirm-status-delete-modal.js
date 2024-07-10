@@ -1,7 +1,7 @@
 import { Button, Modal, Flex } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
-export default function ConfirmDeleteDialog( { status, onCancel, onConfirmDelete } ) {
+export default function ConfirmStatusDeleteModal( { status, onCancel, onConfirmDelete } ) {
 	let defaultStatus = VW_CUSTOM_STATUS_CONFIGURE.custom_statuses.filter(
 		( { is_default } ) => is_default
 	)?.[ 0 ];
