@@ -5,6 +5,7 @@
  */
 namespace VIPWorkflow\Modules;
 
+use DateTime;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
 use function VIPWorkflow\Common\PHP\vw_draft_or_post_title;
@@ -298,9 +299,13 @@ class Notifications extends Module {
 			return;
 		}
 
+		$datetime = new DateTime();
+
 		// Set up the payload
 		$payload = [
-			'text' => $message,
+			'type'      => 'environment:post:update',
+			'timestamp' => $datetime->format( DateTime::ATOM ),
+			'data'      => $message,
 		];
 
 		// apply filters to the payload
