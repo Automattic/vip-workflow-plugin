@@ -26,14 +26,12 @@ export default function CustomStatusEditor( {
 	onErrorThrown,
 } ) {
 	const [ name, setName ] = useState( status?.name || '' );
-	const [ slug, setSlug ] = useState( status?.slug || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
 	const [ isDefault, setIsDefault ] = useState( status?.is_default || false );
 	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
 
 	useEffect( () => {
 		setName( status?.name || '' );
-		setSlug( status?.slug || '' );
 		setDescription( status?.description || '' );
 		setIsDefault( status?.is_default || false );
 	}, [ status ] );
@@ -123,19 +121,6 @@ export default function CustomStatusEditor( {
 						} }
 						value={ name }
 					/>
-
-					{ ! isNew && (
-						<TextControl
-							help={ __(
-								'The slug is the unique ID for the status and is changed when the name is changed.',
-								'vip-workflow'
-							) }
-							label={ __( 'Slug', 'vip-workflow' ) }
-							onChange={ function noRefCheck() {} }
-							value={ slug }
-							disabled
-						/>
-					) }
 					<TextareaControl
 						help={ __(
 							'The description is primarily for administrative use, to give you some context on what the custom status is to be used for.',
