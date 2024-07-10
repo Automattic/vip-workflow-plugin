@@ -1660,7 +1660,7 @@ class Custom_Status extends Module {
 			return false;
 		}
 
-		$status_before_publish     = $custom_statuses[ array_key_last( $custom_statuses ) ];
+		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
 
 		if ( $status_before_publish->slug == $post->post_status ) {
 			// Post is in the last status, so it can be published
