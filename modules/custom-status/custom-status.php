@@ -267,7 +267,7 @@ class Custom_Status extends Module {
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
 				'custom_statuses'      => array_values( $this->get_custom_statuses() ),
-				'default_status_name'  => $this->get_default_custom_status()->name,
+				'default_status'       => $this->get_default_custom_status(),
 				'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
 				'nonce_reorder'        => wp_create_nonce( 'custom-status-sortable' ),
 				'url_ajax'             => admin_url( 'admin-ajax.php' ),

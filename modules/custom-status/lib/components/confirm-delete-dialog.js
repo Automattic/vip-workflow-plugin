@@ -16,7 +16,7 @@ export default function ConfirmDeleteDialog( { status, onCancel, onConfirmDelete
 						'vip-workflow'
 					),
 					status.name,
-					VW_CUSTOM_STATUS_CONFIGURE.default_status_name
+					VW_CUSTOM_STATUS_CONFIGURE.default_status.name
 				) }
 			</p>
 			<strong style={ { display: 'block', marginTop: '1rem' } }>
