@@ -35,7 +35,7 @@ class EditStatus {
 						return trim( $param );
 					},
 				],
-				'id'   => [
+				'id'          => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
@@ -55,14 +55,15 @@ class EditStatus {
 					},
 				],
 			],
-		],
-		[
+		] );
+
+		register_rest_route( VIP_WORKFLOW_REST_NAMESPACE, '/custom-status/(?P<id>[0-9]+)', [
 			'methods'             => 'DELETE',
 			'callback'            => [ __CLASS__, 'handle_delete_custom_status_request' ],
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
-				'id'   => [
+				'id' => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
@@ -72,10 +73,9 @@ class EditStatus {
 					'sanitize_callback' => function ( $param ) {
 						return absint( $param );
 					},
-				]
+				],
 			],
-		]
-	);
+		] );
 
 		register_rest_route( VIP_WORKFLOW_REST_NAMESPACE, '/custom-status', [
 			'methods'             => 'POST',
@@ -101,7 +101,7 @@ class EditStatus {
 					},
 				],
 			],
-		]);
+		] );
 	}
 
 	public static function permission_callback() {
@@ -114,7 +114,7 @@ class EditStatus {
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
 		// Check to make sure the status doesn't already exist
-		$custom_status_by_id   = $custom_status_module->get_custom_status_by( 'id', $term_id );
+		$custom_status_by_id = $custom_status_module->get_custom_status_by( 'id', $term_id );
 		if ( ! $custom_status_by_id ) {
 			return new WP_Error( 'invalid', 'Status does not exist.' );
 		}
@@ -225,9 +225,9 @@ class EditStatus {
 		}
 
 		// Check to make sure the status doesn't already exist
-		$custom_status_by_id   = $custom_status_module->get_custom_status_by( 'id', $term_id );
+		$custom_status_by_id = $custom_status_module->get_custom_status_by( 'id', $term_id );
 		// if ( $custom_status_by_id->name === $status_name ) {
-		// 	return new WP_Error( 'invalid', 'Status already exists. Please choose another name.' );
+		//  return new WP_Error( 'invalid', 'Status already exists. Please choose another name.' );
 		// }
 
 		$custom_status_by_slug = $custom_status_module->get_custom_status_by( 'slug', $status_slug );
