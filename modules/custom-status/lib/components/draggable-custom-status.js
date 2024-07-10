@@ -17,9 +17,13 @@ export default function DraggableCustomStatus( {
 		'custom-status-item'
 	);
 
-	const handleClick = () => {
+	const handleEditClick = () => {
 		handleEditStatus( customStatus );
 	};
+
+	const handleDeleteClick = () => {
+		console.log( 'delete' );
+	}
 
 	return (
 		<>
@@ -30,10 +34,16 @@ export default function DraggableCustomStatus( {
 				{ ...provided.dragHandleProps }
 				style={ getItemStyle( index, snapshot.isDragging, provided.draggableProps.style ) }
 			>
-				<div className="name">{ customStatus.name }</div>
+				<div className="name">{customStatus.name}</div>
+
+				<div className="delete">
+					<Button variant="secondary" size="small" onClick={ handleDeleteClick }>
+						{ __( 'Delete', 'vip-workflow' ) }
+					</Button>
+				</div>
 
 				<div className="edit">
-					<Button variant="secondary" size="small" onClick={ handleClick }>
+					<Button variant="primary" size="small" onClick={ handleEditClick }>
 						{ __( 'Edit', 'vip-workflow' ) }
 					</Button>
 				</div>

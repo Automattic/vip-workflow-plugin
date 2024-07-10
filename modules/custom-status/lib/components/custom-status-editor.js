@@ -13,7 +13,7 @@ import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect } from 'react';
 
-export default function CustomStatusEditor( { status, isNew, onCancel, onStatusesUpdated } ) {
+export default function CustomStatusEditor({ status, isNew, onCancel, onStatusesUpdated }) {
 	const [ name, setName ] = useState( status?.name || '' );
 	const [ slug, setSlug ] = useState( status?.slug || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
@@ -49,12 +49,10 @@ export default function CustomStatusEditor( { status, isNew, onCancel, onStatuse
 			data.status_id = status.term_id;
 		}
 
-		let result;
-
 		try {
 			const result = await apiFetch( {
-				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status,
-				method: 'POST',
+				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + ( isNew ? '' : status.term_id ),
+				method: ( isNew ? 'POST' : 'PUT' ),
 				data,
 			} );
 

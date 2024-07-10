@@ -32,6 +32,11 @@
 		visibility: hidden;
 	}
 
+	.delete {
+		margin: 0 1rem;
+		visibility: hidden;
+	}
+
 	.drag-handle {
 		visibility: hidden;
 		fill: #777;
@@ -49,6 +54,10 @@
 		}
 
 		.edit {
+			visibility: visible;
+		}
+
+		.delete {
 			visibility: visible;
 		}
 	}
