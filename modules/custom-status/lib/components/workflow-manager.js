@@ -58,7 +58,7 @@ export default function WorkflowManager( { customStatuses } ) {
 		<>
 			{ error && (
 				<div style={ { marginBottom: '1rem' } }>
-					<Notice status="error" isDismissible={ true }>
+					<Notice status="error" isDismissible={ true } onRemove={ () => setError( null ) }>
 						<p>{ error }</p>
 					</Notice>
 				</div>
