@@ -5,19 +5,18 @@ import {
 	CardBody,
 	CardFooter,
 	CardHeader,
-	Notice,
 	TextControl,
-	TextareaControl,
+	TextareaControl
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect } from 'react';
 
-export default function CustomStatusEditor({ status, isNew, onCancel, onStatusesUpdated }) {
+export default function CustomStatusEditor({ status, isNew, onCancel, onStatusesUpdated, onErrorThrown }) {
+	console.log(status);
 	const [ name, setName ] = useState( status?.name || '' );
 	const [ slug, setSlug ] = useState( status?.slug || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
-	const [ error, setError ] = useState( null );
 
 	useEffect( () => {
 		setName( status?.name || '' );
@@ -58,19 +57,12 @@ export default function CustomStatusEditor({ status, isNew, onCancel, onStatuses
 
 			onStatusesUpdated( result.updated_statuses );
 		} catch ( error ) {
-			setError( error.message );
+			onErrorThrown( error.message );
 		}
 	};
 
 	return (
 		<>
-			{ error && (
-				<div style={ { marginBottom: '1rem' } }>
-					<Notice status="error" isDismissible={ true }>
-						<p>{ error }</p>
-					</Notice>
-				</div>
-			) }
 			<Card className="custom-status-editor">
 				<CardHeader>
 					<h3>{ titleText }</h3>

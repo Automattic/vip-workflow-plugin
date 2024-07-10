@@ -1,3 +1,4 @@
+import apiFetch from '@wordpress/api-fetch';
 import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { Icon, dragHandle } from '@wordpress/icons';
@@ -9,6 +10,8 @@ export default function DraggableCustomStatus( {
 	provided,
 	snapshot,
 	handleEditStatus,
+	onStatusesUpdated,
+	onErrorThrown
 } ) {
 	const className = clsx(
 		{
@@ -21,8 +24,17 @@ export default function DraggableCustomStatus( {
 		handleEditStatus( customStatus );
 	};
 
-	const handleDeleteClick = () => {
-		console.log( 'delete' );
+	const handleDeleteClick = async () => {
+		try {
+			const result = await apiFetch({
+				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + customStatus.term_id,
+				method: 'DELETE',
+			});
+
+			onStatusesUpdated( result.updated_statuses );
+		} catch ( error ) {
+			onErrorThrown( error.message );
+		}
 	}
 
 	return (

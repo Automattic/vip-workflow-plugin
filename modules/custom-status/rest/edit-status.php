@@ -58,27 +58,21 @@ class EditStatus {
 		],
 		[
 			'methods'             => 'DELETE',
-			'callback'            => [ __CLASS__, 'handle_post_custom_status_request' ],
+			'callback'            => [ __CLASS__, 'handle_delete_custom_status_request' ],
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
-				'name'        => [
+				'id'   => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
-						return ! empty( trim( $param ) );
+						$term_id = absint( $param );
+						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
+						return ( $term instanceof WP_Term );
 					},
 					'sanitize_callback' => function ( $param ) {
-						return trim( $param );
+						return absint( $param );
 					},
-				],
-
-				// Optional parameters
-				'description' => [
-					'default'           => '',
-					'sanitize_callback' => function ( $param ) {
-						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
-					},
-				],
+				]
 			],
 		]
 	);

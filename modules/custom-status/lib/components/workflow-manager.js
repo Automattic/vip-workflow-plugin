@@ -1,5 +1,5 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { Button, Flex, FlexBlock, FlexItem } from '@wordpress/components';
+import { Button, Flex, FlexBlock, FlexItem, Notice } from '@wordpress/components';
 import { useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { plusCircle } from '@wordpress/icons';
@@ -8,11 +8,13 @@ import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 
-export default function WorkflowManager( { customStatuses } ) {
+export default function WorkflowManager({ customStatuses }) {
+	const [error, setError] = useState(null);
+
 	const [ statuses, setStatuses ] = useState( customStatuses );
 
 	const [ editStatus, setEditStatus ] = useState( null );
-	const [ isNewStatus, setIsNewStatus ] = useState( false );
+	const [isNewStatus, setIsNewStatus] = useState(false);
 
 	const statusContainerRef = useRef( null );
 	const [ statusContanerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
@@ -23,12 +25,16 @@ export default function WorkflowManager( { customStatuses } ) {
 	};
 
 	const handleEditStatus = customStatus => {
-		setIsNewStatus( false );
+		setIsNewStatus(false);
 		setEditStatus( customStatus );
 	};
 
 	const handleCancelEditStatus = () => {
 		setEditStatus( null );
+	};
+
+	const handleErrorThrown = error => {
+		setError(error);
 	};
 
 	const handleStatusesUpdated = newStatuses => {
@@ -49,6 +55,14 @@ export default function WorkflowManager( { customStatuses } ) {
 	};
 
 	return (
+		<>
+			{error && (
+				<div style={{ marginBottom: '1rem' }}>
+					<Notice status="error" isDismissible={ true }>
+						<p>{ error }</p>
+					</Notice>
+				</div>
+			) }
 		<Flex direction={ [ 'column', 'row' ] } justify={ 'start' } align={ 'start' }>
 			<FlexItem>
 				<Flex align={ 'start' } justify={ 'start' }>
@@ -84,6 +98,8 @@ export default function WorkflowManager( { customStatuses } ) {
 														provided={ provided }
 														snapshot={ snapshot }
 														handleEditStatus={ handleEditStatus }
+														onStatusesUpdated={ handleStatusesUpdated }
+														onErrorThrown={ handleErrorThrown }
 													/>
 												) }
 											</Draggable>
@@ -109,10 +125,12 @@ export default function WorkflowManager( { customStatuses } ) {
 						isNew={ isNewStatus }
 						onCancel={ handleCancelEditStatus }
 						onStatusesUpdated={ handleStatusesUpdated }
+						onErrorThrown={ handleErrorThrown }
 					/>
 				) }
 			</FlexBlock>
-		</Flex>
+			</Flex>
+		</>
 	);
 }
 

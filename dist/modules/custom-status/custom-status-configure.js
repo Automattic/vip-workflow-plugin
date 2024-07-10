@@ -7663,12 +7663,13 @@ function CustomStatusEditor({
   status,
   isNew,
   onCancel,
-  onStatusesUpdated
+  onStatusesUpdated,
+  onErrorThrown
 }) {
+  console.log(status);
   const [name, setName] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useState)(status?.name || '');
   const [slug, setSlug] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useState)(status?.slug || '');
   const [description, setDescription] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useState)(status?.description || '');
-  const [error, setError] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useState)(null);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     setName(status?.name || '');
     setSlug(status?.slug || '');
@@ -7702,17 +7703,10 @@ function CustomStatusEditor({
       });
       onStatusesUpdated(result.updated_statuses);
     } catch (error) {
-      setError(error.message);
+      onErrorThrown(error.message);
     }
   };
-  return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, error && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    style: {
-      marginBottom: '1rem'
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Notice, {
-    status: "error",
-    isDismissible: true
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, error))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Card, {
+  return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Card, {
     className: "custom-status-editor"
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.CardHeader, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", null, titleText)), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.CardBody, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.TextControl, {
     help: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_4__.__)('The name is used to identify the status.', 'vip-workflow'),
@@ -7759,13 +7753,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "react");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
-/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/icon/index.js");
-/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/drag-handle.js");
-/* harmony import */ var clsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! clsx */ "./node_modules/clsx/dist/clsx.mjs");
+/* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/api-fetch */ "@wordpress/api-fetch");
+/* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/icon/index.js");
+/* harmony import */ var _wordpress_icons__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @wordpress/icons */ "./node_modules/@wordpress/icons/build-module/library/drag-handle.js");
+/* harmony import */ var clsx__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! clsx */ "./node_modules/clsx/dist/clsx.mjs");
+
 
 
 
@@ -7776,16 +7773,26 @@ function DraggableCustomStatus({
   index,
   provided,
   snapshot,
-  handleEditStatus
+  handleEditStatus,
+  onStatusesUpdated,
+  onErrorThrown
 }) {
-  const className = (0,clsx__WEBPACK_IMPORTED_MODULE_3__["default"])({
+  const className = (0,clsx__WEBPACK_IMPORTED_MODULE_4__["default"])({
     dragging: snapshot.isDragging
   }, 'custom-status-item');
   const handleEditClick = () => {
     handleEditStatus(customStatus);
   };
-  const handleDeleteClick = () => {
-    console.log('delete');
+  const handleDeleteClick = async () => {
+    try {
+      const result = await _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_1___default()({
+        url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + customStatus.term_id,
+        method: 'DELETE'
+      });
+      onStatusesUpdated(result.updated_statuses);
+    } catch (error) {
+      onErrorThrown(error.message);
+    }
   };
   return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: className,
@@ -7797,20 +7804,20 @@ function DraggableCustomStatus({
     className: "name"
   }, customStatus.name), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "delete"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
     variant: "secondary",
     size: "small",
     onClick: handleDeleteClick
-  }, (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Delete', 'vip-workflow'))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  }, (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Delete', 'vip-workflow'))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "edit"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
     variant: "primary",
     size: "small",
     onClick: handleEditClick
-  }, (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__.__)('Edit', 'vip-workflow'))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  }, (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Edit', 'vip-workflow'))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "drag-handle"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_icons__WEBPACK_IMPORTED_MODULE_4__["default"], {
-    icon: _wordpress_icons__WEBPACK_IMPORTED_MODULE_5__["default"],
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_icons__WEBPACK_IMPORTED_MODULE_5__["default"], {
+    icon: _wordpress_icons__WEBPACK_IMPORTED_MODULE_6__["default"],
     size: 20
   }))));
 }
@@ -7986,6 +7993,7 @@ __webpack_require__.r(__webpack_exports__);
 function WorkflowManager({
   customStatuses
 }) {
+  const [error, setError] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_2__.useState)(null);
   const [statuses, setStatuses] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_2__.useState)(customStatuses);
   const [editStatus, setEditStatus] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_2__.useState)(null);
   const [isNewStatus, setIsNewStatus] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_2__.useState)(false);
@@ -8002,6 +8010,9 @@ function WorkflowManager({
   const handleCancelEditStatus = () => {
     setEditStatus(null);
   };
+  const handleErrorThrown = error => {
+    setError(error);
+  };
   const handleStatusesUpdated = newStatuses => {
     // ToDo: Show a success message
     setStatuses(newStatuses);
@@ -8016,7 +8027,14 @@ function WorkflowManager({
     setStatuses(reorderedItems);
     updateCustomStatusOrder(reorderedItems);
   };
-  return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Flex, {
+  return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, error && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    style: {
+      marginBottom: '1rem'
+    }
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Notice, {
+    status: "error",
+    isDismissible: true
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, error))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Flex, {
     direction: ['column', 'row'],
     justify: 'start',
     align: 'start'
@@ -8053,7 +8071,9 @@ function WorkflowManager({
     index: index,
     provided: provided,
     snapshot: snapshot,
-    handleEditStatus: handleEditStatus
+    handleEditStatus: handleEditStatus,
+    onStatusesUpdated: handleStatusesUpdated,
+    onErrorThrown: handleErrorThrown
   }))), provided.placeholder))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "add-status"
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_1__.Button, {
@@ -8064,8 +8084,9 @@ function WorkflowManager({
     status: editStatus,
     isNew: isNewStatus,
     onCancel: handleCancelEditStatus,
-    onStatusesUpdated: handleStatusesUpdated
-  })));
+    onStatusesUpdated: handleStatusesUpdated,
+    onErrorThrown: handleErrorThrown
+  }))));
 }
 const reorder = (list, startIndex, endIndex) => {
   const result = Array.from(list);
