@@ -28,7 +28,7 @@ export default function ConfirmDeleteDialog( { status, onCancel, onConfirmDelete
 					{ __( 'Cancel', 'vip-workflow' ) }
 				</Button>
 
-				<Button variant="primary" onClick={ onConfirmDelete }>
+				<Button variant="primary" onClick={ onConfirmDelete } style={ { background: '#b32d2e' } }>
 					{ __( 'Delete this status', 'vip-workflow' ) }
 				</Button>
 			</Flex>

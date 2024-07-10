@@ -545,6 +545,9 @@ class Custom_Status extends Module {
 
 			$this->reassign_post_status( $old_status, $new_status );
 
+			// Reset status cache again, as reassign_post_status() will recache prior statuses
+			$this->custom_statuses_cache = [];
+
 			return wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
 		} else {
 			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $this->get_custom_status_by( 'id', $status_id )->name . ')' );
