@@ -16,6 +16,7 @@ const statuses = window.VipWorkflowCustomStatuses.map( s => ( { label: s.name, v
  * Subscribe to changes so we can set a default status and update a button's text.
  */
 let buttonTextObserver = null;
+let postLocked = false;
 subscribe( function () {
 	const postId = select( 'core/editor' ).getCurrentPostId();
 	if ( ! postId ) {
@@ -43,6 +44,20 @@ subscribe( function () {
 		buttonTextObserver = createButtonObserver(
 			document.querySelector( '.edit-post-header__settings' )
 		);
+	}
+
+	// Lock post if the status is not the last one.
+	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
+	if ( vw_publish_guard_enabled && selectedStatus !== statuses[ statuses.length - 1 ].value ) {
+		if ( ! postLocked ) {
+			postLocked = true;
+			dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
+		}
+	} else {
+		if ( postLocked ) {
+			postLocked = false;
+			dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
+		}
 	}
 } );
 
@@ -107,6 +122,9 @@ const VIPWorkflowCustomPostStati = ( { onUpdate, status } ) => (
 			{ status !== 'publish'
 				? __( 'Note: this will override all status settings above.', 'vip-workflow' )
 				: __( 'To select a custom status, please unpublish the content first.', 'vip-workflow' ) }
+			{ status !== statuses[ statuses.length - 1 ].value
+				? __( " This post is currently locked from publishing due to it's status.", 'vip-workflow' )
+				: '' }
 		</small>
 	</PluginPostStatusInfo>
 );
