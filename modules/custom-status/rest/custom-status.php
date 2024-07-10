@@ -43,6 +43,12 @@ class EditStatus {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
+				'is_default'  => [
+					'default'           => false,
+					'sanitize_callback' => function ( $param ) {
+						return boolval( $param );
+					},
+				],
 			],
 		] );
 
@@ -80,6 +86,12 @@ class EditStatus {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
+				'is_default'  => [
+					'default'           => false,
+					'sanitize_callback' => function ( $param ) {
+						return boolval( $param );
+					},
+				],
 			],
 		] );
 
@@ -115,6 +127,7 @@ class EditStatus {
 		$status_name        = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$status_description = $request->get_param( 'description' );
+		$status_is_default  = $request->get_param( 'is_default' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -159,11 +172,15 @@ class EditStatus {
 
 		if ( is_wp_error( $add_status_result ) ) {
 			return $add_status_result;
-		} else {
-			return [
-				'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
-			];
 		}
+
+		if ( $status_is_default ) {
+			VIP_Workflow::instance()->custom_status->set_default_custom_status( $add_status_result['term_id'] );
+		}
+
+		return [
+			'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
+		];
 	}
 
 	/**
@@ -174,6 +191,7 @@ class EditStatus {
 		$status_name        = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$status_description = $request->get_param( 'description' );
+		$status_is_default  = $request->get_param( 'is_default' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -232,11 +250,15 @@ class EditStatus {
 
 		if ( is_wp_error( $update_status_result ) ) {
 			return $update_status_result;
-		} else {
-			return [
-				'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
-			];
 		}
+
+		if ( $status_is_default ) {
+			VIP_Workflow::instance()->custom_status->set_default_custom_status( $update_status_result->term_id );
+		}
+
+		return [
+			'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
+		];
 	}
 
 	/**

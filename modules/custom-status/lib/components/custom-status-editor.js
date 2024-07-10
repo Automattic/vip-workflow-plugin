@@ -3,10 +3,12 @@ import {
 	Button,
 	Card,
 	CardBody,
+	CardDivider,
 	CardFooter,
 	CardHeader,
 	TextControl,
 	TextareaControl,
+	ToggleControl,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
@@ -24,12 +26,14 @@ export default function CustomStatusEditor( {
 	const [ name, setName ] = useState( status?.name || '' );
 	const [ slug, setSlug ] = useState( status?.slug || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
+	const [ isDefault, setIsDefault ] = useState( status?.is_default || false );
 	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
 
 	useEffect( () => {
 		setName( status?.name || '' );
 		setSlug( status?.slug || '' );
 		setDescription( status?.description || '' );
+		setIsDefault( status?.is_default || false );
 	}, [ status ] );
 
 	let titleText;
@@ -50,6 +54,7 @@ export default function CustomStatusEditor( {
 		let data = {
 			name,
 			description,
+			is_default: isDefault,
 		};
 
 		if ( ! isNew ) {
@@ -123,6 +128,18 @@ export default function CustomStatusEditor( {
 							setDescription( value );
 						} }
 						value={ description }
+					/>
+				</CardBody>
+				<CardDivider />
+				<CardBody>
+					<ToggleControl
+						checked={ isDefault }
+						label={ __( 'Make default status', 'vip-workflow' ) }
+						help={ __(
+							'New posts will automatically be assigned to this status.',
+							'vip-workflow'
+						) }
+						onChange={ () => setIsDefault( ! isDefault ) }
 					/>
 				</CardBody>
 

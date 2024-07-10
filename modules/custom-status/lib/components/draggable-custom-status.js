@@ -17,8 +17,6 @@ export default function DraggableCustomStatus( {
 		'custom-status-item'
 	);
 
-	const isDefaultStatus = customStatus.slug === VW_CUSTOM_STATUS_CONFIGURE.default_status.slug;
-
 	const handleEditClick = () => {
 		handleEditStatus( customStatus );
 	};
@@ -34,7 +32,7 @@ export default function DraggableCustomStatus( {
 			>
 				<div className="name">
 					{ customStatus.name }
-					{ isDefaultStatus && <strong>{ __( ' - Default', 'vip-workflow' ) }</strong> }
+					{ customStatus.is_default && <strong>{ __( ' - Default', 'vip-workflow' ) }</strong> }
 				</div>
 
 				<div className="edit">

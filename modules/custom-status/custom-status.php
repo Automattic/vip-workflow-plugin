@@ -267,7 +267,6 @@ class Custom_Status extends Module {
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
 				'custom_statuses'      => array_values( $this->get_custom_statuses() ),
-				'default_status'       => $this->get_default_custom_status(),
 				'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
 				'nonce_reorder'        => wp_create_nonce( 'custom-status-sortable' ),
 				'url_ajax'             => admin_url( 'admin-ajax.php' ),
@@ -580,6 +579,8 @@ class Custom_Status extends Module {
 			$statuses = [];
 		}
 
+		$has_default_status = false;
+
 		// Expand and order the statuses
 		$ordered_statuses = [];
 		$hold_to_end      = [];
@@ -602,12 +603,27 @@ class Custom_Status extends Module {
 			} else {
 				$hold_to_end[] = $status;
 			}
+
+			// Add is_default property
+			if ( $status->slug === $this->module->options->default_status ) {
+				$status->is_default = true;
+				$has_default_status = true;
+			} else {
+				$status->is_default = false;
+			}
 		}
 		// Sort the items numerically by key
 		ksort( $ordered_statuses, SORT_NUMERIC );
 		// Append all of the statuses that didn't have an existing position
 		foreach ( $hold_to_end as $unpositioned_status ) {
 			$ordered_statuses[] = $unpositioned_status;
+		}
+
+		if ( ! $has_default_status ) {
+			// If no default status is set yet, use the first term
+			if ( ! empty( $ordered_statuses ) ) {
+				$ordered_statuses[0]->is_default = true;
+			}
 		}
 
 		$this->custom_statuses_cache = $ordered_statuses;
@@ -647,10 +663,14 @@ class Custom_Status extends Module {
 	 */
 	public function get_default_custom_status() {
 		$default_status = $this->get_custom_status_by( 'slug', $this->module->options->default_status );
+
 		if ( ! $default_status ) {
 			$custom_statuses = $this->get_custom_statuses();
-			$default_status  = array_shift( $custom_statuses );
+			return array_filter( $custom_statuses, function ( $status ) {
+				return $status->is_default;
+			} )[0];
 		}
+
 		return $default_status;
 	}
 
@@ -1651,6 +1671,28 @@ class Custom_Status extends Module {
 		$is_in_final_custom_status = $status_before_publish->slug === $post->post_status;
 
 		return ! $is_in_final_custom_status;
+	}
+
+	/**
+	 * Given a term ID, set that term as the default custom status.
+	 *
+	 * @param int $term_id The ID of the status to set as the default.
+	 * @return true|WP_Error
+	 */
+	public function set_default_custom_status( $term_id ) {
+		$term_id = intval( $term_id );
+		$term    = $this->get_custom_status_by( 'id', $term_id );
+
+		if ( is_object( $term ) ) {
+			VIP_Workflow::instance()->update_module_option( $this->module->name, 'default_status', $term->slug );
+
+			// Reset custom statuses cache
+			$this->custom_statuses_cache = [];
+
+			return true;
+		} else {
+			return new WP_Error( 'invalid-term-id', sprintf( __( 'Could not set the default status to term ID %d.', 'vip-workflow' ), $term_id ) );
+		}
 	}
 }
 
