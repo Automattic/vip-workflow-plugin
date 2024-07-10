@@ -1,13 +1,13 @@
 import apiFetch from '@wordpress/api-fetch';
 import {
+	Button,
 	Card,
-	CardHeader,
 	CardBody,
 	CardFooter,
-	Button,
+	CardHeader,
+	Notice,
 	TextControl,
 	TextareaControl,
-	Notice,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
@@ -94,7 +94,8 @@ export default function CustomStatusEditor( { status, isNew, onCancel, onStatuse
 								'The slug is the unique ID for the status and is changed when the name is changed.',
 								'vip-workflow'
 							) }
-							label={ __( 'Slug', 'vip-workflow' ) }
+							label={__('Slug', 'vip-workflow')}
+							onChange={ function noRefCheck() {} }
 							value={ slug }
 							disabled
 						/>
