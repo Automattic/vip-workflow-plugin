@@ -20,9 +20,35 @@ class EditStatus {
 	}
 
 	public static function register_routes() {
+		register_rest_route( VIP_WORKFLOW_REST_NAMESPACE, '/custom-status', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'handle_create_status' ],
+			'permission_callback' => [ __CLASS__, 'permission_callback' ],
+			'args'                => [
+				// Required parameters
+				'name'        => [
+					'required'          => true,
+					'validate_callback' => function ( $param ) {
+						return ! empty( trim( $param ) );
+					},
+					'sanitize_callback' => function ( $param ) {
+						return trim( $param );
+					},
+				],
+
+				// Optional parameters
+				'description' => [
+					'default'           => '',
+					'sanitize_callback' => function ( $param ) {
+						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
+					},
+				],
+			],
+		] );
+
 		register_rest_route( VIP_WORKFLOW_REST_NAMESPACE, '/custom-status/(?P<id>[0-9]+)', [
 			'methods'             => 'PUT',
-			'callback'            => [ __CLASS__, 'handle_put_custom_status_request' ],
+			'callback'            => [ __CLASS__, 'handle_update_status' ],
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
@@ -59,7 +85,7 @@ class EditStatus {
 
 		register_rest_route( VIP_WORKFLOW_REST_NAMESPACE, '/custom-status/(?P<id>[0-9]+)', [
 			'methods'             => 'DELETE',
-			'callback'            => [ __CLASS__, 'handle_delete_custom_status_request' ],
+			'callback'            => [ __CLASS__, 'handle_delete_status' ],
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
@@ -76,66 +102,16 @@ class EditStatus {
 				],
 			],
 		] );
-
-		register_rest_route( VIP_WORKFLOW_REST_NAMESPACE, '/custom-status', [
-			'methods'             => 'POST',
-			'callback'            => [ __CLASS__, 'handle_post_custom_status_request' ],
-			'permission_callback' => [ __CLASS__, 'permission_callback' ],
-			'args'                => [
-				// Required parameters
-				'name'        => [
-					'required'          => true,
-					'validate_callback' => function ( $param ) {
-						return ! empty( trim( $param ) );
-					},
-					'sanitize_callback' => function ( $param ) {
-						return trim( $param );
-					},
-				],
-
-				// Optional parameters
-				'description' => [
-					'default'           => '',
-					'sanitize_callback' => function ( $param ) {
-						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
-					},
-				],
-			],
-		] );
 	}
 
 	public static function permission_callback() {
 		return current_user_can( 'manage_options' );
 	}
 
-	public static function handle_delete_custom_status_request( WP_REST_Request $request ) {
-		$term_id = $request->get_param( 'id' );
-
-		$custom_status_module = VIP_Workflow::instance()->custom_status;
-
-		// Check to make sure the status doesn't already exist
-		$custom_status_by_id = $custom_status_module->get_custom_status_by( 'id', $term_id );
-		if ( ! $custom_status_by_id ) {
-			return new WP_Error( 'invalid', 'Status does not exist.' );
-		}
-
-		// Don't allow deletion of default statuses
-		if ( $custom_status_by_id->slug === $custom_status_module->get_default_custom_status()->slug ) {
-			return new WP_Error( 'invalid', 'Cannot delete default status.' );
-		}
-
-		$delete_status_result = $custom_status_module->delete_custom_status( $term_id );
-
-		if ( is_wp_error( $delete_status_result ) ) {
-			return $delete_status_result;
-		} else {
-			return [
-				'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
-			];
-		}
-	}
-
-	public static function handle_post_custom_status_request( WP_REST_Request $request ) {
+	/**
+	 * Handle a request to create a new status
+	 */
+	public static function handle_create_status( WP_REST_Request $request ) {
 		$status_name        = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$status_description = $request->get_param( 'description' );
@@ -191,9 +167,9 @@ class EditStatus {
 	}
 
 	/**
-	 * Handle a PUT request to update the status
+	 * Handle a request to update the status
 	 */
-	public static function handle_put_custom_status_request( WP_REST_Request $request ) {
+	public static function handle_update_status( WP_REST_Request $request ) {
 		$term_id            = $request->get_param( 'id' );
 		$status_name        = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug        = sanitize_title( $request->get_param( 'name' ) );
@@ -256,6 +232,36 @@ class EditStatus {
 
 		if ( is_wp_error( $update_status_result ) ) {
 			return $update_status_result;
+		} else {
+			return [
+				'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
+			];
+		}
+	}
+
+	/**
+	 * Handle a request to delete the status
+	 */
+	public static function handle_delete_status( WP_REST_Request $request ) {
+		$term_id = $request->get_param( 'id' );
+
+		$custom_status_module = VIP_Workflow::instance()->custom_status;
+
+		// Check to make sure the status doesn't already exist
+		$custom_status_by_id = $custom_status_module->get_custom_status_by( 'id', $term_id );
+		if ( ! $custom_status_by_id ) {
+			return new WP_Error( 'invalid', 'Status does not exist.' );
+		}
+
+		// Don't allow deletion of default statuses
+		if ( $custom_status_by_id->slug === $custom_status_module->get_default_custom_status()->slug ) {
+			return new WP_Error( 'invalid', 'Cannot delete default status.' );
+		}
+
+		$delete_status_result = $custom_status_module->delete_custom_status( $term_id );
+
+		if ( is_wp_error( $delete_status_result ) ) {
+			return $delete_status_result;
 		} else {
 			return [
 				'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),

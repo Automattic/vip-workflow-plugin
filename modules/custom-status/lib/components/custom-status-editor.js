@@ -6,17 +6,25 @@ import {
 	CardFooter,
 	CardHeader,
 	TextControl,
-	TextareaControl
+	TextareaControl,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect } from 'react';
 
-export default function CustomStatusEditor({ status, isNew, onCancel, onStatusesUpdated, onErrorThrown }) {
-	console.log(status);
+import ConfirmDeleteDialog from './confirm-delete-dialog';
+
+export default function CustomStatusEditor( {
+	status,
+	isNew,
+	onCancel,
+	onStatusesUpdated,
+	onErrorThrown,
+} ) {
 	const [ name, setName ] = useState( status?.name || '' );
 	const [ slug, setSlug ] = useState( status?.slug || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
+	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
 
 	useEffect( () => {
 		setName( status?.name || '' );
@@ -51,7 +59,7 @@ export default function CustomStatusEditor({ status, isNew, onCancel, onStatuses
 		try {
 			const result = await apiFetch( {
 				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + ( isNew ? '' : status.term_id ),
-				method: ( isNew ? 'POST' : 'PUT' ),
+				method: isNew ? 'POST' : 'PUT',
 				data,
 			} );
 
@@ -59,6 +67,21 @@ export default function CustomStatusEditor({ status, isNew, onCancel, onStatuses
 		} catch ( error ) {
 			onErrorThrown( error.message );
 		}
+	};
+
+	const handleDelete = async () => {
+		try {
+			const result = await apiFetch( {
+				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + status.term_id,
+				method: 'DELETE',
+			} );
+
+			onStatusesUpdated( result.updated_statuses );
+		} catch ( error ) {
+			onErrorThrown( error.message );
+		}
+
+		setIsConfirmingDelete( false );
 	};
 
 	return (
@@ -84,7 +107,7 @@ export default function CustomStatusEditor({ status, isNew, onCancel, onStatuses
 								'The slug is the unique ID for the status and is changed when the name is changed.',
 								'vip-workflow'
 							) }
-							label={__('Slug', 'vip-workflow')}
+							label={ __( 'Slug', 'vip-workflow' ) }
 							onChange={ function noRefCheck() {} }
 							value={ slug }
 							disabled
@@ -104,6 +127,17 @@ export default function CustomStatusEditor({ status, isNew, onCancel, onStatuses
 				</CardBody>
 
 				<CardFooter justify={ 'end' }>
+					<Button
+						variant="secondary"
+						onClick={ () => setIsConfirmingDelete( true ) }
+						style={ {
+							color: '#b32d2e',
+							boxShadow: 'inset 0 0 0 1px #b32d2e',
+							marginRight: 'auto',
+						} }
+					>
+						{ __( 'Delete this status', 'vip-workflow' ) }
+					</Button>
 					<Button variant="secondary" onClick={ onCancel }>
 						{ __( 'Cancel', 'vip-workflow' ) }
 					</Button>
@@ -112,6 +146,14 @@ export default function CustomStatusEditor({ status, isNew, onCancel, onStatuses
 					</Button>
 				</CardFooter>
 			</Card>
+
+			{ isConfirmingDelete && (
+				<ConfirmDeleteDialog
+					status={ status }
+					onCancel={ () => setIsConfirmingDelete( false ) }
+					onConfirmDelete={ handleDelete }
+				/>
+			) }
 		</>
 	);
 }

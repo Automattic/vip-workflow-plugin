@@ -8,13 +8,13 @@ import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 
-export default function WorkflowManager({ customStatuses }) {
-	const [error, setError] = useState(null);
+export default function WorkflowManager( { customStatuses } ) {
+	const [ error, setError ] = useState( null );
 
 	const [ statuses, setStatuses ] = useState( customStatuses );
 
 	const [ editStatus, setEditStatus ] = useState( null );
-	const [isNewStatus, setIsNewStatus] = useState(false);
+	const [ isNewStatus, setIsNewStatus ] = useState( false );
 
 	const statusContainerRef = useRef( null );
 	const [ statusContanerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
@@ -25,7 +25,7 @@ export default function WorkflowManager({ customStatuses }) {
 	};
 
 	const handleEditStatus = customStatus => {
-		setIsNewStatus(false);
+		setIsNewStatus( false );
 		setEditStatus( customStatus );
 	};
 
@@ -34,7 +34,7 @@ export default function WorkflowManager({ customStatuses }) {
 	};
 
 	const handleErrorThrown = error => {
-		setError(error);
+		setError( error );
 	};
 
 	const handleStatusesUpdated = newStatuses => {
@@ -56,79 +56,79 @@ export default function WorkflowManager({ customStatuses }) {
 
 	return (
 		<>
-			{error && (
-				<div style={{ marginBottom: '1rem' }}>
+			{ error && (
+				<div style={ { marginBottom: '1rem' } }>
 					<Notice status="error" isDismissible={ true }>
 						<p>{ error }</p>
 					</Notice>
 				</div>
 			) }
-		<Flex direction={ [ 'column', 'row' ] } justify={ 'start' } align={ 'start' }>
-			<FlexItem>
-				<Flex align={ 'start' } justify={ 'start' }>
-					<WorkflowArrow
-						start={ __( 'Create', 'vip-workflow' ) }
-						end={ __( 'Publish', 'vip-workflow' ) }
-						referenceDimensions={ { width: statusContanerWidth, height: statusContainerHeight } }
-					/>
+			<Flex direction={ [ 'column', 'row' ] } justify={ 'start' } align={ 'start' }>
+				<FlexItem>
+					<Flex align={ 'start' } justify={ 'start' }>
+						<WorkflowArrow
+							start={ __( 'Create', 'vip-workflow' ) }
+							end={ __( 'Publish', 'vip-workflow' ) }
+							referenceDimensions={ { width: statusContanerWidth, height: statusContainerHeight } }
+						/>
 
-					<div className="status-section">
-						<DragDropContext onDragEnd={ handleDragEnd }>
-							<Droppable droppableId="droppable">
-								{ ( provided, snapshot ) => (
-									<div
-										className="status-container"
-										{ ...provided.droppableProps }
-										ref={ el => {
-											statusContainerRef.current = el;
-											provided.innerRef( el );
-										} }
-										style={ getListStyle( snapshot.isDraggingOver ) }
-									>
-										{ statuses.map( ( item, index ) => (
-											<Draggable
-												key={ item.term_id }
-												draggableId={ `${ item.term_id }` }
-												index={ index }
-											>
-												{ ( provided, snapshot ) => (
-													<DraggableCustomStatus
-														customStatus={ item }
-														index={ index }
-														provided={ provided }
-														snapshot={ snapshot }
-														handleEditStatus={ handleEditStatus }
-														onStatusesUpdated={ handleStatusesUpdated }
-														onErrorThrown={ handleErrorThrown }
-													/>
-												) }
-											</Draggable>
-										) ) }
-										{ provided.placeholder }
-									</div>
-								) }
-							</Droppable>
-						</DragDropContext>
+						<div className="status-section">
+							<DragDropContext onDragEnd={ handleDragEnd }>
+								<Droppable droppableId="droppable">
+									{ ( provided, snapshot ) => (
+										<div
+											className="status-container"
+											{ ...provided.droppableProps }
+											ref={ el => {
+												statusContainerRef.current = el;
+												provided.innerRef( el );
+											} }
+											style={ getListStyle( snapshot.isDraggingOver ) }
+										>
+											{ statuses.map( ( item, index ) => (
+												<Draggable
+													key={ item.term_id }
+													draggableId={ `${ item.term_id }` }
+													index={ index }
+												>
+													{ ( provided, snapshot ) => (
+														<DraggableCustomStatus
+															customStatus={ item }
+															index={ index }
+															provided={ provided }
+															snapshot={ snapshot }
+															handleEditStatus={ handleEditStatus }
+															onStatusesUpdated={ handleStatusesUpdated }
+															onErrorThrown={ handleErrorThrown }
+														/>
+													) }
+												</Draggable>
+											) ) }
+											{ provided.placeholder }
+										</div>
+									) }
+								</Droppable>
+							</DragDropContext>
 
-						<div className="add-status">
-							<Button variant="secondary" icon={ plusCircle } onClick={ handleNewStatus }>
-								{ __( 'Add new', 'vip-workflow' ) }
-							</Button>
+							<div className="add-status">
+								<Button variant="secondary" icon={ plusCircle } onClick={ handleNewStatus }>
+									{ __( 'Add new', 'vip-workflow' ) }
+								</Button>
+							</div>
 						</div>
-					</div>
-				</Flex>
-			</FlexItem>
-			<FlexBlock>
-				{ editStatus && (
-					<CustomStatusEditor
-						status={ editStatus }
-						isNew={ isNewStatus }
-						onCancel={ handleCancelEditStatus }
-						onStatusesUpdated={ handleStatusesUpdated }
-						onErrorThrown={ handleErrorThrown }
-					/>
-				) }
-			</FlexBlock>
+					</Flex>
+				</FlexItem>
+				<FlexBlock>
+					{ editStatus && (
+						<CustomStatusEditor
+							status={ editStatus }
+							isNew={ isNewStatus }
+							onCancel={ handleCancelEditStatus }
+							onStatusesUpdated={ handleStatusesUpdated }
+							onErrorThrown={ handleErrorThrown }
+						/>
+					) }
+				</FlexBlock>
 			</Flex>
 		</>
 	);

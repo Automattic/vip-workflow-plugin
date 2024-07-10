@@ -1,4 +1,3 @@
-import apiFetch from '@wordpress/api-fetch';
 import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { Icon, dragHandle } from '@wordpress/icons';
@@ -10,8 +9,6 @@ export default function DraggableCustomStatus( {
 	provided,
 	snapshot,
 	handleEditStatus,
-	onStatusesUpdated,
-	onErrorThrown
 } ) {
 	const className = clsx(
 		{
@@ -24,19 +21,6 @@ export default function DraggableCustomStatus( {
 		handleEditStatus( customStatus );
 	};
 
-	const handleDeleteClick = async () => {
-		try {
-			const result = await apiFetch({
-				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + customStatus.term_id,
-				method: 'DELETE',
-			});
-
-			onStatusesUpdated( result.updated_statuses );
-		} catch ( error ) {
-			onErrorThrown( error.message );
-		}
-	}
-
 	return (
 		<>
 			<div
@@ -46,13 +30,7 @@ export default function DraggableCustomStatus( {
 				{ ...provided.dragHandleProps }
 				style={ getItemStyle( index, snapshot.isDragging, provided.draggableProps.style ) }
 			>
-				<div className="name">{customStatus.name}</div>
-
-				<div className="delete">
-					<Button variant="secondary" size="small" onClick={ handleDeleteClick }>
-						{ __( 'Delete', 'vip-workflow' ) }
-					</Button>
-				</div>
+				<div className="name">{ customStatus.name }</div>
 
 				<div className="edit">
 					<Button variant="primary" size="small" onClick={ handleEditClick }>
