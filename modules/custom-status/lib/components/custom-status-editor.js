@@ -19,6 +19,7 @@ import DenyStatusDeleteModal from './modals/deny-status-delete-modal';
 
 export default function CustomStatusEditor( {
 	status,
+	defaultStatus,
 	isNew,
 	onCancel,
 	onStatusesUpdated,
@@ -99,6 +100,7 @@ export default function CustomStatusEditor( {
 		deleteModal = (
 			<ConfirmStatusDeleteModal
 				status={ status }
+				defaultStatus={ defaultStatus }
 				onCancel={ () => setIsConfirmingDelete( false ) }
 				onConfirmDelete={ handleDelete }
 			/>
@@ -160,17 +162,19 @@ export default function CustomStatusEditor( {
 				</CardBody>
 
 				<CardFooter justify={ 'end' }>
-					<Button
-						variant="secondary"
-						onClick={ () => setIsConfirmingDelete( true ) }
-						style={ {
-							color: '#b32d2e',
-							boxShadow: 'inset 0 0 0 1px #b32d2e',
-							marginRight: 'auto',
-						} }
-					>
-						{ __( 'Delete this status', 'vip-workflow' ) }
-					</Button>
+					{ ! isNew && (
+						<Button
+							variant="secondary"
+							onClick={ () => setIsConfirmingDelete( true ) }
+							style={ {
+								color: '#b32d2e',
+								boxShadow: 'inset 0 0 0 1px #b32d2e',
+								marginRight: 'auto',
+							} }
+						>
+							{ __( 'Delete this status', 'vip-workflow' ) }
+						</Button>
+					) }
 					<Button variant="secondary" onClick={ onCancel }>
 						{ __( 'Cancel', 'vip-workflow' ) }
 					</Button>

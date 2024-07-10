@@ -19,6 +19,8 @@ export default function WorkflowManager( { customStatuses } ) {
 	const statusContainerRef = useRef( null );
 	const [ statusContanerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
 
+	const defaultStatus = statuses.find( status => status.is_default );
+
 	const handleNewStatus = () => {
 		setIsNewStatus( true );
 		setEditStatus( {} );
@@ -122,6 +124,7 @@ export default function WorkflowManager( { customStatuses } ) {
 					{ editStatus && (
 						<CustomStatusEditor
 							status={ editStatus }
+							defaultStatus={ defaultStatus }
 							isNew={ isNewStatus }
 							onCancel={ handleCancelEditStatus }
 							onStatusesUpdated={ handleStatusesUpdated }

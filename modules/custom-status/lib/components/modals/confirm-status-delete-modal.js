@@ -1,11 +1,12 @@
 import { Button, Modal, Flex } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
-export default function ConfirmStatusDeleteModal( { status, onCancel, onConfirmDelete } ) {
-	let defaultStatus = VW_CUSTOM_STATUS_CONFIGURE.custom_statuses.filter(
-		( { is_default } ) => is_default
-	)?.[ 0 ];
-
+export default function ConfirmStatusDeleteModal( {
+	status,
+	defaultStatus,
+	onCancel,
+	onConfirmDelete,
+} ) {
 	return (
 		<Modal
 			title={ sprintf( __( 'Delete %s?', 'vip-workflow' ), status.name ) }
