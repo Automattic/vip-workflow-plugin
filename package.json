@@ -7,7 +7,8 @@
     "dev": "webpack --watch",
     "dev:hot": "wp-scripts start -c webpack.config.js --hot",
     "wp-env": "wp-env",
-    "lint-js": "eslint modules"
+    "lint-js": "eslint modules",
+    "lint-js-fix": "eslint modules --fix"
   },
   "repository": {
     "type": "git",

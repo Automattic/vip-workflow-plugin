@@ -2,7 +2,7 @@ import './editor.scss';
 
 import { SelectControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
-import { subscribe, dispatch, select, withSelect, withDispatch } from '@wordpress/data';
+import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
 import { PluginPostStatusInfo } from '@wordpress/edit-post';
 import { __ } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
@@ -48,16 +48,19 @@ subscribe( function () {
 
 	// Lock post if the status is not the last one.
 	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
-	if ( vw_publish_guard_enabled && selectedStatus !== statuses[ statuses.length - 1 ].value ) {
-		if ( ! postLocked ) {
-			postLocked = true;
-			dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
-		}
-	} else {
-		if ( postLocked ) {
-			postLocked = false;
-			dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
-		}
+	if (
+		vw_publish_guard_enabled &&
+		selectedStatus !== statuses[ statuses.length - 1 ].value &&
+		! postLocked
+	) {
+		postLocked = true;
+		dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
+	} else if (
+		( ! vw_publish_guard_enabled || selectedStatus === statuses[ statuses.length - 1 ].value ) &&
+		postLocked
+	) {
+		postLocked = false;
+		dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
 	}
 } );
 
