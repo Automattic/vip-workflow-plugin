@@ -30,6 +30,7 @@ export default function CustomStatusEditor( {
 	const [ description, setDescription ] = useState( status?.description || '' );
 	const [ isDefault, setIsDefault ] = useState( status?.is_default || false );
 	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
+	const [ isRequesting, setIsRequesting ] = useState( false );
 
 	useEffect( () => {
 		setName( status?.name || '' );
@@ -63,6 +64,7 @@ export default function CustomStatusEditor( {
 		}
 
 		try {
+			setIsRequesting( true );
 			const result = await apiFetch( {
 				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + ( isNew ? '' : status.term_id ),
 				method: isNew ? 'POST' : 'PUT',
@@ -78,6 +80,8 @@ export default function CustomStatusEditor( {
 		} catch ( error ) {
 			onErrorThrown( error.message );
 		}
+
+		setIsRequesting( false );
 	};
 
 	const handleDelete = async () => {
@@ -172,7 +176,7 @@ export default function CustomStatusEditor( {
 					<Button variant="secondary" onClick={ onCancel }>
 						{ __( 'Cancel', 'vip-workflow' ) }
 					</Button>
-					<Button variant="primary" onClick={ handleSave }>
+					<Button variant="primary" onClick={ handleSave } disabled={ isRequesting }>
 						{ saveButtonText }
 					</Button>
 				</CardFooter>
