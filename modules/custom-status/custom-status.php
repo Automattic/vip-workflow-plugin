@@ -12,7 +12,6 @@ use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
 use VIPWorkflow\Modules\CustomStatus\REST\EditStatus;
 use WP_Error;
-use WP_List_Table;
 use function VIPWorkflow\Common\PHP\_vw_wp_link_page;
 
 class Custom_Status extends Module {
