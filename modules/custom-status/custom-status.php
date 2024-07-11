@@ -252,14 +252,13 @@ class Custom_Status extends Module {
 	public function action_admin_enqueue_scripts() {
 		// Load Javascript we need to use on the configuration views
 		if ( $this->is_whitelisted_settings_view( $this->module->name ) ) {
-			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
-			$dependencies = [ ...$asset_file['dependencies'] ];
-			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $dependencies, $asset_file['version'], true );
+			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
+			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'custom_statuses'      => array_values( $this->get_custom_statuses() ),
-				'url_edit_status'      => EditStatus::get_url(),
+				'custom_statuses' => array_values( $this->get_custom_statuses() ),
+				'url_edit_status' => EditStatus::get_url(),
 			] );
 		}
 
@@ -387,7 +386,7 @@ class Custom_Status extends Module {
 				];
 			}
 
-			$always_show_dropdown = ( 'on' == $this->module->options->always_show_dropdown ) ? 1 : 0;
+			$always_show_dropdown  = ( 'on' == $this->module->options->always_show_dropdown ) ? 1 : 0;
 			$publish_guard_enabled = ( 'on' == $this->module->options->publish_guard ) ? 1 : 0;
 
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
