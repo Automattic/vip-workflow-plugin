@@ -1,4 +1,5 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
+import apiFetch from '@wordpress/api-fetch';
 import { Button, Flex, FlexBlock, FlexItem, Notice } from '@wordpress/components';
 import { useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
@@ -8,7 +9,8 @@ import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 
-export default function WorkflowManager( { customStatuses } ) {
+export default function WorkflowManager({ customStatuses }) {
+	const [ success, setSuccess ] = useState( null );
 	const [ error, setError ] = useState( null );
 
 	const [ statuses, setStatuses ] = useState( customStatuses );
@@ -36,7 +38,13 @@ export default function WorkflowManager( { customStatuses } ) {
 	};
 
 	const handleErrorThrown = error => {
+		setSuccess( null );
 		setError( error );
+	};
+
+	const handleSuccess = message => {
+		setError( null );
+		setSuccess(message);
 	};
 
 	const handleStatusesUpdated = newStatuses => {
@@ -45,15 +53,30 @@ export default function WorkflowManager( { customStatuses } ) {
 		setEditStatus( null );
 	};
 
-	const handleDragEnd = result => {
+	const handleDragEnd = async( result) => {
 		// Dropped outside the list
 		if ( ! result.destination ) {
 			return;
 		}
 
-		const reorderedItems = reorder( statuses, result.source.index, result.destination.index );
-		setStatuses( reorderedItems );
-		updateCustomStatusOrder( reorderedItems );
+		const reorderedItems = reorder(statuses, result.source.index, result.destination.index);
+
+		try {
+			let data = {
+				status_positions: reorderedItems.map(item => item.term_id),
+			};
+
+			const result = await apiFetch({
+				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + 'reorder',
+				method: 'POST',
+				data,
+			});
+
+			handleSuccess( __( 'Statuses reordered successfully.') );
+			setStatuses( result.updated_statuses );
+		} catch (error) {
+			setError( error.message );
+		}
 	};
 
 	return (
@@ -62,6 +85,13 @@ export default function WorkflowManager( { customStatuses } ) {
 				<div style={ { marginBottom: '1rem' } }>
 					<Notice status="error" isDismissible={ true } onRemove={ () => setError( null ) }>
 						<p>{ error }</p>
+					</Notice>
+				</div>
+			) }
+			{ success && (
+				<div style={ { marginBottom: '1rem' } }>
+					<Notice status="success" isDismissible={ true } onRemove={ () => setSuccess( null ) }>
+						<p>{ success }</p>
 					</Notice>
 				</div>
 			) }
@@ -100,8 +130,6 @@ export default function WorkflowManager( { customStatuses } ) {
 															provided={ provided }
 															snapshot={ snapshot }
 															handleEditStatus={ handleEditStatus }
-															onStatusesUpdated={ handleStatusesUpdated }
-															onErrorThrown={ handleErrorThrown }
 														/>
 													) }
 												</Draggable>
@@ -128,7 +156,8 @@ export default function WorkflowManager( { customStatuses } ) {
 							isNew={ isNewStatus }
 							onCancel={ handleCancelEditStatus }
 							onStatusesUpdated={ handleStatusesUpdated }
-							onErrorThrown={ handleErrorThrown }
+							onErrorThrown={handleErrorThrown}
+							onSuccess={handleSuccess}
 						/>
 					) }
 				</FlexBlock>
@@ -148,30 +177,3 @@ const reorder = ( list, startIndex, endIndex ) => {
 const getListStyle = isDraggingOver => ( {
 	background: isDraggingOver ? 'lightblue' : 'white',
 } );
-
-function updateCustomStatusOrder( reorderedItems ) {
-	// Prepare the POST
-	const params = {
-		action: 'update_status_positions',
-		status_positions: reorderedItems.map( item => item.term_id ),
-		custom_status_sortable_nonce: VW_CUSTOM_STATUS_CONFIGURE.nonce_reorder,
-	};
-	// Inform WordPress of our updated positions
-	jQuery.post( VW_CUSTOM_STATUS_CONFIGURE.url_ajax, params, function ( retval ) {
-		// ToDo: Ensure there's a message shown to the user on success/failure. Use Gutenberg Snackbar/Notice components?
-
-		// jQuery( '.edit-flow-admin .edit-flow-message' ).remove();
-		// If there's a success message, print it. Otherwise we assume we received an error message
-		if ( retval.status === 'success' ) {
-			let message =
-				'<span class="edit-flow-updated-message edit-flow-message">' + retval.message + '</span>';
-		} else {
-			let message =
-				'<span class="edit-flow-error-message edit-flow-message">' + retval.message + '</span>';
-		}
-
-		// jQuery( '.edit-flow-admin h2' ).append( message );
-		// // Set a timeout to eventually remove it
-		// setTimeout( edit_flow_hide_message, 8000 );
-	} );
-}

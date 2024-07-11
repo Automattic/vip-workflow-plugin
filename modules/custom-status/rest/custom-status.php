@@ -114,6 +114,41 @@ class EditStatus {
 				],
 			],
 		] );
+
+		register_rest_route( VIP_WORKFLOW_REST_NAMESPACE, '/custom-status/reorder', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'handle_reorder_status' ],
+			'permission_callback' => [ __CLASS__, 'permission_callback' ],
+			'args'                => [
+				// Required parameters
+				'status_positions' => [
+					'required'          => true,
+					'validate_callback' => function ( $param ) {
+						if ( ! is_array( $param ) ) {
+							return false;
+						}
+
+						// validate each item in the array.
+						foreach ( $param as $position => $term_id ) {
+							$term_id = absint( $term_id );
+							$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
+							if ( ! $term instanceof WP_Term ) {
+								return false;
+							}
+						}
+
+						return true;
+					},
+					'sanitize_callback' => function ( $param ) {
+						// Sanitize each item in the array.
+						foreach ( $param as $position => $term_id ) {
+							$param[ $position ] = absint( $term_id );
+						}
+						return $param;
+					},
+				],
+			],
+		] );
 	}
 
 	public static function permission_callback() {
@@ -289,6 +324,35 @@ class EditStatus {
 				'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
 			];
 		}
+	}
+
+	public static function handle_reorder_status( WP_REST_Request $request ) {
+		$status_order = $request->get_param( 'status_positions' );
+
+		$custom_status_module = VIP_Workflow::instance()->custom_status;
+
+		if ( ! is_array( $status_order ) ) {
+			return new WP_Error( 'invalid', 'Status order must be an array.' );
+		}
+
+		foreach ( $status_order as $position => $term_id ) {
+
+			// Have to add 1 to the position because the index started with zero
+			$args   = [
+				'position' => absint( $position ) + 1,
+			];
+
+			$update_status_result = $custom_status_module->update_custom_status( (int) $term_id, $args );
+
+			// Stop the operation immediately if something has gone wrong, rather than silently continuing.
+			if ( is_wp_error( $update_status_result ) ) {
+				return $update_status_result;
+			}
+		}
+
+		return [
+			'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
+		];
 	}
 
 	// Public API

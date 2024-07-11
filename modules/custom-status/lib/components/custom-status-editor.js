@@ -24,6 +24,7 @@ export default function CustomStatusEditor( {
 	onCancel,
 	onStatusesUpdated,
 	onErrorThrown,
+	onSuccess,
 } ) {
 	const [ name, setName ] = useState( status?.name || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
@@ -68,6 +69,7 @@ export default function CustomStatusEditor( {
 				data,
 			} );
 
+			onSuccess( isNew ? sprintf(__( 'Status "%s" added successfully.', 'vip-workflow' ), name ) : sprintf(__( 'Status "%s" updated successfully.', 'vip-workflow' ), name ) );
 			onStatusesUpdated( result.updated_statuses );
 		} catch ( error ) {
 			onErrorThrown( error.message );
@@ -81,6 +83,7 @@ export default function CustomStatusEditor( {
 				method: 'DELETE',
 			} );
 
+			onSuccess( sprintf(__( 'Status "%s" deleted successfully.', 'vip-workflow' ), status.name ) );
 			onStatusesUpdated( result.updated_statuses );
 		} catch ( error ) {
 			onErrorThrown( error.message );

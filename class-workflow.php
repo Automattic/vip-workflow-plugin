@@ -318,19 +318,6 @@ class VIP_Workflow {
 	 */
 	public function register_scripts_and_styles() {
 		wp_enqueue_style( 'vw-admin-css', VIP_WORKFLOW_URL . 'common/css/vip-workflow-admin.css', false, VIP_WORKFLOW_VERSION, 'all' );
-
-		wp_register_script( 'jquery-listfilterizer', VIP_WORKFLOW_URL . 'common/js/jquery.listfilterizer.js', array( 'jquery' ), VIP_WORKFLOW_VERSION, true );
-		wp_register_style( 'jquery-listfilterizer', VIP_WORKFLOW_URL . 'common/css/jquery.listfilterizer.css', false, VIP_WORKFLOW_VERSION, 'all' );
-
-
-		wp_localize_script(
-			'jquery-listfilterizer',
-			'__i18n_jquery_filterizer',
-			array(
-				'all'      => esc_html__( 'All', 'vip-workflow' ),
-				'selected' => esc_html__( 'Selected', 'vip-workflow' ),
-			)
-		);
 	}
 }
 
