@@ -44,6 +44,7 @@ class Custom_Status extends Module {
 					'post' => 'on',
 					'page' => 'on',
 				],
+				'publish_guard'        => 'off', // TODO: should default this to 'on' once everything has been implemented
 			],
 			'post_type_support'    => 'vw_custom_statuses', // This has been plural in all of our docs
 			'configure_page_cb'    => 'print_configure_view',
@@ -387,6 +388,7 @@ class Custom_Status extends Module {
 			}
 
 			$always_show_dropdown = ( 'on' == $this->module->options->always_show_dropdown ) ? 1 : 0;
+			$publish_guard_enabled = ( 'on' == $this->module->options->publish_guard ) ? 1 : 0;
 
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
 
@@ -400,6 +402,7 @@ class Custom_Status extends Module {
 				var status_dropdown_visible = <?php echo esc_js( $always_show_dropdown ); ?>;
 				var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
 				var current_user_can_edit_published_posts = <?php echo current_user_can( $post_type_obj->cap->edit_published_posts ) ? 1 : 0; ?>;
+				const vw_publish_guard_enabled = <?php echo esc_js( $publish_guard_enabled ); ?>;
 			</script>
 
 				<?php
@@ -769,10 +772,10 @@ class Custom_Status extends Module {
 	 * (We use the Settings API for form generation, but not saving)
 	 */
 	public function register_settings() {
-
 		add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
 		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ $this, 'settings_post_types_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 		add_settings_field( 'always_show_dropdown', __( 'Always show dropdown:', 'vip-workflow' ), [ $this, 'settings_always_show_dropdown_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+		add_settings_field( 'publish_guard', __( 'Publish Guard:', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 	}
 
 	/**
@@ -801,6 +804,23 @@ class Custom_Status extends Module {
 	}
 
 	/**
+	 * Option for whether the publish guard feature should be enabled
+	 */
+	public function settings_publish_guard() {
+		$options = [
+			'off' => __( 'Disabled', 'vip-workflow' ),
+			'on'  => __( 'Enabled', 'vip-workflow' ),
+		];
+		echo '<select id="publish_guard" name="' . esc_attr( $this->module->options_group_name ) . '[publish_guard]">';
+		foreach ( $options as $value => $label ) {
+			echo '<option value="' . esc_attr( $value ) . '"';
+			echo selected( $this->module->options->publish_guard, $value );
+			echo '>' . esc_html( $label ) . '</option>';
+		}
+		echo '</select>';
+	}
+
+	/**
 	 * Validate input from the end user
 	 */
 	public function settings_validate( $new_options ) {
@@ -814,6 +834,11 @@ class Custom_Status extends Module {
 		// Whitelist validation for the 'always_show_dropdown' optoins
 		if ( ! isset( $new_options['always_show_dropdown'] ) || 'on' != $new_options['always_show_dropdown'] ) {
 			$new_options['always_show_dropdown'] = 'off';
+		}
+
+		// Whitelist validation for the 'publish_guard' optoins
+		if ( ! isset( $new_options['publish_guard'] ) || 'on' != $new_options['publish_guard'] ) {
+			$new_options['publish_guard'] = 'off';
 		}
 
 		return $new_options;
@@ -1261,7 +1286,7 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Given a post ID, return true if the custom post status indicates the post should be blocked from publishing, or false otherwise.
+	 * Given a post ID, return true if the extended post status allows for publishing.
 	 *
 	 * @param int $post_id The post ID being queried.
 	 * @return bool True if the post should not be published based on the extended post status, false otherwise.
@@ -1281,10 +1306,14 @@ class Custom_Status extends Module {
 			return false;
 		}
 
-		$status_before_publish     = $custom_statuses[ array_key_last( $custom_statuses ) ];
-		$is_in_final_custom_status = $status_before_publish->slug === $post->post_status;
+		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
 
-		return ! $is_in_final_custom_status;
+		if ( $status_before_publish->slug == $post->post_status ) {
+			// Post is in the last status, so it can be published
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	/**
