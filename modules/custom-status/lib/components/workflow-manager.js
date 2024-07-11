@@ -59,7 +59,11 @@ export default function WorkflowManager( { customStatuses } ) {
 			return;
 		}
 
+		const originalOrder = statuses;
 		const reorderedItems = reorder( statuses, result.source.index, result.destination.index );
+
+		// Optimistically reorder to avoid status jumping when the request completes
+		setStatuses( reorderedItems );
 
 		try {
 			let data = {
@@ -67,7 +71,7 @@ export default function WorkflowManager( { customStatuses } ) {
 			};
 
 			const result = await apiFetch( {
-				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + 'reorder',
+				url: VW_CUSTOM_STATUS_CONFIGURE.url_reorder_status,
 				method: 'POST',
 				data,
 			} );
@@ -76,6 +80,7 @@ export default function WorkflowManager( { customStatuses } ) {
 			setStatuses( result.updated_statuses );
 		} catch ( error ) {
 			setError( error.message );
+			setStatuses( originalOrder );
 		}
 	};
 

@@ -257,8 +257,9 @@ class Custom_Status extends Module {
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'custom_statuses' => array_values( $this->get_custom_statuses() ),
-				'url_edit_status' => EditStatus::get_url(),
+				'custom_statuses'    => array_values( $this->get_custom_statuses() ),
+				'url_edit_status'    => EditStatus::get_crud_url(),
+				'url_reorder_status' => EditStatus::get_reorder_url(),
 			] );
 		}
 

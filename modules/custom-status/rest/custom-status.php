@@ -338,7 +338,7 @@ class EditStatus {
 		foreach ( $status_order as $position => $term_id ) {
 
 			// Have to add 1 to the position because the index started with zero
-			$args   = [
+			$args = [
 				'position' => absint( $position ) + 1,
 			];
 
@@ -357,7 +357,11 @@ class EditStatus {
 
 	// Public API
 
-	public static function get_url() {
+	public static function get_crud_url() {
 		return rest_url( sprintf( '%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status/' ) );
+	}
+
+	public static function get_reorder_url() {
+		return rest_url( sprintf( '%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status/reorder' ) );
 	}
 }
