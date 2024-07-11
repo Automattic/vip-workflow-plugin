@@ -9,7 +9,7 @@ import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 
-export default function WorkflowManager({ customStatuses }) {
+export default function WorkflowManager( { customStatuses } ) {
 	const [ success, setSuccess ] = useState( null );
 	const [ error, setError ] = useState( null );
 
@@ -44,7 +44,7 @@ export default function WorkflowManager({ customStatuses }) {
 
 	const handleSuccess = message => {
 		setError( null );
-		setSuccess(message);
+		setSuccess( message );
 	};
 
 	const handleStatusesUpdated = newStatuses => {
@@ -53,28 +53,28 @@ export default function WorkflowManager({ customStatuses }) {
 		setEditStatus( null );
 	};
 
-	const handleDragEnd = async( result) => {
+	const handleDragEnd = async result => {
 		// Dropped outside the list
 		if ( ! result.destination ) {
 			return;
 		}
 
-		const reorderedItems = reorder(statuses, result.source.index, result.destination.index);
+		const reorderedItems = reorder( statuses, result.source.index, result.destination.index );
 
 		try {
 			let data = {
-				status_positions: reorderedItems.map(item => item.term_id),
+				status_positions: reorderedItems.map( item => item.term_id ),
 			};
 
-			const result = await apiFetch({
+			const result = await apiFetch( {
 				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + 'reorder',
 				method: 'POST',
 				data,
-			});
+			} );
 
-			handleSuccess( __( 'Statuses reordered successfully.') );
+			handleSuccess( __( 'Statuses reordered successfully.' ) );
 			setStatuses( result.updated_statuses );
-		} catch (error) {
+		} catch ( error ) {
 			setError( error.message );
 		}
 	};
@@ -156,8 +156,8 @@ export default function WorkflowManager({ customStatuses }) {
 							isNew={ isNewStatus }
 							onCancel={ handleCancelEditStatus }
 							onStatusesUpdated={ handleStatusesUpdated }
-							onErrorThrown={handleErrorThrown}
-							onSuccess={handleSuccess}
+							onErrorThrown={ handleErrorThrown }
+							onSuccess={ handleSuccess }
 						/>
 					) }
 				</FlexBlock>

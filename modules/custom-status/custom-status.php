@@ -1305,6 +1305,7 @@ class Custom_Status extends Module {
 
 			return true;
 		} else {
+			/* translators: %d: the invalid term id */
 			return new WP_Error( 'invalid-term-id', sprintf( __( 'Could not set the default status to term ID %d.', 'vip-workflow' ), $term_id ) );
 		}
 	}
