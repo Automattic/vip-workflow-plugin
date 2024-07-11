@@ -7,6 +7,7 @@ import { plusCircle } from '@wordpress/icons';
 
 import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
+import SuccessNotice from './success-notice';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 
 export default function WorkflowManager( { customStatuses } ) {
@@ -78,24 +79,18 @@ export default function WorkflowManager( { customStatuses } ) {
 			handleSuccess( __( 'Statuses reordered successfully.', 'vip-workflow' ) );
 			setStatuses( result.updated_statuses );
 		} catch ( error ) {
-			setError( error.message );
+			handleErrorThrown( error.message );
 			setStatuses( originalOrder );
 		}
 	};
 
 	return (
 		<>
+			{ <SuccessNotice success={ success } /> }
 			{ error && (
 				<div style={ { marginBottom: '1rem' } }>
 					<Notice status="error" isDismissible={ true } onRemove={ () => setError( null ) }>
 						<p>{ error }</p>
-					</Notice>
-				</div>
-			) }
-			{ success && (
-				<div style={ { marginBottom: '1rem' } }>
-					<Notice status="success" isDismissible={ true } onRemove={ () => setSuccess( null ) }>
-						<p>{ success }</p>
 					</Notice>
 				</div>
 			) }
