@@ -48,7 +48,6 @@ export default function WorkflowManager( { customStatuses } ) {
 	};
 
 	const handleStatusesUpdated = newStatuses => {
-		// ToDo: Show a success message
 		setStatuses( newStatuses );
 		setEditStatus( null );
 	};
@@ -76,7 +75,7 @@ export default function WorkflowManager( { customStatuses } ) {
 				data,
 			} );
 
-			handleSuccess( __( 'Statuses reordered successfully.' ) );
+			handleSuccess( __( 'Statuses reordered successfully.', 'vip-workflow' ) );
 			setStatuses( result.updated_statuses );
 		} catch ( error ) {
 			setError( error.message );
