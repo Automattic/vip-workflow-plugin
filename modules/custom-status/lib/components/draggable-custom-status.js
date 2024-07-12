@@ -30,10 +30,7 @@ export default function DraggableCustomStatus( {
 				{ ...provided.dragHandleProps }
 				style={ getItemStyle( index, snapshot.isDragging, provided.draggableProps.style ) }
 			>
-				<div className="name">
-					{ customStatus.name }
-					{ customStatus.is_default && <strong>{ __( ' - Default', 'vip-workflow' ) }</strong> }
-				</div>
+				<div className="name">{ customStatus.name }</div>
 
 				<div className="edit">
 					<Button variant="primary" size="small" onClick={ handleEditClick }>

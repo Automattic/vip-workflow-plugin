@@ -8,18 +8,15 @@ import {
 	CardHeader,
 	TextControl,
 	TextareaControl,
-	ToggleControl,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect } from 'react';
 
 import ConfirmStatusDeleteModal from './modals/confirm-status-delete-modal';
-import DenyStatusDeleteModal from './modals/deny-status-delete-modal';
 
 export default function CustomStatusEditor( {
 	status,
-	defaultStatus,
 	isNew,
 	onCancel,
 	onStatusesUpdated,
@@ -28,14 +25,12 @@ export default function CustomStatusEditor( {
 } ) {
 	const [ name, setName ] = useState( status?.name || '' );
 	const [ description, setDescription ] = useState( status?.description || '' );
-	const [ isDefault, setIsDefault ] = useState( status?.is_default || false );
 	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
 	const [ isRequesting, setIsRequesting ] = useState( false );
 
 	useEffect( () => {
 		setName( status?.name || '' );
 		setDescription( status?.description || '' );
-		setIsDefault( status?.is_default || false );
 	}, [ status ] );
 
 	let titleText;
@@ -53,10 +48,9 @@ export default function CustomStatusEditor( {
 	}
 
 	const handleSave = async () => {
-		let data = {
+		const data = {
 			name,
 			description,
-			is_default: isDefault,
 		};
 
 		if ( ! isNew ) {
@@ -102,21 +96,13 @@ export default function CustomStatusEditor( {
 		setIsConfirmingDelete( false );
 	};
 
-	let deleteModal;
-	if ( status?.is_default ) {
-		deleteModal = (
-			<DenyStatusDeleteModal status={ status } onCancel={ () => setIsConfirmingDelete( false ) } />
-		);
-	} else {
-		deleteModal = (
-			<ConfirmStatusDeleteModal
-				status={ status }
-				defaultStatus={ defaultStatus }
-				onCancel={ () => setIsConfirmingDelete( false ) }
-				onConfirmDelete={ handleDelete }
-			/>
-		);
-	}
+	const deleteModal = (
+		<ConfirmStatusDeleteModal
+			status={ status }
+			onCancel={ () => setIsConfirmingDelete( false ) }
+			onConfirmDelete={ handleDelete }
+		/>
+	);
 
 	return (
 		<>
@@ -147,17 +133,6 @@ export default function CustomStatusEditor( {
 					/>
 				</CardBody>
 				<CardDivider />
-				<CardBody>
-					<ToggleControl
-						checked={ isDefault }
-						label={ __( 'Make default status', 'vip-workflow' ) }
-						help={ __(
-							'New posts will automatically be assigned to this status.',
-							'vip-workflow'
-						) }
-						onChange={ () => setIsDefault( ! isDefault ) }
-					/>
-				</CardBody>
 
 				<CardFooter justify={ 'end' }>
 					{ ! isNew && (

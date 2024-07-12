@@ -38,7 +38,6 @@ class Custom_Status extends Module {
 			'img_url'              => $this->module_url . 'lib/custom_status_s128.png',
 			'slug'                 => 'custom-status',
 			'default_options'      => [
-				'default_status'       => 'pitch',
 				'always_show_dropdown' => 'off',
 				'post_types'           => [
 					'post' => 'on',
@@ -52,7 +51,6 @@ class Custom_Status extends Module {
 			'messages'             => [
 				'status-added'            => __( 'Post status created.', 'vip-workflow' ),
 				'status-missing'          => __( "Post status doesn't exist.", 'vip-workflow' ),
-				'default-status-changed'  => __( 'Default post status has been changed.', 'vip-workflow' ),
 				'term-updated'            => __( 'Post status updated.', 'vip-workflow' ),
 				'status-deleted'          => __( 'Post status deleted.', 'vip-workflow' ),
 				'status-position-updated' => __( 'Status order updated.', 'vip-workflow' ),
@@ -216,6 +214,8 @@ class Custom_Status extends Module {
 					'protected'   => true,
 					'_builtin'    => false,
 					'label_count' => _n_noop( "{$status->name} <span class='count'>(%s)</span>", "{$status->name} <span class='count'>(%s)</span>" ),
+					'show_in_admin_status_list' => true,
+					'show_in_admin_all_list'    => true,
 				] );
 			}
 		}
@@ -344,8 +344,7 @@ class Custom_Status extends Module {
 			if ( ! empty( $post ) ) {
 				// Get the status of the current post
 				if ( 0 == $post->ID || 'auto-draft' == $post->post_status || 'edit.php' == $pagenow ) {
-					// TODO: check to make sure that the default exists
-					$selected = $this->get_default_custom_status()->slug;
+					$selected = $custom_statuses[0]->slug;
 				} else {
 					$selected = $post->post_status;
 				}
@@ -396,7 +395,6 @@ class Custom_Status extends Module {
 			?>
 			<script type="text/javascript">
 				var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
-				var vw_default_custom_status = '<?php echo esc_js( $this->get_default_custom_status()->slug ); ?>';
 				var current_status = '<?php echo esc_js( $selected ); ?>';
 				var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
 				var status_dropdown_visible = <?php echo esc_js( $always_show_dropdown ); ?>;
@@ -478,11 +476,6 @@ class Custom_Status extends Module {
 		if ( isset( $args['slug'] ) && $args['slug'] != $old_status->slug && ! $this->is_restricted_status( $old_status->slug ) ) {
 			$new_status = $args['slug'];
 			$this->reassign_post_status( $old_status->slug, $new_status );
-
-			$default_status = $this->get_default_custom_status()->slug;
-			if ( $old_status->slug == $default_status ) {
-				$vip_workflow->update_module_option( $this->module->name, 'default_status', $new_status );
-			}
 		}
 		// We're encoding metadata that isn't supported by default in the term's description field
 		$args_to_encode                = [];
@@ -506,31 +499,21 @@ class Custom_Status extends Module {
 	 * Partly a wrapper for the wp_delete_term function.
 	 * BUT, also reassigns posts that currently have the deleted status assigned.
 	 */
-	public function delete_custom_status( $status_id, $args = [], $reassign = '' ) {
-		global $vip_workflow;
-		// Reassign posts to alternate status
-
+	public function delete_custom_status( $status_id, $args = [] ) {
 		// Get slug for the old status
 		$old_status = $this->get_custom_status_by( 'id', $status_id )->slug;
-
-		if ( $reassign == $old_status ) {
-			return new WP_Error( 'invalid', __( 'Cannot reassign to the status you want to delete', 'vip-workflow' ) );
-		}
 
 		// Reset our internal object cache
 		$this->custom_statuses_cache = [];
 
 		if ( ! $this->is_restricted_status( $old_status ) && 'draft' !== $old_status ) {
-			$default_status = $this->get_default_custom_status()->slug;
-			// If new status in $reassign, use that for all posts of the old_status
-			if ( ! empty( $reassign ) ) {
-				$new_status = $this->get_custom_status_by( 'id', $reassign )->slug;
-			} else {
-				$new_status = $default_status;
-			}
-			if ( $old_status == $default_status && $this->get_custom_status_by( 'slug', 'draft' ) ) { // Deleting default status
-				$new_status = 'draft';
-				$vip_workflow->update_module_option( $this->module->name, 'default_status', $new_status );
+			// Get the new status to reassign posts to, which would be the first custom status.
+			// In the event that the first custom status is being deleted, we'll reassign to the second custom status.
+			// Since draft cannot be deleted, we don't need to worry about ever getting index out of bounds.
+			$custom_statuses = $this->get_custom_statuses();
+			$new_status = $custom_statuses[0]->slug;
+			if ( $old_status->slug === $new_status ) {
+				$new_status = $custom_statuses[1]->slug;
 			}
 
 			$this->reassign_post_status( $old_status, $new_status );
@@ -570,8 +553,6 @@ class Custom_Status extends Module {
 			$statuses = [];
 		}
 
-		$has_default_status = false;
-
 		// Expand and order the statuses
 		$ordered_statuses = [];
 		$hold_to_end      = [];
@@ -594,27 +575,12 @@ class Custom_Status extends Module {
 			} else {
 				$hold_to_end[] = $status;
 			}
-
-			// Add is_default property
-			if ( $status->slug === $this->module->options->default_status ) {
-				$status->is_default = true;
-				$has_default_status = true;
-			} else {
-				$status->is_default = false;
-			}
 		}
 		// Sort the items numerically by key
 		ksort( $ordered_statuses, SORT_NUMERIC );
 		// Append all of the statuses that didn't have an existing position
 		foreach ( $hold_to_end as $unpositioned_status ) {
 			$ordered_statuses[] = $unpositioned_status;
-		}
-
-		if ( ! $has_default_status ) {
-			// If no default status is set yet, use the first term
-			if ( ! empty( $ordered_statuses ) ) {
-				$ordered_statuses[0]->is_default = true;
-			}
 		}
 
 		$this->custom_statuses_cache = $ordered_statuses;
@@ -648,38 +614,25 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Get the term object for the default custom post status
-	 *
-	 * @return object $default_status Default post status object
-	 */
-	public function get_default_custom_status() {
-		$default_status = $this->get_custom_status_by( 'slug', $this->module->options->default_status );
-
-		if ( ! $default_status ) {
-			$custom_statuses = $this->get_custom_statuses();
-			return array_filter( $custom_statuses, function ( $status ) {
-				return $status->is_default;
-			} )[0];
-		}
-
-		return $default_status;
-	}
-
-	/**
-	 * Assign new statuses to posts using value provided or the default
+	 * Assign new statuses to posts using value provided
 	 *
 	 * @param string $old_status Slug for the old status
 	 * @param string $new_status Slug for the new status
 	 */
-	public function reassign_post_status( $old_status, $new_status = '' ) {
+	public function reassign_post_status( $old_status, $new_status ) {
 		global $wpdb;
 
 		if ( empty( $new_status ) ) {
-			$new_status = $this->get_default_custom_status()->slug;
+			throw new WPError( 'invalid', __( 'No new status provided for reassignment.', 'vip-workflow' ) );
 		}
 
 		// Make the database call
 		$result = $wpdb->update( $wpdb->posts, [ 'post_status' => $new_status ], [ 'post_status' => $old_status ], [ '%s' ] );
+
+		// Check if result was successful
+		if ( false === $result ) {
+			throw new WPError( 'invalid', __( 'Failed to reassign post statuses.', 'vip-workflow' ) );
+		}
 	}
 
 	/**
@@ -740,31 +693,6 @@ class Custom_Status extends Module {
 				break;
 		}
 		return $restricted;
-	}
-
-	/**
-	 * Generate a link to one of the custom status actions
-	 *
-	 * @param array $args (optional) Action and any query args to add to the URL
-	 * @return string $link Direct link to complete the action
-	 */
-	public function get_link( $args = [] ) {
-		if ( ! isset( $args['action'] ) ) {
-			$args['action'] = '';
-		}
-		if ( ! isset( $args['page'] ) ) {
-			$args['page'] = $this->module->settings_slug;
-		}
-		// Add other things we may need depending on the action
-		switch ( $args['action'] ) {
-			case 'make-default':
-			case 'delete-status':
-				$args['nonce'] = wp_create_nonce( $args['action'] );
-				break;
-			default:
-				break;
-		}
-		return add_query_arg( $args, get_admin_url( null, 'admin.php' ) );
 	}
 
 	/**
@@ -1313,29 +1241,6 @@ class Custom_Status extends Module {
 			return true;
 		} else {
 			return false;
-		}
-	}
-
-	/**
-	 * Given a term ID, set that term as the default custom status.
-	 *
-	 * @param int $term_id The ID of the status to set as the default.
-	 * @return true|WP_Error
-	 */
-	public function set_default_custom_status( $term_id ) {
-		$term_id = intval( $term_id );
-		$term    = $this->get_custom_status_by( 'id', $term_id );
-
-		if ( is_object( $term ) ) {
-			VIP_Workflow::instance()->update_module_option( $this->module->name, 'default_status', $term->slug );
-
-			// Reset custom statuses cache
-			$this->custom_statuses_cache = [];
-
-			return true;
-		} else {
-			/* translators: %d: the invalid term id */
-			return new WP_Error( 'invalid-term-id', sprintf( __( 'Could not set the default status to term ID %d.', 'vip-workflow' ), $term_id ) );
 		}
 	}
 

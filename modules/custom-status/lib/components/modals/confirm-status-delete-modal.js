@@ -1,12 +1,7 @@
-import { Button, Modal, Flex } from '@wordpress/components';
+import { Button, Flex, Modal } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
-export default function ConfirmStatusDeleteModal( {
-	status,
-	defaultStatus,
-	onCancel,
-	onConfirmDelete,
-} ) {
+export default function ConfirmStatusDeleteModal( { status, onCancel, onConfirmDelete } ) {
 	return (
 		<Modal
 			title={ sprintf( __( 'Delete %s?', 'vip-workflow' ), status.name ) }
@@ -17,11 +12,10 @@ export default function ConfirmStatusDeleteModal( {
 			<p>
 				{ sprintf(
 					__(
-						'Are you sure you want to delete "%1$s"? Any existing posts with this status will be reassigned to the default status%2$s.',
+						'Are you sure you want to delete "%1$s"? Any existing posts with this status will be reassigned to the starting status.',
 						'vip-workflow'
 					),
-					status.name,
-					defaultStatus ? ` "${ defaultStatus.name }"` : ''
+					status.name
 				) }
 			</p>
 			<strong style={ { display: 'block', marginTop: '1rem' } }>

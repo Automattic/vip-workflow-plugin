@@ -43,12 +43,6 @@ class EditStatus {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
-				'is_default'  => [
-					'default'           => false,
-					'sanitize_callback' => function ( $param ) {
-						return boolval( $param );
-					},
-				],
 			],
 		] );
 
@@ -84,12 +78,6 @@ class EditStatus {
 					'default'           => '',
 					'sanitize_callback' => function ( $param ) {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
-					},
-				],
-				'is_default'  => [
-					'default'           => false,
-					'sanitize_callback' => function ( $param ) {
-						return boolval( $param );
 					},
 				],
 			],
@@ -162,7 +150,6 @@ class EditStatus {
 		$status_name        = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$status_description = $request->get_param( 'description' );
-		$status_is_default  = $request->get_param( 'is_default' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -209,10 +196,6 @@ class EditStatus {
 			return $add_status_result;
 		}
 
-		if ( $status_is_default ) {
-			VIP_Workflow::instance()->custom_status->set_default_custom_status( $add_status_result['term_id'] );
-		}
-
 		return [
 			'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
 		];
@@ -226,17 +209,8 @@ class EditStatus {
 		$status_name        = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$status_description = $request->get_param( 'description' );
-		$status_is_default  = $request->get_param( 'is_default' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
-
-		// ToDo: Ensure we have a similar error shown when the name is empty when running validate_callback above
-
-		// // Check if name field was filled in
-		// if ( empty( $status_name ) ) {
-		//  $change_error = new WP_Error( 'invalid', esc_html__( 'Please enter a name for the status.', 'vip-workflow' ) );
-		//  die( esc_html( $change_error->get_error_message() ) );
-		// }
 
 		// Check that the name isn't numeric
 		if ( is_numeric( $status_name ) ) {
@@ -255,9 +229,6 @@ class EditStatus {
 
 		// Check to make sure the status doesn't already exist
 		$custom_status_by_id = $custom_status_module->get_custom_status_by( 'id', $term_id );
-		// if ( $custom_status_by_id->name === $status_name ) {
-		//  return new WP_Error( 'invalid', 'Status already exists. Please choose another name.' );
-		// }
 
 		$custom_status_by_slug = $custom_status_module->get_custom_status_by( 'slug', $status_slug );
 
@@ -287,10 +258,6 @@ class EditStatus {
 			return $update_status_result;
 		}
 
-		if ( $status_is_default ) {
-			VIP_Workflow::instance()->custom_status->set_default_custom_status( $update_status_result->term_id );
-		}
-
 		return [
 			'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
 		];
@@ -304,15 +271,10 @@ class EditStatus {
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
-		// Check to make sure the status doesn't already exist
+		// Check to make sure the status exists
 		$custom_status_by_id = $custom_status_module->get_custom_status_by( 'id', $term_id );
 		if ( ! $custom_status_by_id ) {
 			return new WP_Error( 'invalid', 'Status does not exist.' );
-		}
-
-		// Don't allow deletion of default statuses
-		if ( $custom_status_by_id->slug === $custom_status_module->get_default_custom_status()->slug ) {
-			return new WP_Error( 'invalid', 'Cannot delete default status.' );
 		}
 
 		$delete_status_result = $custom_status_module->delete_custom_status( $term_id );
