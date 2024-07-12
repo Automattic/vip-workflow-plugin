@@ -286,26 +286,36 @@ class Settings extends Module {
 		<?php
 	}
 
+	public function settings_publish_guard() {
+		$options    = get_option( 'vw_publish_guard' );
+		$is_enabled = $options[ 'vw_publish_guard' ] ?? true;
+
+		printf( '<input id="%1$s" name="%2$s[%1$s]" type="checkbox" value="yes" %3$s />', esc_attr( 'vw_publish_guard' ), esc_attr( 'vw_publish_guard' ), checked( $is_enabled, true, false ) );
+		printf( '<label for="%s"><p class="description" style="display: inline-block; margin-left: 0.25rem">%s</p></label>', esc_attr( 'is-enabled' ), esc_html__( 'Enable guard publishing.' ) );
+	}
+
 	public function register_all_settings() {
 		add_settings_section( 'plugin-settings', __( 'Plugin Settings' ), '__return_null', VIP_WORKFLOW_MENU_SLUG );
 
-		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'post_types', [
+		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'vw_post_types', [
 			'type' => 'array',
 			'description' => 'The post types that the plugin should be enabled on',
 			'default' => [ 'post', 'page' ],
 		] );
-		add_settings_field( 'post_types', __( 'Post types:', 'vip-workflow' ), [ $this, 'helper_option_custom_post_type' ], VIP_WORKFLOW_MENU_SLUG, 'plugin-settings' );
+		//add_settings_field( 'vw_post_types', __( 'Post types:', 'vip-workflow' ), [ $this, 'helper_option_custom_post_type' ], VIP_WORKFLOW_MENU_SLUG, 'plugin-settings' );
 
 		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'always_show_dropdown', [
 			'type' => 'boolean',
 			'description' => 'Whether the dropdown should always be shown',
 			'default' => false,
 		] );
-		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'publish_guard', [
+		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'vw_publish_guard', [
 			'type' => 'boolean',
 			'description' => 'Whether the publish guard should be enabled',
 			'default' => false,
 		] );
+		add_settings_field( 'vw_publish_guard', __( 'Publish Guard:', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], VIP_WORKFLOW_MENU_SLUG, 'plugin-settings' );
+
 		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'always_notify_admin', [
 			'type' => 'boolean',
 			'description' => 'Always notify blog admin',
