@@ -15,18 +15,20 @@ const statuses = window.VipWorkflowCustomStatuses.map( s => ( { label: s.name, v
 /**
  * Subscribe to changes so we can set a default status and update a button's text.
  */
+const editor = select( 'core/editor' );
 let buttonTextObserver = null;
-let postLocked = false;
+
 subscribe( function () {
-	const postId = select( 'core/editor' ).getCurrentPostId();
+	const postId = editor.getCurrentPostId();
 	if ( ! postId ) {
 		// Post isn't ready yet so don't do anything.
 		return;
 	}
 
-	// For new posts, we need to force the default custom status.
-	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
+	const isCleanNewPost = editor.isCleanNewPost();
+
 	if ( isCleanNewPost ) {
+		// On fresh posts, set the default custom status
 		dispatch( 'core/editor' ).editPost( {
 			status: vw_default_custom_status,
 		} );
@@ -36,30 +38,58 @@ subscribe( function () {
 	maybeUpdateButtonText( document.querySelector( '.editor-post-save-draft' ) );
 
 	// The post is being saved, so we need to set up an observer to update the button text when it's back.
-	if (
-		buttonTextObserver === null &&
-		window.MutationObserver &&
-		select( 'core/editor' ).isSavingPost()
-	) {
+	if ( buttonTextObserver === null && window.MutationObserver && editor.isSavingPost() ) {
 		buttonTextObserver = createButtonObserver(
 			document.querySelector( '.edit-post-header__settings' )
 		);
 	}
 
-	// Lock post if the status is not the last one.
+	if ( vw_publish_guard_enabled ) {
+		enforcePublishGuard( isCleanNewPost );
+	}
+} );
+
+// Track isPostLocked locally to avoid infinite recursion when updating
+let isPostLocked = editor.isPostLocked();
+
+function enforcePublishGuard( isCleanNewPost ) {
+	const isNewPost = isCleanNewPost || editor.isEditedPostNew();
+
 	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
-	if ( vw_publish_guard_enabled && selectedStatus !== statuses[ statuses.length - 1 ].value ) {
-		if ( ! postLocked ) {
-			postLocked = true;
+	const isDefaultStatus = selectedStatus === vw_default_custom_status;
+	const isFinalStatusBeforePublish = selectedStatus === statuses[ statuses.length - 1 ].value;
+
+	console.log( '------------' );
+	console.log( 'selectedStatus:', selectedStatus );
+
+	console.log( 'isPostLocked:', isPostLocked );
+
+	if ( isNewPost ) {
+		// New posts are only allowed to have the default status
+		if ( isDefaultStatus && isPostLocked ) {
+			console.log( 'New post with default status, unlocking.' );
+			isPostLocked = false;
+			dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
+		} else if ( ! isDefaultStatus && ! isPostLocked ) {
+			console.log( 'New post with non-default status, LOCK.' );
+			isPostLocked = true;
 			dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
 		}
 	} else {
-		if ( postLocked ) {
-			postLocked = false;
+		// Non-new posts are locked from publishing unless in the final status
+		if ( isFinalStatusBeforePublish && isPostLocked ) {
+			console.log( 'Existing post, unlocking, because this is the final status.' );
+			isPostLocked = false;
 			dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
+		} else if ( ! isFinalStatusBeforePublish && ! isPostLocked ) {
+			console.log( 'Existing post, LOCKing, not final status.' );
+			isPostLocked = true;
+			dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
+		} else {
+			console.log( 'Did not lock or unlock post, keeping it at:', isPostLocked );
 		}
 	}
-} );
+}
 
 /**
  * Create a mutation observer that will update the
