@@ -1649,6 +1649,7 @@ class Custom_Status extends Module {
 	 *
 	 * Hooks into the `wp_insert_post_empty_content` filter to check if the post status is valid to be published
 	 */
+	/* phpcs:disable WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement */
 	public function validate_post_is_publish_locked( $maybe_empty, $postarr ) {
 		// if new status is not `publish` then we don't care
 		if ( 'publish' !== $postarr['post_status'] ) {
