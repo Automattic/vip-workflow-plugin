@@ -7,6 +7,9 @@ use VIPWorkflow\Common\PHP\Module;
 
 class Settings extends Module {
 
+	public const MENU_SLUG              = 'vip_workflow';
+	public const OPTIONS_KEY            = 'vip_workflow_options';
+
 	public $module;
 
 	/**
@@ -33,12 +36,15 @@ class Settings extends Module {
 	 * Initialize the rest of the stuff in the class if the module is active
 	 */
 	public function init() {
-		add_action( 'admin_init', array( $this, 'helper_settings_validate_and_save' ), 100 );
+		add_action( 'admin_init', [ $this, 'register_all_settings' ], 100);
 
-		add_action( 'admin_print_styles', array( $this, 'action_admin_print_styles' ) );
-		add_action( 'admin_print_scripts', array( $this, 'action_admin_print_scripts' ) );
+		add_action( 'admin_menu', [ $this, 'register_all_menus' ] );
+		//add_action( 'admin_init', array( $this, 'helper_settings_validate_and_save' ), 100 );
+
+		//add_action( 'admin_print_styles', array( $this, 'action_admin_print_styles' ) );
+		//add_action( 'admin_print_scripts', array( $this, 'action_admin_print_scripts' ) );
 		//add_action( 'admin_enqueue_scripts', array( $this, 'action_admin_enqueue_scripts' ) );
-		add_action( 'admin_menu', array( $this, 'action_admin_menu' ) );
+		//add_action( 'admin_menu', array( $this, 'action_admin_menu' ) );
 	}
 
 	/**
@@ -261,5 +267,59 @@ class Settings extends Module {
 		$goback = add_query_arg( 'message', 'settings-updated', remove_query_arg( array( 'message' ), wp_get_referer() ) );
 		wp_safe_redirect( $goback );
 		exit;
+	}
+
+	public function register_all_menus() {
+		add_menu_page( __( 'VIP Workflow', 'vip-workflow' ), __( 'VIP Workflow', 'vip-workflow' ), 'manage_options', VIP_WORKFLOW_MENU_SLUG, [ $this, 'render_settings_page' ], 'dashicons-groups' );
+	}
+
+	public function render_settings_page() {
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'VIP Workflow Settings', 'vip-workflow' ); ?></h1>
+			<form method="post" action="options.php">
+				<?php settings_fields( VIP_WORKFLOW_OPTIONS_GROUP_NAME ); ?>
+				<?php do_settings_sections( VIP_WORKFLOW_MENU_SLUG ); ?>
+				<?php submit_button(); ?>
+			</form>
+		</div>
+		<?php
+	}
+
+	public function register_all_settings() {
+		add_settings_section( 'plugin-settings', __( 'Plugin Settings' ), '__return_null', VIP_WORKFLOW_MENU_SLUG );
+
+		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'post_types', [
+			'type' => 'array',
+			'description' => 'The post types that the plugin should be enabled on',
+			'default' => [ 'post', 'page' ],
+		] );
+		add_settings_field( 'post_types', __( 'Post types:', 'vip-workflow' ), [ $this, 'helper_option_custom_post_type' ], VIP_WORKFLOW_MENU_SLUG, 'plugin-settings' );
+
+		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'always_show_dropdown', [
+			'type' => 'boolean',
+			'description' => 'Whether the dropdown should always be shown',
+			'default' => false,
+		] );
+		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'publish_guard', [
+			'type' => 'boolean',
+			'description' => 'Whether the publish guard should be enabled',
+			'default' => false,
+		] );
+		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'always_notify_admin', [
+			'type' => 'boolean',
+			'description' => 'Always notify blog admin',
+			'default' => true,
+		] );
+		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'send_to_webhook', [
+			'type' => 'boolean',
+			'description' => 'Send notifications to a configured webhook',
+			'default' => false,
+		] );
+		register_setting( VIP_WORKFLOW_OPTIONS_GROUP_NAME, 'webhook_url', [
+			'type' => 'string',
+			'description' => 'The webhook URL to send notifications to',
+			'default' => '',
+		] );
 	}
 }
