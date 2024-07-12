@@ -633,7 +633,7 @@ class Custom_Status extends Module {
 		global $wpdb;
 
 		if ( empty( $new_status ) ) {
-			return new WPError( 'invalid', __( 'No new status provided for reassignment.', 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( 'No new status provided for reassignment.', 'vip-workflow' ) );
 		}
 
 		// Make the database call
@@ -641,7 +641,7 @@ class Custom_Status extends Module {
 
 		// Check if result was successful
 		if ( false === $result ) {
-			return new WPError( 'invalid', __( 'Failed to reassign post statuses.', 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( 'Failed to reassign post statuses.', 'vip-workflow' ) );
 		}
 	}
 
