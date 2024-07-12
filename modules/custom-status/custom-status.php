@@ -475,7 +475,11 @@ class Custom_Status extends Module {
 		// Reassign posts to new status slug if the slug changed and isn't restricted
 		if ( isset( $args['slug'] ) && $args['slug'] != $old_status->slug && ! $this->is_restricted_status( $old_status->slug ) ) {
 			$new_status = $args['slug'];
-			$this->reassign_post_status( $old_status->slug, $new_status );
+			$reassigned_result = $this->reassign_post_status( $old_status->slug, $new_status );
+			// If the reassignment failed, return the error
+			if ( is_wp_error( $reassigned_result ) ) {
+				return $reassigned_result;
+			}
 		}
 		// We're encoding metadata that isn't supported by default in the term's description field
 		$args_to_encode                = [];
@@ -516,7 +520,11 @@ class Custom_Status extends Module {
 				$new_status = $custom_statuses[1]->slug;
 			}
 
-			$this->reassign_post_status( $old_status, $new_status );
+			$reassigned_result = $this->reassign_post_status( $old_status, $new_status );
+			// If the reassignment failed, return the error
+			if ( is_wp_error( $reassigned_result ) ) {
+				return $reassigned_result;
+			}
 
 			// Reset status cache again, as reassign_post_status() will recache prior statuses
 			$this->custom_statuses_cache = [];
