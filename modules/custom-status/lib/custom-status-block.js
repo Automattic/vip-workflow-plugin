@@ -53,11 +53,9 @@ subscribe( function () {
 			postLocked = true;
 			dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
 		}
-	} else {
-		if ( postLocked ) {
-			postLocked = false;
-			dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
-		}
+	} else if ( postLocked ) {
+		postLocked = false;
+		dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
 	}
 } );
 
