@@ -197,7 +197,7 @@ class EditStatus {
 		}
 
 		return [
-			'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
+			'updated_statuses' => $custom_status_module->get_custom_statuses(),
 		];
 	}
 
@@ -259,7 +259,7 @@ class EditStatus {
 		}
 
 		return [
-			'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
+			'updated_statuses' => $custom_status_module->get_custom_statuses(),
 		];
 	}
 
@@ -283,7 +283,7 @@ class EditStatus {
 			return $delete_status_result;
 		} else {
 			return [
-				'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
+				'updated_statuses' => $custom_status_module->get_custom_statuses(),
 			];
 		}
 	}
@@ -313,7 +313,7 @@ class EditStatus {
 		}
 
 		return [
-			'updated_statuses' => array_values( $custom_status_module->get_custom_statuses() ),
+			'updated_statuses' => $custom_status_module->get_custom_statuses(),
 		];
 	}
 
