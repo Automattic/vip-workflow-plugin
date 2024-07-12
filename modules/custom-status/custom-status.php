@@ -113,6 +113,11 @@ class Custom_Status extends Module {
 
 		// Pagination for custom post statuses when previewing posts
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
+
+		// publish guard
+		if ( 'on' === $this->module->options->publish_guard ) {
+			add_filter( 'wp_insert_post_empty_content', [ $this, 'validate_post_is_publish_locked' ], 10, 2 );
+		}
 	}
 
 	/**
@@ -1637,6 +1642,44 @@ class Custom_Status extends Module {
 		/* translators: %s: post title */
 		$actions['view'] = '<a href="' . esc_url( $preview_link ) . '" title="' . esc_attr( sprintf( __( 'Preview &#8220;%s&#8221;' ), $post->post_title ) ) . '" rel="permalink">' . __( 'Preview' ) . '</a>';
 		return $actions;
+	}
+
+	/**
+	 * Validate the post status before pubslishing
+	 *
+	 * Hooks into the `wp_insert_post_empty_content` filter to check if the post status is valid to be published
+	 */
+	public function validate_post_is_publish_locked( $maybe_empty, $postarr ) {
+		// if new status is not `publish` then we don't care
+		if ( 'publish' !== $postarr['post_status'] ) {
+			return $maybe_empty;
+		}
+
+		$post = get_post( $postarr['ID'] );
+
+		// if post is already published then we don't need to check for custom statuses
+		if ( 'publish' === $post->post_status ) {
+			return $maybe_empty;
+		}
+
+		$custom_statuses = $this->get_custom_statuses();
+		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
+
+		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+			// Post is not using a custom status, or is not a supported post type
+			return $maybe_empty;
+		}
+
+		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
+
+		if ( $status_before_publish->slug == $post->post_status ) {
+			// Post is in the last status, so it can be published
+			return $maybe_empty;
+		} else {
+			// Post is not in the last status, so it cannot be published
+			// use wp_die here as returning `true` to stop the save will result in the wrong error message
+			wp_die( esc_html__( 'This post cannot be published because it is not in the final status.', 'vip-workflow' ), 400 );
+		}
 	}
 
 	/**
