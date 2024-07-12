@@ -505,22 +505,22 @@ class Custom_Status extends Module {
 	 */
 	public function delete_custom_status( $status_id, $args = [] ) {
 		// Get slug for the old status
-		$old_status = $this->get_custom_status_by( 'id', $status_id )->slug;
+		$old_status_slug = $this->get_custom_status_by( 'id', $status_id )->slug;
 
 		// Reset our internal object cache
 		$this->custom_statuses_cache = [];
 
-		if ( ! $this->is_restricted_status( $old_status ) && 'draft' !== $old_status ) {
+		if ( ! $this->is_restricted_status( $old_status_slug ) && 'draft' !== $old_status_slug ) {
 			// Get the new status to reassign posts to, which would be the first custom status.
 			// In the event that the first custom status is being deleted, we'll reassign to the second custom status.
 			// Since draft cannot be deleted, we don't need to worry about ever getting index out of bounds.
 			$custom_statuses = $this->get_custom_statuses();
-			$new_status      = $custom_statuses[0]->slug;
-			if ( $old_status->slug === $new_status ) {
-				$new_status = $custom_statuses[1]->slug;
+			$new_status_slug = $custom_statuses[0]->slug;
+			if ( $old_status_slug === $new_status_slug ) {
+				$new_status_slug = $custom_statuses[1]->slug;
 			}
 
-			$reassigned_result = $this->reassign_post_status( $old_status, $new_status );
+			$reassigned_result = $this->reassign_post_status( $old_status_slug, $new_status_slug );
 			// If the reassignment failed, return the error
 			if ( is_wp_error( $reassigned_result ) ) {
 				return $reassigned_result;
