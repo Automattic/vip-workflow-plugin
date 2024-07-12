@@ -12,7 +12,7 @@ export default function ConfirmStatusDeleteModal( { status, onCancel, onConfirmD
 			<p>
 				{ sprintf(
 					__(
-						'Are you sure you want to delete "%1$s"? Any existing posts with this status will be reassigned to the starting status.',
+						'Are you sure you want to delete "%1$s"? Any existing posts with this status will be reassigned to the first status.',
 						'vip-workflow'
 					),
 					status.name
