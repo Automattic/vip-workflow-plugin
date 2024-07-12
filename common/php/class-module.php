@@ -67,7 +67,7 @@ class Module {
 			'post' => __( 'Post' ),
 			'page' => __( 'Page' ),
 		);
-		$custom_post_types = $this->get_supported_post_types_for_module();
+		$custom_post_types  = $this->get_supported_post_types_for_module();
 
 		foreach ( $custom_post_types as $custom_post_type => $args ) {
 			$allowed_post_types[ $custom_post_type ] = $args->label;
@@ -86,7 +86,7 @@ class Module {
 	 */
 	public function clean_post_type_options( $module_post_types = array(), $post_type_support = null ) {
 		$normalized_post_type_options = array();
-		$all_post_types = array_keys( $this->get_all_post_types() );
+		$all_post_types               = array_keys( $this->get_all_post_types() );
 		foreach ( $all_post_types as $post_type ) {
 			if ( ( isset( $module_post_types[ $post_type ] ) && 'on' == $module_post_types[ $post_type ] ) || post_type_supports( $post_type, $post_type_support ) ) {
 				$normalized_post_type_options[ $post_type ] = 'on';
@@ -107,7 +107,7 @@ class Module {
 
 		$pt_args = array(
 			'_builtin' => false,
-			'public' => true,
+			'public'   => true,
 		);
 		$pt_args = apply_filters( 'vip_workflow_supported_module_post_types_args', $pt_args, $module );
 		return get_post_types( $pt_args, 'objects' );
@@ -133,17 +133,6 @@ class Module {
 	}
 
 	/**
-	 * Get all of the currently available post statuses
-	 *
-	 * @return array $post_statuses All of the post statuses that aren't a published state
-	 */
-	public function get_post_statuses() {
-		global $vip_workflow;
-
-		return $vip_workflow->custom_status->get_custom_statuses();
-	}
-
-	/**
 	 * Get core's 'draft' and 'pending' post statuses, but include our special attributes
 	 *
 	 * @return array
@@ -152,16 +141,16 @@ class Module {
 
 		return array(
 			(object) array(
-				'name'         => __( 'Draft' ),
-				'description'  => '',
-				'slug'         => 'draft',
-				'position'     => 1,
+				'name'        => __( 'Draft' ),
+				'description' => '',
+				'slug'        => 'draft',
+				'position'    => 1,
 			),
 			(object) array(
-				'name'         => __( 'Pending Review' ),
-				'description'  => '',
-				'slug'         => 'pending',
-				'position'     => 2,
+				'name'        => __( 'Pending Review' ),
+				'description' => '',
+				'slug'        => 'pending',
+				'position'    => 2,
 			),
 		);
 	}
@@ -361,21 +350,21 @@ class Module {
 	 */
 	public function users_select_form( $selected = null, $args = null ) {
 		// Set up arguments
-		$defaults = array(
+		$defaults    = array(
 			'list_class' => 'vw-users-select-form',
-			'input_id' => 'vw-selected-users',
+			'input_id'   => 'vw-selected-users',
 		);
 		$parsed_args = wp_parse_args( $args, $defaults );
 		extract( $parsed_args, EXTR_SKIP );
 
 		$args = array(
 			'capability' => 'publish_posts',
-			'fields' => array(
+			'fields'     => array(
 				'ID',
 				'display_name',
 				'user_email',
 			),
-			'orderby' => 'display_name',
+			'orderby'    => 'display_name',
 		);
 		$args = apply_filters( 'vw_users_select_form_get_users_args', $args );
 
@@ -399,7 +388,7 @@ class Module {
 							<div class="vw-user-subscribe-actions">
 								<?php do_action( 'vw_user_subscribe_actions', $user->ID, $checked ); ?>
 								<input type="checkbox" id="<?php echo esc_attr( $input_id . '-' . $user->ID ); ?>" name="<?php echo esc_attr( $input_id ); ?>[]" value="<?php echo esc_attr( $user->ID ); ?>"
-																	  <?php
+																		<?php
 																		echo esc_attr( $checked );
 																		echo esc_attr( $current_user_class );
 																		?>
