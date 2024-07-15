@@ -98,35 +98,31 @@ class Module {
 	}
 
 	/**
-	 * Get all of the possible post types that can be used with a given module
+	 * Get all of the possible post types that can be used
 	 *
-	 * @param object $module The full module
 	 * @return array $post_types An array of post type objects
 	 */
-	public function get_supported_post_types_for_module( $module = null ) {
+	public function get_supported_post_types_for_module() {
 
 		$pt_args = array(
 			'_builtin' => false,
 			'public'   => true,
 		);
-		$pt_args = apply_filters( 'vip_workflow_supported_module_post_types_args', $pt_args, $module );
 		return get_post_types( $pt_args, 'objects' );
 	}
 
 	/**
-	 * Collect all of the active post types for a given module
+	 * Collect all of the active post types
 	 *
-	 * @param object $module Module's data
 	 * @return array $post_types All of the post types that are 'on'
 	 */
-	public function get_post_types_for_module( $module ) {
+	public function get_post_types_for_module() {
+		global $vip_workflow;
 
 		$post_types = array();
-		if ( isset( $module->options->post_types ) && is_array( $module->options->post_types ) ) {
-			foreach ( $module->options->post_types as $post_type => $value ) {
-				if ( 'on' == $value ) {
-					$post_types[] = $post_type;
-				}
+		foreach ( $vip_workflow->settings->options->post_types as $post_type => $value ) {
+			if ( 'on' === $value ) {
+				$post_types[] = $post_type;
 			}
 		}
 		return $post_types;
@@ -202,45 +198,6 @@ class Module {
 	}
 
 	/**
-	 * Wrapper for the get_user_meta() function so we can replace it if we need to
-	 *
-	 * @param int $user_id Unique ID for the user
-	 * @param string $key Key to search against
-	 * @param bool $single Whether or not to return just one value
-	 * @return string|bool|array $value Whatever the stored value was
-	 */
-	public function get_user_meta( $user_id, $key, $string = true ) {
-
-		$response = null;
-		$response = apply_filters( 'vw_get_user_meta', $response, $user_id, $key, $string );
-		if ( ! is_null( $response ) ) {
-			return $response;
-		}
-
-		return get_user_meta( $user_id, $key, $string );
-	}
-
-	/**
-	 * Wrapper for the update_user_meta() function so we can replace it if we need to
-	 *
-	 * @param int $user_id Unique ID for the user
-	 * @param string $key Key to search against
-	 * @param string|bool|array $value Whether or not to return just one value
-	 * @param string|bool|array $previous (optional) Previous value to replace
-	 * @return bool $success Whether we were successful in saving
-	 */
-	public function update_user_meta( $user_id, $key, $value, $previous = null ) {
-
-		$response = null;
-		$response = apply_filters( 'vw_update_user_meta', $response, $user_id, $key, $value, $previous );
-		if ( ! is_null( $response ) ) {
-			return $response;
-		}
-
-		return update_user_meta( $user_id, $key, $value, $previous );
-	}
-
-	/**
 	 * Take a status and a message, JSON encode and print
 	 *
 	 * @param string $status Whether it was a 'success' or an 'error'
@@ -258,20 +215,7 @@ class Module {
 	}
 
 	/**
-	 * Whether or not the current page is a user-facing Edit Flow View
-	 * @todo Think of a creative way to make this work
-	 *
-	 * @param string $module_name (Optional) Module name to check against
-	 */
-	public function is_whitelisted_functional_view( $module_name = null ) {
-
-		// @todo complete this method
-
-		return true;
-	}
-
-	/**
-	 * Whether or not the current page is an Edit Flow settings view (either main or module)
+	 * Whether or not the current page is our settings view
 	 * Determination is based on $pagenow, $_GET['page'], and the module's $settings_slug
 	 * If there's no module name specified, it will return true against all Edit Flow settings views
 	 *
@@ -298,9 +242,9 @@ class Module {
 			return false;
 		}
 
-		if ( $module_name && $vip_workflow->modules->$module_name->settings_slug != $_GET['page'] ) {
-			return false;
-		}
+		// if ( $module_name && $vip_workflow->modules->$module_name->settings_slug != $_GET['page'] ) {
+		//  return false;
+		// }
 
 		return true;
 	}
@@ -338,118 +282,5 @@ class Module {
 	public function get_module_url( $file ) {
 		$module_url = plugins_url( '/', $file );
 		return trailingslashit( $module_url );
-	}
-
-	/**
-	 * Displays a list of users that can be selected!
-	 *
-	 * @todo Add pagination support for blogs with billions of users
-	 *
-	 * @param array $selected An array of user IDs that are selected
-	 * @param array $args An array of arguments to pass to get_users()
-	 */
-	public function users_select_form( $selected = null, $args = null ) {
-		// Set up arguments
-		$defaults    = array(
-			'list_class' => 'vw-users-select-form',
-			'input_id'   => 'vw-selected-users',
-		);
-		$parsed_args = wp_parse_args( $args, $defaults );
-		extract( $parsed_args, EXTR_SKIP );
-
-		$args = array(
-			'capability' => 'publish_posts',
-			'fields'     => array(
-				'ID',
-				'display_name',
-				'user_email',
-			),
-			'orderby'    => 'display_name',
-		);
-		$args = apply_filters( 'vw_users_select_form_get_users_args', $args );
-
-		$users = get_users( $args );
-
-		if ( ! is_array( $selected ) ) {
-			$selected = array();
-		}
-		?>
-
-		<?php if ( ! empty( $users ) ) : ?>
-			<ul class="<?php echo esc_attr( $list_class ); ?>">
-				<?php
-				foreach ( $users as $user ) :
-					$checked = ( in_array( $user->ID, $selected ) ) ? 'checked="checked"' : '';
-					// Add a class to checkbox of current user so we know not to add them in notified list during notifiedMessage() js function
-					$current_user_class = ( get_current_user_id() == $user->ID ) ? 'class="post_following_list-current_user" ' : '';
-					?>
-					<li>
-						<label for="<?php echo esc_attr( $input_id . '-' . $user->ID ); ?>">
-							<div class="vw-user-subscribe-actions">
-								<?php do_action( 'vw_user_subscribe_actions', $user->ID, $checked ); ?>
-								<input type="checkbox" id="<?php echo esc_attr( $input_id . '-' . $user->ID ); ?>" name="<?php echo esc_attr( $input_id ); ?>[]" value="<?php echo esc_attr( $user->ID ); ?>"
-																		<?php
-																		echo esc_attr( $checked );
-																		echo esc_attr( $current_user_class );
-																		?>
-								/>
-							</div>
-
-							<span class="vw-user_displayname"><?php echo esc_html( $user->display_name ); ?></span>
-							<span class="vw-user_useremail"><?php echo esc_html( $user->user_email ); ?></span>
-						</label>
-					</li>
-				<?php endforeach; ?>
-			</ul>
-		<?php endif; ?>
-			<?php
-	}
-
-	/**
-	 * Adds an array of capabilities to a role.
-	 *
-	 * @param string $role A standard WP user role like 'administrator' or 'author'
-	 * @param array $caps One or more user caps to add
-	 */
-	public function add_caps_to_role( $role, $caps ) {
-		// In some contexts, we don't want to add caps to roles
-		if ( apply_filters( 'vw_kill_add_caps_to_role', false, $role, $caps ) ) {
-			return;
-		}
-
-		global $wp_roles;
-
-		if ( $wp_roles->is_role( $role ) ) {
-			$role = get_role( $role );
-			foreach ( $caps as $cap ) {
-				$role->add_cap( $cap );
-			}
-		}
-	}
-
-	/**
-	 * Add settings help menus to our module screens if the values exist
-	 * Auto-registered in vip-workflow::register_module()
-	 */
-	public function action_settings_help_menu() {
-
-		$screen = get_current_screen();
-
-		if ( ! method_exists( $screen, 'add_help_tab' ) ) {
-			return;
-		}
-
-		if ( 'vip-workflow_page_' . $this->module->settings_slug != $screen->id ) {
-			return;
-		}
-
-		// Make sure we have all of the required values for our tab
-		if ( isset( $this->module->settings_help_tab['id'], $this->module->settings_help_tab['title'], $this->module->settings_help_tab['content'] ) ) {
-			$screen->add_help_tab( $this->module->settings_help_tab );
-
-			if ( isset( $this->module->settings_help_sidebar ) ) {
-				$screen->set_help_sidebar( $this->module->settings_help_sidebar );
-			}
-		}
 	}
 }

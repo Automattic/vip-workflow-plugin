@@ -37,16 +37,9 @@ class Custom_Status extends Module {
 			'module_url'           => $this->module_url,
 			'img_url'              => $this->module_url . 'lib/custom_status_s128.png',
 			'slug'                 => 'custom-status',
-			'default_options'      => [
-				'always_show_dropdown' => 'off',
-				'post_types'           => [
-					'post' => 'on',
-					'page' => 'on',
-				],
-				'publish_guard'        => 'off', // TODO: should default this to 'on' once everything has been implemented
-			],
-			'post_type_support'    => 'vw_custom_statuses', // This has been plural in all of our docs
+			'default_options'      => array(),
 			'configure_page_cb'    => 'print_configure_view',
+			'post_type_support'    => 'vw_custom_statuses', // This has been plural in all of our docs
 			'configure_link_text'  => __( 'Edit Statuses', 'vip-workflow' ),
 			'messages'             => [
 				'status-added'            => __( 'Post status created.', 'vip-workflow' ),
@@ -68,8 +61,6 @@ class Custom_Status extends Module {
 		$this->register_custom_statuses();
 
 		// Register our settings
-		add_action( 'admin_init', [ $this, 'register_settings' ] );
-
 		if ( ! $this->disable_custom_statuses_for_post_type() ) {
 			// Load CSS and JS resources that we probably need in the admin page
 			add_action( 'admin_enqueue_scripts', [ $this, 'action_admin_enqueue_scripts' ] );
@@ -239,11 +230,15 @@ class Custom_Status extends Module {
 			$post_type = $this->get_current_post_type();
 		}
 
-		if ( $post_type && ! in_array( $post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+		if ( $post_type && ! in_array( $post_type, $this->get_post_types_for_module() ) ) {
 			return true;
 		}
 
 		return false;
+	}
+
+	public function configure_page_cb() {
+		// do nothing
 	}
 
 	/**
@@ -303,7 +298,7 @@ class Custom_Status extends Module {
 	public function is_whitelisted_page() {
 		global $pagenow;
 
-		if ( ! in_array( $this->get_current_post_type(), $this->get_post_types_for_module( $this->module ) ) ) {
+		if ( ! in_array( $this->get_current_post_type(), $this->get_post_types_for_module() ) ) {
 			return false;
 		}
 
@@ -323,7 +318,7 @@ class Custom_Status extends Module {
 	 * @todo Support private and future posts on edit.php view
 	 */
 	public function post_admin_header() {
-		global $post, $vip_workflow, $pagenow, $current_user;
+		global $post, $pagenow, $vip_workflow;
 
 		if ( $this->disable_custom_statuses_for_post_type() ) {
 			return;
@@ -386,8 +381,7 @@ class Custom_Status extends Module {
 				];
 			}
 
-			$always_show_dropdown  = ( 'on' == $this->module->options->always_show_dropdown ) ? 1 : 0;
-			$publish_guard_enabled = ( 'on' == $this->module->options->publish_guard ) ? 1 : 0;
+			$publish_guard_enabled = ( 'on' === $vip_workflow->settings->options->publish_guard ) ? 1 : 0;
 
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
 
@@ -397,7 +391,6 @@ class Custom_Status extends Module {
 				var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
 				var current_status = '<?php echo esc_js( $selected ); ?>';
 				var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
-				var status_dropdown_visible = <?php echo esc_js( $always_show_dropdown ); ?>;
 				var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
 				var current_user_can_edit_published_posts = <?php echo current_user_can( $post_type_obj->cap->edit_published_posts ) ? 1 : 0; ?>;
 				const vw_publish_guard_enabled = <?php echo esc_js( $publish_guard_enabled ); ?>;
@@ -447,8 +440,6 @@ class Custom_Status extends Module {
 	 * @return object $updated_status Newly updated status object
 	 */
 	public function update_custom_status( $status_id, $args = [] ) {
-		global $vip_workflow;
-
 		$old_status = $this->get_custom_status_by( 'id', $status_id );
 		if ( ! $old_status || is_wp_error( $old_status ) ) {
 			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
@@ -654,7 +645,7 @@ class Custom_Status extends Module {
 	 * @return array $post_states
 	 */
 	public function add_status_to_post_states( $post_states, $post ) {
-		if ( ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ), true ) ) {
+		if ( ! in_array( $post->post_type, $this->get_post_types_for_module(), true ) ) {
 			// Return early if this post type doesn't support custom statuses.
 			return $post_states;
 		}
@@ -706,85 +697,6 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Register settings for notifications so we can partially use the Settings API
-	 * (We use the Settings API for form generation, but not saving)
-	 */
-	public function register_settings() {
-		add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
-		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ $this, 'settings_post_types_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-		add_settings_field( 'always_show_dropdown', __( 'Always show dropdown:', 'vip-workflow' ), [ $this, 'settings_always_show_dropdown_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-		add_settings_field( 'publish_guard', __( 'Publish Guard:', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-	}
-
-	/**
-	 * Choose the post types that should be displayed on the calendar
-	 */
-	public function settings_post_types_option() {
-		global $vip_workflow;
-		$vip_workflow->settings->helper_option_custom_post_type( $this->module );
-	}
-
-	/**
-	 * Option for whether the blog admin email address should be always notified or not
-	 */
-	public function settings_always_show_dropdown_option() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="always_show_dropdown" name="' . esc_attr( $this->module->options_group_name ) . '[always_show_dropdown]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->always_show_dropdown, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-	}
-
-	/**
-	 * Option for whether the publish guard feature should be enabled
-	 */
-	public function settings_publish_guard() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="publish_guard" name="' . esc_attr( $this->module->options_group_name ) . '[publish_guard]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->publish_guard, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-	}
-
-	/**
-	 * Validate input from the end user
-	 */
-	public function settings_validate( $new_options ) {
-
-		// Whitelist validation for the post type options
-		if ( ! isset( $new_options['post_types'] ) ) {
-			$new_options['post_types'] = [];
-		}
-		$new_options['post_types'] = $this->clean_post_type_options( $new_options['post_types'], $this->module->post_type_support );
-
-		// Whitelist validation for the 'always_show_dropdown' optoins
-		if ( ! isset( $new_options['always_show_dropdown'] ) || 'on' != $new_options['always_show_dropdown'] ) {
-			$new_options['always_show_dropdown'] = 'off';
-		}
-
-		// Whitelist validation for the 'publish_guard' optoins
-		if ( ! isset( $new_options['publish_guard'] ) || 'on' != $new_options['publish_guard'] ) {
-			$new_options['publish_guard'] = 'off';
-		}
-
-		return $new_options;
-	}
-
-	// phpcs:disable:WordPress.Security.NonceVerification.Missing -- Disabling nonce verification because that is not available here, it's just rendering it. The actual save is done in helper_settings_validate_and_save and that's guarded well.
-
-	/**
 	 * Primary configuration page for custom status class.
 	 * Shows form to add new custom statuses on the left and a
 	 * WP_List_Table with the custom status terms on the right
@@ -793,6 +705,8 @@ class Custom_Status extends Module {
 	public function print_configure_view() {
 		include_once __DIR__ . '/views/manage-workflow.php';
 	}
+
+	// phpcs:disable:WordPress.Security.NonceVerification.Missing -- Disabling nonce verification but we should renable it.
 
 	/**
 	 * This is a hack! hack! hack! until core is fixed/better supports custom statuses
@@ -902,7 +816,7 @@ class Custom_Status extends Module {
 
 		// Ignore if it's not a post status and post type we support
 		if ( ! in_array( $data['post_status'], $status_slugs )
-		|| ! in_array( $data['post_type'], $this->get_post_types_for_module( $this->module ) ) ) {
+		|| ! in_array( $data['post_type'], $this->get_post_types_for_module() ) ) {
 			return $data;
 		}
 
@@ -930,7 +844,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		if ( ! in_array( $post_status, $status_slugs )
-		|| ! in_array( $post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+		|| ! in_array( $post_type, $this->get_post_types_for_module() ) ) {
 			return null;
 		}
 
@@ -964,7 +878,7 @@ class Custom_Status extends Module {
 		|| ! is_admin()
 		|| 'post.php' != $pagenow
 		|| ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) )
+		|| ! in_array( $post->post_type, $this->get_post_types_for_module() )
 		|| strpos( $preview_link, 'preview_id' ) !== false
 		|| 'sample' == $post->filter ) {
 			return $preview_link;
@@ -989,7 +903,7 @@ class Custom_Status extends Module {
 		}
 
 		//Should we be doing anything at all?
-		if ( ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+		if ( ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
 			return $permalink;
 		}
 
@@ -1058,7 +972,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		if ( ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+		|| ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
 			return $permalink;
 		}
 
@@ -1100,7 +1014,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		if ( ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+		|| ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
 			return $permalink;
 		}
 
@@ -1192,7 +1106,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 		if ( 'edit.php' != $pagenow
 		|| ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+		|| ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
 			return $actions;
 		}
 
@@ -1239,7 +1153,7 @@ class Custom_Status extends Module {
 		$custom_statuses = $this->get_custom_statuses();
 		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
 
-		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module( $this->module ) ) ) {
+		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
 			// Post is not using a custom status, or is not a supported post type
 			return false;
 		}

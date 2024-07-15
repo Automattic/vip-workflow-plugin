@@ -224,11 +224,6 @@ class VIP_Workflow {
 		if ( empty( $args['post_type_support'] ) ) {
 			$args['post_type_support'] = 'vw_' . $name;
 		}
-		// If there's a Help Screen registered for the module, make sure we
-		// auto-load it
-		if ( ! empty( $args['settings_help_tab'] ) ) {
-			add_action( 'load-vip-workflow_page_' . $args['settings_slug'], array( &$this->$name, 'action_settings_help_menu' ) );
-		}
 
 		$this->modules->$name = (object) $args;
 
@@ -322,15 +317,3 @@ class VIP_Workflow {
 }
 
 VIP_Workflow::instance();
-
-/**
- * Caps don't get loaded on install on VIP Go. Instead, let's add
- * them via filters.
- */
-add_filter( 'vw_kill_add_caps_to_role', '__return_true' );
-add_filter( 'vw_edit_post_subscriptions_cap', function () {
-	return 'edit_others_posts';
-} );
-add_filter( 'vw_manage_usergroups_cap', function () {
-	return 'manage_options';
-} );

@@ -17,8 +17,6 @@ class Notifications extends Module {
 
 	public $module;
 
-	public $edit_post_subscriptions_cap = 'edit_post_subscriptions';
-
 	/**
 	 * Register the module with VIP Workflow but don't do anything else
 	 */
@@ -33,16 +31,7 @@ class Notifications extends Module {
 			'module_url'            => $this->module_url,
 			'img_url'               => $this->module_url . 'lib/notifications_s128.png',
 			'slug'                  => 'notifications',
-			'default_options'       => [
-				'post_types'          => [
-					'post' => 'on',
-					'page' => 'on',
-				],
-				'always_notify_admin' => 'on',
-				'send_to_webhook'     => 'off',
-				'webhook_url'         => '',
-			],
-			'configure_page_cb'     => 'print_configure_view',
+			'default_options'       => array(),
 			'post_type_support'     => 'vw_notification',
 			'autoload'              => true,
 		];
@@ -57,12 +46,6 @@ class Notifications extends Module {
 		add_action( 'transition_post_status', [ $this, 'notification_status_change' ], 10, 3 );
 		// Schedule email sending
 		add_action( 'vw_send_scheduled_email', [ $this, 'send_single_email' ], 10, 4 );
-
-		add_action( 'admin_init', [ $this, 'register_settings' ] );
-
-		// Javascript and CSS if we need it
-		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_scripts' ] );
-		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_styles' ] );
 	}
 
 	/**
@@ -80,31 +63,12 @@ class Notifications extends Module {
 	}
 
 	/**
-	 * Enqueue necessary admin scripts
-	 * @uses wp_enqueue_script()
-	 */
-	public function enqueue_admin_scripts() {
-		if ( $this->is_whitelisted_functional_view() ) {
-			wp_enqueue_script( 'vip-workflow-notifications-js', $this->module_url . 'lib/notifications.js', [ 'jquery' ], VIP_WORKFLOW_VERSION, true );
-		}
-	}
-
-	/**
-	 * Enqueue necessary admin styles, but only on the proper pages
-	 *
-	 * @uses wp_enqueue_style()
-	 */
-	public function enqueue_admin_styles() {
-		if ( $this->is_whitelisted_functional_view() || $this->is_whitelisted_settings_view() ) {
-			wp_enqueue_style( 'vip-workflow-notifications-css', $this->module->module_url . 'lib/notifications.css', false, VIP_WORKFLOW_VERSION );
-		}
-	}
-
-	/**
 	 * Set up and send post status change notification email
 	 */
 	public function notification_status_change( $new_status, $old_status, $post ) {
-		$supported_post_types = $this->get_post_types_for_module( $this->module );
+		global $vip_workflow;
+
+		$supported_post_types = $this->get_post_types_for_module();
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
 		}
@@ -233,7 +197,7 @@ class Notifications extends Module {
 
 			$this->send_email( 'status-change', $post, $subject, $body );
 
-			if ( 'on' === $this->module->options->send_to_webhook ) {
+			if ( 'on' === $vip_workflow->settings->options->send_to_webhook ) {
 				/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
 				$format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
 				$text   = sprintf( $format, $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name );
@@ -291,7 +255,9 @@ class Notifications extends Module {
 	 * @param WP_Post $post Post that the action is being taken on
 	 */
 	public function send_to_webhook( $message, $action, $user, $post ) {
-		$webhook_url = $this->module->options->webhook_url;
+		global $vip_workflow;
+
+		$webhook_url = $vip_workflow->settings->options->webhook_url;
 
 		// Bail if the webhook URL is not set
 		if ( empty( $webhook_url ) ) {
@@ -379,114 +345,6 @@ class Notifications extends Module {
 	}
 
 	/**
-	 * Register settings for notifications so we can partially use the Settings API
-	 * (We use the Settings API for form generation, but not saving)
-	 */
-	public function register_settings() {
-			add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
-			add_settings_field( 'post_types', __( 'Post types for notifications:', 'vip-workflow' ), [ $this, 'settings_post_types_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-			add_settings_field( 'always_notify_admin', __( 'Always notify blog admin', 'vip-workflow' ), [ $this, 'settings_always_notify_admin_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-			add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'vip-workflow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-			add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-	}
-
-	/**
-	 * Chose the post types for notifications
-	 */
-	public function settings_post_types_option() {
-		global $vip_workflow;
-		$vip_workflow->settings->helper_option_custom_post_type( $this->module );
-	}
-
-	/**
-	 * Option for whether the blog admin email address should be always notified or not
-	 */
-	public function settings_always_notify_admin_option() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="always_notify_admin" name="' . esc_attr( $this->module->options_group_name ) . '[always_notify_admin]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->always_notify_admin, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-	}
-
-	/**
-	 * Option to enable sending notifications to Slack
-	 */
-	public function settings_send_to_webhook() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="send_to_webhook" name="' . esc_attr( $this->module->options_group_name ) . '[send_to_webhook]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->send_to_webhook, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-	}
-
-	/**
-	 * Option to set the Slack webhook URL
-	 */
-	public function settings_webhook_url() {
-		echo '<input type="text" id="webhook_url" name="' . esc_attr( $this->module->options_group_name ) . '[webhook_url]" value="' . esc_attr( $this->module->options->webhook_url ) . '" />';
-	}
-
-	/**
-	 * Validate our user input as the settings are being saved
-	 */
-	public function settings_validate( $new_options ) {
-
-		// Whitelist validation for the post type options
-		if ( ! isset( $new_options['post_types'] ) ) {
-			$new_options['post_types'] = [];
-		}
-		$new_options['post_types'] = $this->clean_post_type_options( $new_options['post_types'], $this->module->post_type_support );
-
-		// Whitelist validation for the 'always_notify_admin' options
-		if ( ! isset( $new_options['always_notify_admin'] ) || 'on' != $new_options['always_notify_admin'] ) {
-			$new_options['always_notify_admin'] = 'off';
-		}
-
-		// White list validation for the 'send_to_slack' option
-		if ( ! isset( $new_options['send_to_webhook'] ) || 'on' != $new_options['send_to_webhook'] ) {
-			$new_options['send_to_webhook'] = 'off';
-		}
-
-		// White list validation for the 'slack_webhook_url' option
-		if ( ! isset( $new_options['webhook_url'] ) || esc_url_raw( $new_options['webhook_url'] ) !== $new_options['webhook_url'] ) {
-			$new_options['webhook_url'] = '';
-		} else {
-			$new_options['webhook_url'] = esc_url_raw( $new_options['webhook_url'] );
-		}
-
-		return $new_options;
-	}
-
-	/**
-	 * Settings page for notifications
-	 */
-	public function print_configure_view() {
-		?>
-			<form class="basic-settings" action="<?php echo esc_url( menu_page_url( $this->module->settings_slug, false ) ); ?>" method="post">
-			<?php settings_fields( $this->module->options_group_name ); ?>
-			<?php do_settings_sections( $this->module->options_group_name ); ?>
-			<?php
-				echo '<input id="vip_workflow_module_name" name="vip_workflow_module_name" type="hidden" value="' . esc_attr( $this->module->name ) . '" />';
-			?>
-				<p class="submit"><?php submit_button( null, 'primary', 'submit', false ); ?><a class="cancel-settings-link" href="<?php echo esc_url( VIP_WORKFLOW_SETTINGS_PAGE ); ?>"><?php _e( 'Back to VIP Workflow', 'vip-workflow' ); ?></a></p>
-			</form>
-			<?php
-	}
-
-	/**
 	* Gets a simple phrase containing the formatted date and time that the post is scheduled for.
 	*
 	* @param  obj    $post               Post object
@@ -503,4 +361,3 @@ class Notifications extends Module {
 			return sprintf( __( '%1$s at %2$s', 'vip-workflow' ), $date, $time );
 	}
 }
-
