@@ -31,9 +31,9 @@ class Custom_Status extends Module {
 		$this->module_url = $this->get_module_url( __FILE__ );
 		// Register the module with VIP Workflow
 		$args         = [
-			'title'                => __( 'Custom Statuses', 'vip-workflow' ),
-			'short_description'    => __( 'Create custom post statuses to define the stages of your workflow.', 'vip-workflow' ),
-			'extended_description' => __( 'Create your own post statuses to add structure your publishing workflow. You can change existing or add new ones anytime, and drag and drop to change their order.', 'vip-workflow' ),
+			'title'                => __( 'Workflow Config', 'vip-workflow' ),
+			'short_description'    => __( 'Configure your editorial workflow.', 'vip-workflow' ),
+			'extended_description' => __( 'Using the power of your own post statuses, configure the different stages of your workflow. You can change existing or add new ones anytime, and drag and drop to change their order.', 'vip-workflow' ),
 			'module_url'           => $this->module_url,
 			'img_url'              => $this->module_url . 'lib/custom_status_s128.png',
 			'slug'                 => 'custom-status',
