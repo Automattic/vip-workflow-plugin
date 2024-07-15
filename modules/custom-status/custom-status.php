@@ -210,10 +210,10 @@ class Custom_Status extends Module {
 			// of manage posts if there is a post with the status
 			foreach ( $custom_statuses as $status ) {
 				register_post_status( $status->slug, [
-					'label'       => $status->name,
-					'protected'   => true,
-					'_builtin'    => false,
-					'label_count' => _n_noop( "{$status->name} <span class='count'>(%s)</span>", "{$status->name} <span class='count'>(%s)</span>" ),
+					'label'                     => $status->name,
+					'protected'                 => true,
+					'_builtin'                  => false,
+					'label_count'               => _n_noop( "{$status->name} <span class='count'>(%s)</span>", "{$status->name} <span class='count'>(%s)</span>" ),
 					'show_in_admin_status_list' => true,
 					'show_in_admin_all_list'    => true,
 				] );
@@ -257,7 +257,7 @@ class Custom_Status extends Module {
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'custom_statuses'    => array_values( $this->get_custom_statuses() ),
+				'custom_statuses'    => $this->get_custom_statuses(),
 				'url_edit_status'    => EditStatus::get_crud_url(),
 				'url_reorder_status' => EditStatus::get_reorder_url(),
 			] );
@@ -285,7 +285,7 @@ class Custom_Status extends Module {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 		wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-		$custom_statuses = array_values( $this->get_custom_statuses() );
+		$custom_statuses = $this->get_custom_statuses();
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', $custom_statuses );
 	}
 
@@ -474,7 +474,7 @@ class Custom_Status extends Module {
 
 		// Reassign posts to new status slug if the slug changed and isn't restricted
 		if ( isset( $args['slug'] ) && $args['slug'] != $old_status->slug && ! $this->is_restricted_status( $old_status->slug ) ) {
-			$new_status = $args['slug'];
+			$new_status        = $args['slug'];
 			$reassigned_result = $this->reassign_post_status( $old_status->slug, $new_status );
 			// If the reassignment failed, return the error
 			if ( is_wp_error( $reassigned_result ) ) {
@@ -505,22 +505,22 @@ class Custom_Status extends Module {
 	 */
 	public function delete_custom_status( $status_id, $args = [] ) {
 		// Get slug for the old status
-		$old_status = $this->get_custom_status_by( 'id', $status_id )->slug;
+		$old_status_slug = $this->get_custom_status_by( 'id', $status_id )->slug;
 
 		// Reset our internal object cache
 		$this->custom_statuses_cache = [];
 
-		if ( ! $this->is_restricted_status( $old_status ) && 'draft' !== $old_status ) {
+		if ( ! $this->is_restricted_status( $old_status_slug ) && 'draft' !== $old_status_slug ) {
 			// Get the new status to reassign posts to, which would be the first custom status.
 			// In the event that the first custom status is being deleted, we'll reassign to the second custom status.
 			// Since draft cannot be deleted, we don't need to worry about ever getting index out of bounds.
 			$custom_statuses = $this->get_custom_statuses();
-			$new_status = $custom_statuses[0]->slug;
-			if ( $old_status->slug === $new_status ) {
-				$new_status = $custom_statuses[1]->slug;
+			$new_status_slug = $custom_statuses[0]->slug;
+			if ( $old_status_slug === $new_status_slug ) {
+				$new_status_slug = $custom_statuses[1]->slug;
 			}
 
-			$reassigned_result = $this->reassign_post_status( $old_status, $new_status );
+			$reassigned_result = $this->reassign_post_status( $old_status_slug, $new_status_slug );
 			// If the reassignment failed, return the error
 			if ( is_wp_error( $reassigned_result ) ) {
 				return $reassigned_result;
@@ -591,6 +591,8 @@ class Custom_Status extends Module {
 			$ordered_statuses[] = $unpositioned_status;
 		}
 
+		$ordered_statuses = array_values( $ordered_statuses );
+
 		$this->custom_statuses_cache = $ordered_statuses;
 		return $ordered_statuses;
 	}
@@ -631,7 +633,7 @@ class Custom_Status extends Module {
 		global $wpdb;
 
 		if ( empty( $new_status ) ) {
-			return new WPError( 'invalid', __( 'No new status provided for reassignment.', 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( 'No new status provided for reassignment.', 'vip-workflow' ) );
 		}
 
 		// Make the database call
@@ -639,7 +641,7 @@ class Custom_Status extends Module {
 
 		// Check if result was successful
 		if ( false === $result ) {
-			return new WPError( 'invalid', __( 'Failed to reassign post statuses.', 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( 'Failed to reassign post statuses.', 'vip-workflow' ) );
 		}
 	}
 
