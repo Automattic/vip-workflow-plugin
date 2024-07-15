@@ -52,12 +52,16 @@ subscribe( function () {
 		if ( ! postLocked ) {
 			postLocked = true;
 			dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
+			dispatch( 'core/notices' ).createNotice(
+				'warning',
+				__( 'This post is locked from publishing due to its status.', 'vip-workflow' ),
+				{ id: 'publish-guard-lock', isDismissible: false }
+			);
 		}
-	} else {
-		if ( postLocked ) {
-			postLocked = false;
-			dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
-		}
+	} else if ( postLocked ) {
+		postLocked = false;
+		dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
+		dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
 	}
 } );
 
