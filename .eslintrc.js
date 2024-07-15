@@ -10,8 +10,6 @@ module.exports = {
 		camelcase: 0,
 		'no-undef': 0,
 		'no-shadow': 0,
-		'no-unused-vars': 0,
-		'prefer-const': 0,
 		'id-length': 0,
 	},
 	parser: '@babel/eslint-parser',
