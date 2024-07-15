@@ -67,7 +67,7 @@ class Module {
 			'post' => __( 'Post' ),
 			'page' => __( 'Page' ),
 		);
-		$custom_post_types  = $this->get_supported_post_types_for_module();
+		$custom_post_types = $this->get_supported_post_types_for_module();
 
 		foreach ( $custom_post_types as $custom_post_type => $args ) {
 			$allowed_post_types[ $custom_post_type ] = $args->label;
