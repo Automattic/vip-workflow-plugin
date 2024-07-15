@@ -246,7 +246,7 @@ class Custom_Status extends Module {
 	 */
 	public function action_admin_enqueue_scripts() {
 		// Load Javascript we need to use on the configuration views
-		if ( $this->is_whitelisted_settings_view( $this->module->name ) ) {
+		if ( $this->is_whitelisted_settings_view() ) {
 			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
 			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
@@ -381,7 +381,7 @@ class Custom_Status extends Module {
 				];
 			}
 
-			$publish_guard_enabled = ( 'on' === $vip_workflow->settings->options->publish_guard ) ? 1 : 0;
+			$publish_guard_enabled = ( 'on' === $vip_workflow->settings->module->options->publish_guard ) ? 1 : 0;
 
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
 

@@ -197,7 +197,7 @@ class Notifications extends Module {
 
 			$this->send_email( 'status-change', $post, $subject, $body );
 
-			if ( 'on' === $vip_workflow->settings->options->send_to_webhook ) {
+			if ( 'on' === $vip_workflow->settings->module->options->send_to_webhook ) {
 				/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
 				$format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
 				$text   = sprintf( $format, $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name );
@@ -257,7 +257,7 @@ class Notifications extends Module {
 	public function send_to_webhook( $message, $action, $user, $post ) {
 		global $vip_workflow;
 
-		$webhook_url = $vip_workflow->settings->options->webhook_url;
+		$webhook_url = $vip_workflow->settings->module->options->webhook_url;
 
 		// Bail if the webhook URL is not set
 		if ( empty( $webhook_url ) ) {

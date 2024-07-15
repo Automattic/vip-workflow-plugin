@@ -275,21 +275,14 @@ class Settings extends Module {
 	/**
 	 * Generate an option field to turn post type support on/off for a given module
 	 *
-	 * @param object $module VIP Workflow module we're generating the option field for
-	 * @param {missing}
+	 * @param array $args An array of arguments to pass to the function
 	 */
-	public function helper_option_custom_post_type( $module, $args = array() ) {
+	public function helper_option_custom_post_type( $args = array() ) {
 
 		$all_post_types = array(
 			'post' => __( 'Posts' ),
 			'page' => __( 'Pages' ),
 		);
-		$custom_post_types = $this->get_supported_post_types_for_module();
-		if ( count( $custom_post_types ) ) {
-			foreach ( $custom_post_types as $custom_post_type => $args ) {
-				$all_post_types[ $custom_post_type ] = $args->label;
-			}
-		}
 
 		foreach ( $all_post_types as $post_type => $title ) {
 			echo '<label for="' . esc_attr( $post_type ) . '">';
@@ -301,11 +294,6 @@ class Settings extends Module {
 			// Defining post_type_supports in the functions.php file or similar should disable the checkbox
 			disabled( post_type_supports( $post_type, $this->module->post_type_support ), true );
 			echo ' type="checkbox" />&nbsp;&nbsp;&nbsp;' . esc_html( $title ) . '</label>';
-			// Leave a note to the admin as a reminder that add_post_type_support has been used somewhere in their code
-			if ( post_type_supports( $post_type, $this->module->post_type_support ) ) {
-				/* translators: 1: post type, 2: post type support */
-				echo '&nbsp&nbsp;&nbsp;<span class="description">' . esc_html( sprintf( __( 'Disabled because add_post_type_support( \'%1$s\', \'%2$s\' ) is included in a loaded file.', 'vip-workflow' ), $post_type, $this->module->post_type_support ) ) . '</span>';
-			}
 			echo '<br />';
 		}
 	}

@@ -76,12 +76,6 @@ class VIP_Workflow {
 	 * Include the common resources to VIP Workflow and dynamically load the modules
 	 */
 	private function load_modules() {
-
-		// We use the WP_List_Table API for some of the table gen
-		if ( ! class_exists( 'WP_List_Table' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
-		}
-
 		// VIP Workflow base module
 		require_once VIP_WORKFLOW_ROOT . '/common/php/class-module.php';
 
@@ -221,9 +215,9 @@ class VIP_Workflow {
 		if ( ! isset( $args['settings_slug'] ) ) {
 			$args['settings_slug'] = 'vw-' . $args['slug'] . '-settings';
 		}
-		if ( empty( $args['post_type_support'] ) ) {
-			$args['post_type_support'] = 'vw_' . $name;
-		}
+		// if ( empty( $args['post_type_support'] ) ) {
+		//  $args['post_type_support'] = 'vw_' . $name;
+		// }
 
 		$this->modules->$name = (object) $args;
 
