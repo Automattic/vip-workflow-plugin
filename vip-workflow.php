@@ -40,5 +40,6 @@ define( 'VIP_WORKFLOW_VERSION', '0.0.1' );
 define( 'VIP_WORKFLOW_ROOT', __DIR__ );
 define( 'VIP_WORKFLOW_URL', plugins_url( '/', __FILE__ ) );
 define( 'VIP_WORKFLOW_SETTINGS_PAGE', add_query_arg( 'page', 'vw-settings', get_admin_url( null, 'admin.php' ) ) );
+define( 'VIP_WORKFLOW_REST_NAMESPACE', 'vip-workflow/v1' );
 
 require_once VIP_WORKFLOW_ROOT . '/class-workflow.php';

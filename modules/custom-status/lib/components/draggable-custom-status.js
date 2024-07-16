@@ -17,7 +17,7 @@ export default function DraggableCustomStatus( {
 		'custom-status-item'
 	);
 
-	const handleClick = () => {
+	const handleEditClick = () => {
 		handleEditStatus( customStatus );
 	};
 
@@ -33,7 +33,7 @@ export default function DraggableCustomStatus( {
 				<div className="name">{ customStatus.name }</div>
 
 				<div className="edit">
-					<Button variant="secondary" size="small" onClick={ handleClick }>
+					<Button variant="primary" size="small" onClick={ handleEditClick }>
 						{ __( 'Edit', 'vip-workflow' ) }
 					</Button>
 				</div>

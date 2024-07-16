@@ -213,6 +213,7 @@ h3.nav-tab-wrapper {
 .vip-workflow-updated-message {
 	background-color: #FFFFE0;
 	border: 1px solid #E6DB55;
+	transition: opacity 0.5s ease;
 }
 
 .vip-workflow-error-message {

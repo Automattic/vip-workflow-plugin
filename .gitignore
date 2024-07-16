@@ -4,6 +4,7 @@
 node_modules
 wordpress
 vendor
+.env
 
 # Test files
 .phpunit.result.cache

@@ -6,12 +6,12 @@
 
 namespace VIPWorkflow\Modules;
 
-include_once __DIR__ . '/class-custom-status-list-table.php'; // autoloading doesn't seem to be working for this file
+require_once __DIR__ . '/rest/custom-status.php';
 
-use WP_Error;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
-use VIPWorkflow\Modules\Custom_Status_List_Table;
+use VIPWorkflow\Modules\CustomStatus\REST\EditStatus;
+use WP_Error;
 use function VIPWorkflow\Common\PHP\_vw_wp_link_page;
 
 class Custom_Status extends Module {
@@ -38,7 +38,6 @@ class Custom_Status extends Module {
 			'img_url'              => $this->module_url . 'lib/custom_status_s128.png',
 			'slug'                 => 'custom-status',
 			'default_options'      => [
-				'default_status'       => 'pitch',
 				'always_show_dropdown' => 'off',
 				'post_types'           => [
 					'post' => 'on',
@@ -52,7 +51,6 @@ class Custom_Status extends Module {
 			'messages'             => [
 				'status-added'            => __( 'Post status created.', 'vip-workflow' ),
 				'status-missing'          => __( "Post status doesn't exist.", 'vip-workflow' ),
-				'default-status-changed'  => __( 'Default post status has been changed.', 'vip-workflow' ),
 				'term-updated'            => __( 'Post status updated.', 'vip-workflow' ),
 				'status-deleted'          => __( 'Post status deleted.', 'vip-workflow' ),
 				'status-position-updated' => __( 'Status order updated.', 'vip-workflow' ),
@@ -88,14 +86,6 @@ class Custom_Status extends Module {
 		// Add custom statuses to the post states.
 		add_filter( 'display_post_states', [ $this, 'add_status_to_post_states' ], 10, 2 );
 
-		// Methods for handling the actions of creating, making default, and deleting post stati
-		add_action( 'admin_init', [ $this, 'handle_add_custom_status' ] );
-		add_action( 'admin_init', [ $this, 'handle_edit_custom_status' ] );
-		add_action( 'admin_init', [ $this, 'handle_make_default_custom_status' ] );
-		add_action( 'admin_init', [ $this, 'handle_delete_custom_status' ] );
-		add_action( 'wp_ajax_update_status_positions', [ $this, 'handle_ajax_update_status_positions' ] );
-		add_action( 'wp_ajax_inline_save_status', [ $this, 'ajax_inline_save_status' ] );
-
 		// These seven-ish methods are hacks for fixing bugs in WordPress core
 		add_action( 'admin_init', [ $this, 'check_timestamp_on_publish' ] );
 		add_filter( 'wp_insert_post_data', [ $this, 'fix_custom_status_timestamp' ], 10, 2 );
@@ -113,6 +103,9 @@ class Custom_Status extends Module {
 
 		// Pagination for custom post statuses when previewing posts
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
+
+		// REST endpoints
+		EditStatus::init();
 
 		// publish guard
 		if ( 'on' === $this->module->options->publish_guard ) {
@@ -222,10 +215,12 @@ class Custom_Status extends Module {
 			// of manage posts if there is a post with the status
 			foreach ( $custom_statuses as $status ) {
 				register_post_status( $status->slug, [
-					'label'       => $status->name,
-					'protected'   => true,
-					'_builtin'    => false,
-					'label_count' => _n_noop( "{$status->name} <span class='count'>(%s)</span>", "{$status->name} <span class='count'>(%s)</span>" ),
+					'label'                     => $status->name,
+					'protected'                 => true,
+					'_builtin'                  => false,
+					'label_count'               => _n_noop( "{$status->name} <span class='count'>(%s)</span>", "{$status->name} <span class='count'>(%s)</span>" ),
+					'show_in_admin_status_list' => true,
+					'show_in_admin_all_list'    => true,
 				] );
 			}
 		}
@@ -262,16 +257,14 @@ class Custom_Status extends Module {
 	public function action_admin_enqueue_scripts() {
 		// Load Javascript we need to use on the configuration views
 		if ( $this->is_whitelisted_settings_view( $this->module->name ) ) {
-			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
-			$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'jquery-ui-sortable' ];
-			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $dependencies, $asset_file['version'], true );
+			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
+			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'ajax_url'             => admin_url( 'admin-ajax.php' ),
-				'custom_statuses'      => array_values( $this->get_custom_statuses() ),
-				'delete_status_string' => __( 'Are you sure you want to delete the post status? All posts with this status will be assigned to the default status.', 'vip-workflow' ),
-				'reorder_nonce'        => wp_create_nonce( 'custom-status-sortable' ),
+				'custom_statuses'    => $this->get_custom_statuses(),
+				'url_edit_status'    => EditStatus::get_crud_url(),
+				'url_reorder_status' => EditStatus::get_reorder_url(),
 			] );
 		}
 
@@ -297,7 +290,7 @@ class Custom_Status extends Module {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 		wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-		$custom_statuses = array_values( $this->get_custom_statuses() );
+		$custom_statuses = $this->get_custom_statuses();
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', $custom_statuses );
 	}
 
@@ -356,8 +349,7 @@ class Custom_Status extends Module {
 			if ( ! empty( $post ) ) {
 				// Get the status of the current post
 				if ( 0 == $post->ID || 'auto-draft' == $post->post_status || 'edit.php' == $pagenow ) {
-					// TODO: check to make sure that the default exists
-					$selected = $this->get_default_custom_status()->slug;
+					$selected = $custom_statuses[0]->slug;
 				} else {
 					$selected = $post->post_status;
 				}
@@ -399,7 +391,7 @@ class Custom_Status extends Module {
 				];
 			}
 
-			$always_show_dropdown = ( 'on' == $this->module->options->always_show_dropdown ) ? 1 : 0;
+			$always_show_dropdown  = ( 'on' == $this->module->options->always_show_dropdown ) ? 1 : 0;
 			$publish_guard_enabled = ( 'on' == $this->module->options->publish_guard ) ? 1 : 0;
 
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
@@ -408,7 +400,6 @@ class Custom_Status extends Module {
 			?>
 			<script type="text/javascript">
 				var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
-				var vw_default_custom_status = '<?php echo esc_js( $this->get_default_custom_status()->slug ); ?>';
 				var current_status = '<?php echo esc_js( $selected ); ?>';
 				var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
 				var status_dropdown_visible = <?php echo esc_js( $always_show_dropdown ); ?>;
@@ -488,12 +479,11 @@ class Custom_Status extends Module {
 
 		// Reassign posts to new status slug if the slug changed and isn't restricted
 		if ( isset( $args['slug'] ) && $args['slug'] != $old_status->slug && ! $this->is_restricted_status( $old_status->slug ) ) {
-			$new_status = $args['slug'];
-			$this->reassign_post_status( $old_status->slug, $new_status );
-
-			$default_status = $this->get_default_custom_status()->slug;
-			if ( $old_status->slug == $default_status ) {
-				$vip_workflow->update_module_option( $this->module->name, 'default_status', $new_status );
+			$new_status        = $args['slug'];
+			$reassigned_result = $this->reassign_post_status( $old_status->slug, $new_status );
+			// If the reassignment failed, return the error
+			if ( is_wp_error( $reassigned_result ) ) {
+				return $reassigned_result;
 			}
 		}
 		// We're encoding metadata that isn't supported by default in the term's description field
@@ -506,6 +496,9 @@ class Custom_Status extends Module {
 		$updated_status_array = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
 		$updated_status       = $this->get_custom_status_by( 'id', $updated_status_array['term_id'] );
 
+		// Reset status cache again, as reassign_post_status() will recache prior statuses
+		$this->custom_statuses_cache = [];
+
 		return $updated_status;
 	}
 
@@ -515,34 +508,31 @@ class Custom_Status extends Module {
 	 * Partly a wrapper for the wp_delete_term function.
 	 * BUT, also reassigns posts that currently have the deleted status assigned.
 	 */
-	public function delete_custom_status( $status_id, $args = [], $reassign = '' ) {
-		global $vip_workflow;
-		// Reassign posts to alternate status
-
+	public function delete_custom_status( $status_id, $args = [] ) {
 		// Get slug for the old status
-		$old_status = $this->get_custom_status_by( 'id', $status_id )->slug;
-
-		if ( $reassign == $old_status ) {
-			return new WP_Error( 'invalid', __( 'Cannot reassign to the status you want to delete', 'vip-workflow' ) );
-		}
+		$old_status_slug = $this->get_custom_status_by( 'id', $status_id )->slug;
 
 		// Reset our internal object cache
 		$this->custom_statuses_cache = [];
 
-		if ( ! $this->is_restricted_status( $old_status ) && 'draft' !== $old_status ) {
-			$default_status = $this->get_default_custom_status()->slug;
-			// If new status in $reassign, use that for all posts of the old_status
-			if ( ! empty( $reassign ) ) {
-				$new_status = $this->get_custom_status_by( 'id', $reassign )->slug;
-			} else {
-				$new_status = $default_status;
-			}
-			if ( $old_status == $default_status && $this->get_custom_status_by( 'slug', 'draft' ) ) { // Deleting default status
-				$new_status = 'draft';
-				$vip_workflow->update_module_option( $this->module->name, 'default_status', $new_status );
+		if ( ! $this->is_restricted_status( $old_status_slug ) && 'draft' !== $old_status_slug ) {
+			// Get the new status to reassign posts to, which would be the first custom status.
+			// In the event that the first custom status is being deleted, we'll reassign to the second custom status.
+			// Since draft cannot be deleted, we don't need to worry about ever getting index out of bounds.
+			$custom_statuses = $this->get_custom_statuses();
+			$new_status_slug = $custom_statuses[0]->slug;
+			if ( $old_status_slug === $new_status_slug ) {
+				$new_status_slug = $custom_statuses[1]->slug;
 			}
 
-			$this->reassign_post_status( $old_status, $new_status );
+			$reassigned_result = $this->reassign_post_status( $old_status_slug, $new_status_slug );
+			// If the reassignment failed, return the error
+			if ( is_wp_error( $reassigned_result ) ) {
+				return $reassigned_result;
+			}
+
+			// Reset status cache again, as reassign_post_status() will recache prior statuses
+			$this->custom_statuses_cache = [];
 
 			return wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
 		} else {
@@ -606,6 +596,8 @@ class Custom_Status extends Module {
 			$ordered_statuses[] = $unpositioned_status;
 		}
 
+		$ordered_statuses = array_values( $ordered_statuses );
+
 		$this->custom_statuses_cache = $ordered_statuses;
 		return $ordered_statuses;
 	}
@@ -637,34 +629,25 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Get the term object for the default custom post status
-	 *
-	 * @return object $default_status Default post status object
-	 */
-	public function get_default_custom_status() {
-		$default_status = $this->get_custom_status_by( 'slug', $this->module->options->default_status );
-		if ( ! $default_status ) {
-			$custom_statuses = $this->get_custom_statuses();
-			$default_status  = array_shift( $custom_statuses );
-		}
-		return $default_status;
-	}
-
-	/**
-	 * Assign new statuses to posts using value provided or the default
+	 * Assign new statuses to posts using value provided
 	 *
 	 * @param string $old_status Slug for the old status
 	 * @param string $new_status Slug for the new status
 	 */
-	public function reassign_post_status( $old_status, $new_status = '' ) {
+	public function reassign_post_status( $old_status, $new_status ) {
 		global $wpdb;
 
 		if ( empty( $new_status ) ) {
-			$new_status = $this->get_default_custom_status()->slug;
+			return new WP_Error( 'invalid', __( 'No new status provided for reassignment.', 'vip-workflow' ) );
 		}
 
 		// Make the database call
 		$result = $wpdb->update( $wpdb->posts, [ 'post_status' => $new_status ], [ 'post_status' => $old_status ], [ '%s' ] );
+
+		// Check if result was successful
+		if ( false === $result ) {
+			return new WP_Error( 'invalid', __( 'Failed to reassign post statuses.', 'vip-workflow' ) );
+		}
 	}
 
 	/**
@@ -725,368 +708,6 @@ class Custom_Status extends Module {
 				break;
 		}
 		return $restricted;
-	}
-
-	/**
-	 * Handles a form's POST request to add a custom status
-	 */
-	public function handle_add_custom_status() {
-
-		// Check that the current POST request is our POST request
-		if ( ! isset( $_POST['submit'], $_GET['page'], $_POST['action'] )
-		|| $_GET['page'] != $this->module->settings_slug || 'add-new' != $_POST['action'] ) {
-			return;
-		}
-
-		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'custom-status-add-nonce' ) ) {
-			wp_die( esc_html( $this->module->messages['nonce-failed'] ) );
-		}
-
-		// Validate and sanitize the form data
-		$status_name        = isset( $_POST['status_name'] ) ? sanitize_text_field( trim( $_POST['status_name'] ) ) : '';
-		$status_slug        = sanitize_title( $status_name );
-		$status_description = isset( $_POST['status_description'] ) ? stripslashes( wp_filter_nohtml_kses( trim( $_POST['status_description'] ) ) ) : '';
-
-		/**
-		 * Form validation
-		 * - Name is required and can't conflict with an existing name or slug
-		 * - Description is optional
-		 */
-		$_REQUEST['form-errors'] = [];
-		// Check if name field was filled in
-		if ( empty( $status_name ) ) {
-			$_REQUEST['form-errors']['name'] = __( 'Please enter a name for the status', 'vip-workflow' );
-		}
-		// Check that the name isn't numeric
-		if ( 0 != (int) $status_name ) {
-			$_REQUEST['form-errors']['name'] = __( 'Please enter a valid, non-numeric name for the status.', 'vip-workflow' );
-		}
-		// Check that the status name doesn't exceed 20 chars
-		if ( strlen( $status_name ) > 20 ) {
-			$_REQUEST['form-errors']['name'] = __( 'Status name cannot exceed 20 characters. Please try a shorter name.', 'vip-workflow' );
-		}
-		// Check to make sure the status doesn't already exist as another term because otherwise we'd get a weird slug
-		if ( term_exists( $status_slug, self::TAXONOMY_KEY ) ) {
-			$_REQUEST['form-errors']['name'] = __( 'Status name conflicts with existing term. Please choose another.', 'vip-workflow' );
-		}
-		// Check to make sure the name is not restricted
-		if ( $this->is_restricted_status( strtolower( $status_slug ) ) ) {
-			$_REQUEST['form-errors']['name'] = __( 'Status name is restricted. Please choose another name.', 'vip-workflow' );
-		}
-
-		// If there were any form errors, kick out and return them
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-		if ( count( $_REQUEST['form-errors'] ) ) {
-			$_REQUEST['error'] = 'form-error';
-			return;
-		}
-
-		// Try to add the status
-		$status_args = [
-			'description' => $status_description,
-			'slug'        => $status_slug,
-		];
-		$return      = $this->add_custom_status( $status_name, $status_args );
-		if ( is_wp_error( $return ) ) {
-			/* translators: %s: error message */
-			wp_die( esc_html( sprintf( __( 'Could not add status: %s', 'vip-workflow' ), $return->get_error_message() ) ) );
-		}
-		// Redirect if successful
-		$redirect_url = $this->get_link( [ 'message' => 'status-added' ] );
-		wp_redirect( $redirect_url );
-		exit;
-	}
-
-	/**
-	 * Handles a POST request to edit an custom status
-	 */
-	public function handle_edit_custom_status() {
-		if ( ! isset( $_POST['submit'], $_GET['page'], $_GET['action'], $_GET['term-id'] )
-		|| $_GET['page'] != $this->module->settings_slug || 'edit-status' != $_GET['action'] ) {
-			return;
-		}
-
-		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'edit-status' ) ) {
-			wp_die( esc_html( $this->module->messages['nonce-failed'] ) );
-		}
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html( $this->module->messages['invalid-permissions'] ) );
-		}
-
-		$existing_status = $this->get_custom_status_by( 'id', (int) $_GET['term-id'] );
-		if ( ! $existing_status ) {
-			wp_die( esc_html( $this->module->messages['status-missing'] ) );
-		}
-
-		$name        = isset( $_POST['name'] ) ? sanitize_text_field( trim( $_POST['name'] ) ) : '';
-		$description = isset( $_POST['description'] ) ? stripslashes( wp_filter_nohtml_kses( trim( $_POST['description'] ) ) ) : '';
-
-		/**
-		 * Form validation for editing custom status
-		 *
-		 * Details
-		 * - 'name' is a required field and can't conflict with existing name or slug
-		 * - 'description' is optional
-		 */
-		$_REQUEST['form-errors'] = [];
-		// Check if name field was filled in
-		if ( empty( $name ) ) {
-			$_REQUEST['form-errors']['name'] = __( 'Please enter a name for the status', 'vip-workflow' );
-		}
-		// Check that the name isn't numeric
-		if ( is_numeric( $name ) ) {
-			$_REQUEST['form-errors']['name'] = __( 'Please enter a valid, non-numeric name for the status.', 'vip-workflow' );
-		}
-		// Check that the status name doesn't exceed 20 chars
-		if ( strlen( $name ) > 20 ) {
-			$_REQUEST['form-errors']['name'] = __( 'Status name cannot exceed 20 characters. Please try a shorter name.', 'vip-workflow' );
-		}
-		// Check to make sure the status doesn't already exist as another term because otherwise we'd get a weird slug
-		$term_exists = term_exists( sanitize_title( $name ), self::TAXONOMY_KEY );
-		if ( $term_exists && isset( $term_exists['term_id'] ) && $term_exists['term_id'] != $existing_status->term_id ) {
-			$_REQUEST['form-errors']['name'] = __( 'Status name conflicts with existing term. Please choose another.', 'vip-workflow' );
-		}
-		// Check to make sure the status doesn't already exist
-		$search_status = $this->get_custom_status_by( 'slug', sanitize_title( $name ) );
-		if ( $search_status && $search_status->term_id != $existing_status->term_id ) {
-			$_REQUEST['form-errors']['name'] = __( 'Status name conflicts with existing status. Please choose another.', 'vip-workflow' );
-		}
-		// Check to make sure the name is not restricted
-		if ( $this->is_restricted_status( strtolower( sanitize_title( $name ) ) ) ) {
-			$_REQUEST['form-errors']['name'] = __( 'Status name is restricted. Please choose another name.', 'vip-workflow' );
-		}
-
-		// Kick out if there are any errors
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-		if ( count( $_REQUEST['form-errors'] ) ) {
-			$_REQUEST['error'] = 'form-error';
-			return;
-		}
-
-		// Try to add the new post status
-		$args   = [
-			'name'        => $name,
-			'slug'        => sanitize_title( $name ),
-			'description' => $description,
-		];
-		$return = $this->update_custom_status( $existing_status->term_id, $args );
-		if ( is_wp_error( $return ) ) {
-			wp_die( esc_html__( 'Error updating post status.', 'vip-workflow' ) );
-		}
-
-		$redirect_url = $this->get_link( [ 'message' => 'status-updated' ] );
-		wp_redirect( $redirect_url );
-		exit;
-	}
-
-	/**
-	 * Handles a GET request to make the identified status default
-	 */
-	public function handle_make_default_custom_status() {
-		global $vip_workflow;
-
-		// Check that the current GET request is our GET request
-		if ( ! isset( $_GET['page'], $_GET['action'], $_GET['term-id'], $_GET['nonce'] )
-		|| $_GET['page'] != $this->module->settings_slug || 'make-default' != $_GET['action'] ) {
-			return;
-		}
-
-		// Check for proper nonce
-		if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( $_GET['nonce'], 'make-default' ) ) {
-			wp_die( esc_html__( 'Invalid nonce for submission.', 'vip-workflow' ) );
-		}
-
-		// Only allow users with the proper caps
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Sorry, you do not have permission to edit custom statuses.', 'vip-workflow' ) );
-		}
-
-		$term_id = (int) $_GET['term-id'];
-		$term    = $this->get_custom_status_by( 'id', $term_id );
-		if ( is_object( $term ) ) {
-			$vip_workflow->update_module_option( $this->module->name, 'default_status', $term->slug );
-			// @todo How do we want to handle users who click the link from "Add New Status"
-			$redirect_url = $this->get_link( [ 'message' => 'default-status-changed' ] );
-			wp_redirect( $redirect_url );
-			exit;
-		} else {
-			wp_die( esc_html__( 'Status doesn&#39;t exist.', 'vip-workflow' ) );
-		}
-	}
-
-	/**
-	 * Handles a GET request to delete a specific term
-	 */
-	public function handle_delete_custom_status() {
-
-		// Check that this GET request is our GET request
-		if ( ! isset( $_GET['page'], $_GET['action'], $_GET['term-id'], $_GET['nonce'] )
-		|| $_GET['page'] != $this->module->settings_slug || 'delete-status' != $_GET['action'] ) {
-			return;
-		}
-
-		// Check for proper nonce
-		if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( $_GET['nonce'], 'delete-status' ) ) {
-			wp_die( esc_html__( 'Invalid nonce for submission.', 'vip-workflow' ) );
-		}
-
-		// Only allow users with the proper caps
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Sorry, you do not have permission to edit custom statuses.', 'vip-workflow' ) );
-		}
-
-		// Check to make sure the status isn't already deleted
-		$term_id = (int) $_GET['term-id'];
-		$term    = $this->get_custom_status_by( 'id', $term_id );
-		if ( ! $term ) {
-			wp_die( esc_html__( 'Status does not exist.', 'vip-workflow' ) );
-		}
-
-		// Don't allow deletion of default status
-		if ( $term->slug == $this->get_default_custom_status()->slug ) {
-			wp_die( esc_html__( 'Cannot delete default status.', 'vip-workflow' ) );
-		}
-
-		$return = $this->delete_custom_status( $term_id );
-		if ( is_wp_error( $return ) ) {
-			wp_die( esc_html( __( 'Could not delete the status: ', 'vip-workflow' ) . $return->get_error_message() ) );
-		}
-
-		$redirect_url = $this->get_link( [ 'message' => 'status-deleted' ] );
-		wp_redirect( $redirect_url );
-		exit;
-	}
-
-	/**
-	 * Generate a link to one of the custom status actions
-	 *
-	 * @param array $args (optional) Action and any query args to add to the URL
-	 * @return string $link Direct link to complete the action
-	 */
-	public function get_link( $args = [] ) {
-		if ( ! isset( $args['action'] ) ) {
-			$args['action'] = '';
-		}
-		if ( ! isset( $args['page'] ) ) {
-			$args['page'] = $this->module->settings_slug;
-		}
-		// Add other things we may need depending on the action
-		switch ( $args['action'] ) {
-			case 'make-default':
-			case 'delete-status':
-				$args['nonce'] = wp_create_nonce( $args['action'] );
-				break;
-			default:
-				break;
-		}
-		return add_query_arg( $args, get_admin_url( null, 'admin.php' ) );
-	}
-
-	/**
-	 * Handle an ajax request to update the order of custom statuses
-	 */
-	public function handle_ajax_update_status_positions() {
-
-		if ( ! isset( $_POST['custom_status_sortable_nonce'] ) || ! wp_verify_nonce( $_POST['custom_status_sortable_nonce'], 'custom-status-sortable' ) ) {
-			$this->print_ajax_response( 'error', esc_html( $this->module->messages['nonce-failed'] ) );
-		}
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			$this->print_ajax_response( 'error', esc_html( $this->module->messages['invalid-permissions'] ) );
-		}
-
-		if ( ! isset( $_POST['status_positions'] ) || ! is_array( $_POST['status_positions'] ) ) {
-			$this->print_ajax_response( 'error', esc_html__( 'Terms not set.', 'vip-workflow' ) );
-		}
-
-		// Update each custom status with its new position
-		foreach ( $_POST['status_positions'] as $position => $term_id ) {
-
-			// Have to add 1 to the position because the index started with zero
-			$args   = [
-				'position' => (int) $position + 1,
-			];
-			$return = $this->update_custom_status( (int) $term_id, $args );
-			// @todo check that this was a valid return
-		}
-		$this->print_ajax_response( 'success', $this->module->messages['status-position-updated'] );
-	}
-
-	/**
-	 * Handle an Inline Edit POST request to update status values
-	 */
-	public function ajax_inline_save_status() {
-		global $vip_workflow;
-
-		if ( ! isset( $_POST['inline_edit'] ) || ! wp_verify_nonce( $_POST['inline_edit'], 'custom-status-inline-edit-nonce' ) ) {
-			die( esc_html( $this->module->messages['nonce-failed'] ) );
-		}
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			die( esc_html( $this->module->messages['invalid-permissions'] ) );
-		}
-
-		$term_id            = isset( $_POST['status_id'] ) ? (int) $_POST['status_id'] : 0;
-		$status_name        = isset( $_POST['name'] ) ? sanitize_text_field( trim( $_POST['name'] ) ) : '';
-		$status_slug        = isset( $_POST['name'] ) ? sanitize_title( trim( $_POST['name'] ) ) : '';
-		$status_description = isset( $_POST['description'] ) ? stripslashes( wp_filter_nohtml_kses( trim( $_POST['description'] ) ) ) : '';
-
-		// Check if name field was filled in
-		if ( empty( $status_name ) ) {
-			$change_error = new WP_Error( 'invalid', esc_html__( 'Please enter a name for the status.', 'vip-workflow' ) );
-			die( esc_html( $change_error->get_error_message() ) );
-		}
-
-		// Check that the name isn't numeric
-		if ( is_numeric( $status_name ) ) {
-			$change_error = new WP_Error( 'invalid', esc_html__( 'Please enter a valid, non-numeric name for the status.', 'vip-workflow' ) );
-			die( esc_html( $change_error->get_error_message() ) );
-		}
-
-		// Check that the status name doesn't exceed 20 chars
-		if ( strlen( $status_name ) > 20 ) {
-			$change_error = new WP_Error( 'invalid', esc_html__( 'Status name cannot exceed 20 characters. Please try a shorter name.', 'vip-workflow' ) );
-			die( esc_html( $change_error->get_error_message() ) );
-		}
-
-		// Check to make sure the name is not restricted
-		if ( $vip_workflow->custom_status->is_restricted_status( strtolower( $status_name ) ) ) {
-			$change_error = new WP_Error( 'invalid', esc_html__( 'Status name is restricted. Please chose another name.', 'vip-workflow' ) );
-			die( esc_html( $change_error->get_error_message() ) );
-		}
-
-		// Check to make sure the status doesn't already exist
-		if ( $this->get_custom_status_by( 'slug', $status_slug ) && ( $this->get_custom_status_by( 'id', $term_id )->slug != $status_slug ) ) {
-			$change_error = new WP_Error( 'invalid', esc_html__( 'Status already exists. Please choose another name.', 'vip-workflow' ) );
-			die( esc_html( $change_error->get_error_message() ) );
-		}
-
-		// Check to make sure the status doesn't already exist as another term because otherwise we'd get a fatal error
-		$term_exists = term_exists( sanitize_title( $status_name ), self::TAXONOMY_KEY );
-		if ( $term_exists && isset( $term_exists['term_id'] ) && $term_exists['term_id'] != $term_id ) {
-			$change_error = new WP_Error( 'invalid', esc_html__( 'Status name conflicts with existing term. Please choose another.', 'vip-workflow' ) );
-			die( esc_html( $change_error->get_error_message() ) );
-		}
-
-		// get status_name & status_description
-		$args   = [
-			'name'        => $status_name,
-			'description' => $status_description,
-			'slug'        => $status_slug,
-		];
-		$return = $this->update_custom_status( $term_id, $args );
-		if ( ! is_wp_error( $return ) ) {
-			set_current_screen( 'edit-custom-status' );
-			$wp_list_table = new Custom_Status_List_Table();
-			$wp_list_table->prepare_items();
-			echo wp_kses_post( $wp_list_table->single_row( $return ) );
-			die();
-		} else {
-			/* translators: 1: the status's name */
-			$change_error = new WP_Error( 'invalid', sprintf( __( 'Could not update the status: <strong>%s</strong>', 'vip-workflow' ), $status_name ) );
-			die( wp_kses( $change_error->get_error_message(), 'strong' ) );
-		}
 	}
 
 	/**
@@ -1175,44 +796,7 @@ class Custom_Status extends Module {
 	 *
 	 */
 	public function print_configure_view() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- No verification required for unprivileged URL check.
-		$action = isset( $_GET['action'] ) && in_array( $_GET['action'], [ 'edit-status', 'change-options', 'manage-workflow' ] ) ? $_GET['action'] : '';
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- No verification required for unprivileged URL check.
-		$term_id = isset( $_GET['term-id'] ) ? absint( $_GET['term-id'] ) : false;
-
-		if ( $term_id && 'edit-status' === $action ) {
-			// Check whether the term exists
-			$custom_status = $this->get_custom_status_by( 'id', $term_id );
-
-			if ( ! $custom_status ) {
-				printf( '<div class="error"><p>%s</p></div>', esc_html( $this->module->messages['status-missing'] ) );
-				return;
-			}
-
-			$edit_status_link = $this->get_link( [
-				'action'  => 'edit-status',
-				'term-id' => $term_id,
-			] );
-
-			$name        = $custom_status->name;
-			$description = $custom_status->description;
-
-			$is_nonce_valid = isset( $_POST['_wpnonce'] ) && wp_verify_nonce( wp_strip_all_tags( $_POST['_wpnonce'] ), 'edit-status' );
-
-			if ( $is_nonce_valid ) {
-				$name        = ( isset( $_POST['name'] ) ) ? wp_strip_all_tags( $_POST['name'] ) : $custom_status->name;
-				$description = ( isset( $_POST['description'] ) ) ? wp_strip_all_tags( $_POST['description'] ) : $custom_status->description;
-			}
-
-			include_once __DIR__ . '/views/edit-status.php';
-		} elseif ( 'manage-workflow' === $action ) {
-			include_once __DIR__ . '/views/manage-workflow.php';
-		} else {
-			$custom_status_list_table = new Custom_Status_List_Table();
-			$custom_status_list_table->prepare_items();
-			include_once __DIR__ . '/views/configure.php';
-		}
+		include_once __DIR__ . '/views/manage-workflow.php';
 	}
 
 	/**
@@ -1712,6 +1296,10 @@ class Custom_Status extends Module {
 		} else {
 			return false;
 		}
+	}
+
+	public function register_rest_endpoints() {
+		EditStatus::init();
 	}
 }
 
