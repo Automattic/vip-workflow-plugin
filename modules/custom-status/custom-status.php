@@ -1242,7 +1242,7 @@ class Custom_Status extends Module {
 
 		$post = get_post( $postarr['ID'] );
 
-		// if post is already published then we don't need to check for custom statuses
+		// if post is already published and being updated then we don't need to check for custom statuses
 		if ( 'publish' === $post->post_status ) {
 			return $maybe_empty;
 		}
