@@ -193,24 +193,6 @@ class Settings extends Module {
 	}
 
 	/**
-	 * Given a form field and a description, prints either the error associated with the field or the description.
-	 *
-	 * @param string $field The form field for which to check for an error
-	 * @param string $description Unlocalized string to display if there was no error with the given field
-	 */
-	public function helper_print_error_or_description( $field, $description ) {
-		if ( isset( $_REQUEST['form-errors'][ $field ] ) ) :
-			?>
-			<div class="form-error">
-				<p><?php echo esc_html( $_REQUEST['form-errors'][ $field ] ); ?></p>
-			</div>
-			<?php else : ?>
-			<p class="description"><?php echo esc_html( $description ); ?></p>
-				<?php
-		endif;
-	}
-
-	/**
 	 * Option for whether the publish guard feature should be enabled
 	 */
 	public function settings_publish_guard() {
@@ -344,7 +326,7 @@ class Settings extends Module {
 		$module_name = sanitize_key( $_POST['vip_workflow_module_name'] );
 
 		if ( 'update' != $_POST['action']
-		|| $_POST['option_page'] != VIP_Workflow::instance()->$module_name->module->options_group_name ) {
+		|| VIP_Workflow::instance()->$module_name->module->options_group_name != $_POST['option_page'] ) {
 			return false;
 		}
 

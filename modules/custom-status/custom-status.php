@@ -38,14 +38,6 @@ class Custom_Status extends Module {
 			'img_url'              => $this->module_url . 'lib/custom_status_s128.png',
 			'slug'                 => 'custom-status',
 			'configure_page_cb'    => 'print_configure_view',
-			'configure_link_text'  => __( 'Edit Statuses', 'vip-workflow' ),
-			'messages'             => [
-				'status-added'            => __( 'Post status created.', 'vip-workflow' ),
-				'status-missing'          => __( "Post status doesn't exist.", 'vip-workflow' ),
-				'term-updated'            => __( 'Post status updated.', 'vip-workflow' ),
-				'status-deleted'          => __( 'Post status deleted.', 'vip-workflow' ),
-				'status-position-updated' => __( 'Status order updated.', 'vip-workflow' ),
-			],
 			'autoload'             => true,
 		];
 		$this->module = VIP_Workflow::instance()->register_module( 'custom_status', $args );

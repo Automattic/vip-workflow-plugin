@@ -212,7 +212,7 @@ class VIP_Workflow {
 			$args['settings_slug'] = 'vw-' . $args['slug'] . '-settings';
 		}
 		if ( empty( $args['post_type_support'] ) ) {
-		 $args['post_type_support'] = 'vw_' . $name;
+			$args['post_type_support'] = 'vw_' . $name;
 		}
 
 		$this->modules->$name = (object) $args;

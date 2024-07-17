@@ -219,7 +219,7 @@ class Notifications extends Module {
 	public function send_email( $action, $post, $subject, $message, $message_headers = '' ) {
 
 		// Get list of email recipients -- set them CC
-		$recipients = $this->_get_notification_recipients( $post, true );
+		$recipients = $this->get_notification_recipients( $post, true );
 
 		if ( $recipients && ! is_array( $recipients ) ) {
 			$recipients = explode( ',', $recipients );
@@ -309,7 +309,7 @@ class Notifications extends Module {
 	 * @param bool $string Whether to return recipients as comma-delimited string or array.
 	 * @return string|array Recipients to receive notification.
 	 */
-	private function _get_notification_recipients( $post, $string = false ) {
+	private function get_notification_recipients( $post, $string = false ) {
 		$post_id = $post->ID;
 		if ( ! $post_id ) {
 			return $string ? '' : [];
@@ -317,7 +317,7 @@ class Notifications extends Module {
 
 		// Email all admins if enabled.
 		$admins = [];
-		if ( 'on' === $this->module->options->always_notify_admin ) {
+		if ( 'on' === VIP_Workflow::instance()->settings->module->options->always_notify_admin ) {
 			$admins[] = get_option( 'admin_email' );
 		}
 
