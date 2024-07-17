@@ -80,7 +80,11 @@ class Settings extends Module {
 
 		add_settings_field( 'always_notify_admin', __( 'Always notify blog admin', 'vip-workflow' ), [ $this, 'settings_always_notify_admin_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 		add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'vip-workflow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+
+		// Hide the Webhook URL field by default if "Send to Webhook" is disabled
+		$webhook_url_class = 'on' === $this->module->options->send_to_webhook ? '' : 'hidden';
+
+		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general', [ 'class' => $webhook_url_class ] );
 	}
 
 	/**
@@ -154,7 +158,7 @@ class Settings extends Module {
 	 * Option to set the Slack webhook URL
 	 */
 	public function settings_webhook_url() {
-		echo '<input type="text" id="webhook_url" name="' . esc_attr( $this->module->options_group_name ) . '[webhook_url]" value="' . esc_attr( $this->module->options->webhook_url ) . '" />';
+		printf( '<input type="text" id="webhook_url" name="%s[webhook_url]" value="%s" />', esc_attr( $this->module->options_group_name ), esc_attr( $this->module->options->webhook_url ) );
 	}
 
 	/**
