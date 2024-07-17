@@ -55,10 +55,6 @@ class VIP_Workflow {
 			self::$instance = new VIP_Workflow();
 			self::$instance->setup_globals();
 			self::$instance->setup_actions();
-			// ToDo: Take this away, along with any backwards compat code.
-			// Backwards compat for when we promoted use of the $edit_flow global
-			global $vip_workflow;
-			$vip_workflow = self::$instance;
 		}
 		return self::$instance;
 	}
@@ -128,7 +124,7 @@ class VIP_Workflow {
 	}
 
 	/**
-	 * Inititalizes the Edit Flows!
+	 * Inititalizes the entire plugin
 	 * Loads options for each registered module and then initializes it if it's active
 	 */
 	public function action_init() {
@@ -215,9 +211,9 @@ class VIP_Workflow {
 		if ( ! isset( $args['settings_slug'] ) ) {
 			$args['settings_slug'] = 'vw-' . $args['slug'] . '-settings';
 		}
-		// if ( empty( $args['post_type_support'] ) ) {
-		//  $args['post_type_support'] = 'vw_' . $name;
-		// }
+		if ( empty( $args['post_type_support'] ) ) {
+		 $args['post_type_support'] = 'vw_' . $name;
+		}
 
 		$this->modules->$name = (object) $args;
 
@@ -247,8 +243,6 @@ class VIP_Workflow {
 
 	/**
 	 * Load the post type options again so we give add_post_type_support() a chance to work
-	 *
-	 * @see http://dev.editflow.org/2011/11/17/edit-flow-v0-7-alpha2-notes/#comment-232
 	 */
 	public function action_init_after() {
 		foreach ( $this->modules as $mod_name => $mod_data ) {

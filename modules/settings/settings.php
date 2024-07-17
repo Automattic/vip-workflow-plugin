@@ -55,11 +55,9 @@ class Settings extends Module {
 	 * Add necessary things to the admin menu
 	 */
 	public function action_admin_menu() {
-		global $vip_workflow;
-
 		add_menu_page( $this->module->title, $this->module->title, 'manage_options', $this->module->settings_slug, array( $this, 'settings_page_controller' ) );
 
-		foreach ( $vip_workflow->modules as $mod_name => $mod_data ) {
+		foreach ( VIP_Workflow::instance()->modules as $mod_name => $mod_data ) {
 			if ( $mod_data->configure_page_cb && $mod_name != $this->module->name ) {
 				add_submenu_page( $this->module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, array( $this, 'settings_page_controller' ) );
 			}
@@ -94,10 +92,8 @@ class Settings extends Module {
 	 * Handles all settings and configuration page requests. Required element for VIP Workflow
 	 */
 	public function settings_page_controller() {
-		global $vip_workflow;
-
 		$page_requested = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : 'settings';
-		$requested_module = $vip_workflow->get_module_by( 'settings_slug', $page_requested );
+		$requested_module = VIP_Workflow::instance()->get_module_by( 'settings_slug', $page_requested );
 		if ( ! $requested_module ) {
 			wp_die( esc_html__( 'Not a registered VIP Workflow module', 'vip-workflow' ) );
 		}
@@ -106,7 +102,7 @@ class Settings extends Module {
 		$requested_module_name = $requested_module->name;
 
 		$this->print_default_header( $requested_module );
-		$vip_workflow->$requested_module_name->$configure_callback();
+		VIP_Workflow::instance()->$requested_module_name->$configure_callback();
 	}
 
 	public function register_settings() {
@@ -345,28 +341,27 @@ class Settings extends Module {
 			return false;
 		}
 
-		global $vip_workflow;
 		$module_name = sanitize_key( $_POST['vip_workflow_module_name'] );
 
 		if ( 'update' != $_POST['action']
-		|| $_POST['option_page'] != $vip_workflow->$module_name->module->options_group_name ) {
+		|| $_POST['option_page'] != VIP_Workflow::instance()->$module_name->module->options_group_name ) {
 			return false;
 		}
 
-		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'], $vip_workflow->$module_name->module->options_group_name . '-options' ) ) {
+		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'], VIP_Workflow::instance()->$module_name->module->options_group_name . '-options' ) ) {
 			wp_die( esc_html__( 'Cheatin&#8217; uh?' ) );
 		}
 
-		$new_options = ( isset( $_POST[ $vip_workflow->$module_name->module->options_group_name ] ) ) ? $_POST[ $vip_workflow->$module_name->module->options_group_name ] : array();
+		$new_options = ( isset( $_POST[ VIP_Workflow::instance()->$module_name->module->options_group_name ] ) ) ? $_POST[ VIP_Workflow::instance()->$module_name->module->options_group_name ] : array();
 
 		// Only call the validation callback if it exists?
-		if ( method_exists( $vip_workflow->$module_name, 'settings_validate' ) ) {
-			$new_options = $vip_workflow->$module_name->settings_validate( $new_options );
+		if ( method_exists( VIP_Workflow::instance()->$module_name, 'settings_validate' ) ) {
+			$new_options = VIP_Workflow::instance()->$module_name->settings_validate( $new_options );
 		}
 
 		// Cast our object and save the data.
-		$new_options = (object) array_merge( (array) $vip_workflow->$module_name->module->options, $new_options );
-		$vip_workflow->update_all_module_options( $vip_workflow->$module_name->module->name, $new_options );
+		$new_options = (object) array_merge( (array) VIP_Workflow::instance()->$module_name->module->options, $new_options );
+		VIP_Workflow::instance()->update_all_module_options( VIP_Workflow::instance()->$module_name->module->name, $new_options );
 
 		// Redirect back to the settings page that was submitted without any previous messages
 		$goback = add_query_arg( 'message', 'settings-updated', remove_query_arg( array( 'message' ), wp_get_referer() ) );

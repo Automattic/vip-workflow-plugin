@@ -37,9 +37,7 @@ class Custom_Status extends Module {
 			'module_url'           => $this->module_url,
 			'img_url'              => $this->module_url . 'lib/custom_status_s128.png',
 			'slug'                 => 'custom-status',
-			'default_options'      => array(),
 			'configure_page_cb'    => 'print_configure_view',
-			'post_type_support'    => 'vw_custom_statuses', // This has been plural in all of our docs
 			'configure_link_text'  => __( 'Edit Statuses', 'vip-workflow' ),
 			'messages'             => [
 				'status-added'            => __( 'Post status created.', 'vip-workflow' ),
@@ -318,7 +316,7 @@ class Custom_Status extends Module {
 	 * @todo Support private and future posts on edit.php view
 	 */
 	public function post_admin_header() {
-		global $post, $pagenow, $vip_workflow;
+		global $post, $pagenow;
 
 		if ( $this->disable_custom_statuses_for_post_type() ) {
 			return;
@@ -381,7 +379,7 @@ class Custom_Status extends Module {
 				];
 			}
 
-			$publish_guard_enabled = ( 'on' === $vip_workflow->settings->module->options->publish_guard ) ? 1 : 0;
+			$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? 1 : 0;
 
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
 
@@ -717,14 +715,14 @@ class Custom_Status extends Module {
 	 * @see Core ticket: http://core.trac.wordpress.org/ticket/18362
 	 */
 	public function check_timestamp_on_publish() {
-		global $vip_workflow, $pagenow, $wpdb;
+		global $pagenow, $wpdb;
 
 		if ( $this->disable_custom_statuses_for_post_type() ) {
 			return;
 		}
 
 		// Handles the transition to 'publish' on edit.php
-		if ( isset( $vip_workflow ) && 'edit.php' === $pagenow && isset( $_REQUEST['bulk_edit'] ) ) {
+		if ( VIP_Workflow::instance() !== null && 'edit.php' === $pagenow && isset( $_REQUEST['bulk_edit'] ) ) {
 			// For every post_id, set the post_status as 'pending' only when there's no timestamp set for $post_date_gmt
 			if ( isset( $_REQUEST['post'] ) && isset( $_REQUEST['_status'] ) && 'publish' == $_REQUEST['_status'] ) {
 				$post_ids = array_map( 'intval', (array) $_REQUEST['post'] );
@@ -739,7 +737,7 @@ class Custom_Status extends Module {
 		}
 
 		// Handles the transition to 'publish' on post.php
-		if ( isset( $vip_workflow ) && 'post.php' == $pagenow && isset( $_POST['publish'] ) ) {
+		if ( VIP_Workflow::instance() !== null && 'post.php' == $pagenow && isset( $_POST['publish'] ) ) {
 			// Set the post_status as 'pending' only when there's no timestamp set for $post_date_gmt
 			if ( isset( $_POST['post_ID'] ) ) {
 				$post_id = (int) $_POST['post_ID'];
@@ -780,10 +778,9 @@ class Custom_Status extends Module {
 	 * @see Core ticket: http://core.trac.wordpress.org/ticket/18362
 	 */
 	public function fix_custom_status_timestamp( $data, $postarr ) {
-		global $vip_workflow;
 		// Don't run this if VIP Workflow isn't active, or we're on some other page
 		if ( $this->disable_custom_statuses_for_post_type()
-		|| ! isset( $vip_workflow ) ) {
+		|| VIP_Workflow::instance() === null ) {
 			return $data;
 		}
 

@@ -24,7 +24,7 @@ jobs:
           node-version: '20'
           cache: npm
 
-      - name: Build Edit Flow
+      - name: Build
         run: |
           npm ci
           npm run build

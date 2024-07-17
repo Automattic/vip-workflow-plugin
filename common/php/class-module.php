@@ -7,6 +7,8 @@
 
 namespace VIPWorkflow\Common\PHP;
 
+use VIPWorkflow\VIP_Workflow;
+
 class Module {
 
 	public $published_statuses = array(
@@ -96,10 +98,8 @@ class Module {
 	 * @return array $post_types All of the post types that are 'on'
 	 */
 	public function get_post_types_for_module() {
-		global $vip_workflow;
-
 		$post_types = array();
-		$post_types_options = $vip_workflow->settings->module->options->post_types;
+		$post_types_options = VIP_Workflow::instance()->settings->module->options->post_types;
 		foreach ( $post_types_options as $post_type => $value ) {
 			if ( 'on' === $value ) {
 				$post_types[] = $post_type;
@@ -200,7 +200,7 @@ class Module {
 	 * @return bool $is_settings_view Return true if it is
 	 */
 	public function is_whitelisted_settings_view() {
-		global $pagenow, $vip_workflow;
+		global $pagenow;
 
 		// All of the settings views are based on admin.php and a $_GET['page'] parameter
 		if ( 'admin.php' != $pagenow || ! isset( $_GET['page'] ) ) {
@@ -208,7 +208,7 @@ class Module {
 		}
 
 		// Load all of the modules that have a settings slug/ callback for the settings page
-		foreach ( $vip_workflow->modules as $mod_name => $mod_data ) {
+		foreach ( VIP_Workflow::instance()->modules as $mod_name => $mod_data ) {
 			if ( $mod_data->configure_page_cb ) {
 				$settings_view_slugs[] = $mod_data->settings_slug;
 			}

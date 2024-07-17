@@ -9,10 +9,6 @@ use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
 use function VIPWorkflow\Common\PHP\vw_draft_or_post_title;
 
-if ( ! defined( 'VW_NOTIFICATION_USE_CRON' ) ) {
-	define( 'VW_NOTIFICATION_USE_CRON', false );
-}
-
 class Notifications extends Module {
 
 	public $module;
@@ -31,8 +27,6 @@ class Notifications extends Module {
 			'module_url'            => $this->module_url,
 			'img_url'               => $this->module_url . 'lib/notifications_s128.png',
 			'slug'                  => 'notifications',
-			'default_options'       => array(),
-			'post_type_support'     => 'vw_notification',
 			'autoload'              => true,
 		];
 		$this->module     = VIP_Workflow::instance()->register_module( 'notifications', $args );
@@ -66,8 +60,6 @@ class Notifications extends Module {
 	 * Set up and send post status change notification email
 	 */
 	public function notification_status_change( $new_status, $old_status, $post ) {
-		global $vip_workflow;
-
 		$supported_post_types = $this->get_post_types_for_module();
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
@@ -197,7 +189,8 @@ class Notifications extends Module {
 
 			$this->send_email( 'status-change', $post, $subject, $body );
 
-			if ( 'on' === $vip_workflow->settings->module->options->send_to_webhook ) {
+			// ToDo: See how we can optimize this, using batching as well as async processing.
+			if ( 'on' === VIP_Workflow::instance()->settings->module->options->send_to_webhook ) {
 				/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
 				$format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
 				$text   = sprintf( $format, $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name );
@@ -232,17 +225,11 @@ class Notifications extends Module {
 			$recipients = explode( ',', $recipients );
 		}
 
-		// ToDo: Do we want to keep these filters for these email parts?
-		$subject         = apply_filters( 'vw_notification_send_email_subject', $subject, $action, $post );
-		$message         = apply_filters( 'vw_notification_send_email_message', $message, $action, $post );
-		$message_headers = apply_filters( 'vw_notification_send_email_message_headers', $message_headers, $action, $post );
+		// ToDo: Figure out best filters to add for the email.
 
-		if ( VW_NOTIFICATION_USE_CRON ) {
+		if ( ! empty( $recipients ) ) {
+			// ToDo: Let's batch these emails, and send collate the updates so we don't schedule too many emails.
 			$this->schedule_emails( $recipients, $subject, $message, $message_headers );
-		} elseif ( ! empty( $recipients ) ) {
-			foreach ( $recipients as $recipient ) {
-				$this->send_single_email( $recipient, $subject, $message, $message_headers );
-			}
 		}
 	}
 
@@ -255,9 +242,7 @@ class Notifications extends Module {
 	 * @param WP_Post $post Post that the action is being taken on
 	 */
 	public function send_to_webhook( $message, $action, $user, $post ) {
-		global $vip_workflow;
-
-		$webhook_url = $vip_workflow->settings->module->options->webhook_url;
+		$webhook_url = VIP_Workflow::instance()->settings->module->options->webhook_url;
 
 		// Bail if the webhook URL is not set
 		if ( empty( $webhook_url ) ) {
