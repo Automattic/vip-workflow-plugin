@@ -179,11 +179,15 @@ class VIP_Workflow {
 		$main_module = self::instance()->modules->custom_status;
 		$menu_title  = __( 'VIP Workflow', 'vip-workflow' );
 
-		add_menu_page( $menu_title, $menu_title, 'manage_options', $main_module->settings_slug, [ $this, 'menu_controller' ] );
+		add_menu_page( $menu_title, $menu_title, 'manage_options', $main_module->settings_slug, function () use ( $main_module ) {
+			return $this->menu_controller( $main_module->settings_slug );
+		} );
 
 		foreach ( self::instance()->modules as $mod_name => $mod_data ) {
 			if ( $mod_data->configure_page_cb && $mod_name !== $main_module->name ) {
-				add_submenu_page( $main_module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, [ $this, 'menu_controller' ] );
+				add_submenu_page( $main_module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, function () use ( $mod_data ) {
+					return $this->menu_controller( $mod_data->settings_slug );
+				} );
 			}
 		}
 	}
@@ -191,9 +195,8 @@ class VIP_Workflow {
 	/**
 	 * Handles all settings and configuration page requests. Required element for VIP Workflow
 	 */
-	public function menu_controller() {
-		$page_requested   = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : 'settings';
-		$requested_module = self::instance()->get_module_by( 'settings_slug', $page_requested );
+	public function menu_controller( $mod_slug ) {
+		$requested_module = self::instance()->get_module_by( 'settings_slug', $mod_slug );
 		if ( ! $requested_module ) {
 			wp_die( esc_html__( 'Not a registered VIP Workflow module', 'vip-workflow' ) );
 		}
