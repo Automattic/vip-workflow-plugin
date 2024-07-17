@@ -77,7 +77,7 @@ class VIP_Workflow {
 
 		// Scan the modules directory and include any modules that exist there
 		$module_dirs = scandir( VIP_WORKFLOW_ROOT . '/modules/' );
-		$class_names = array();
+		$class_names = [];
 		foreach ( $module_dirs as $module_dir ) {
 			if ( file_exists( VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php" ) ) {
 				include_once VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php";
@@ -117,11 +117,11 @@ class VIP_Workflow {
 	 * @uses add_action() To add various actions
 	 */
 	private function setup_actions() {
-		add_action( 'init', array( $this, 'action_init' ) );
-		add_action( 'init', array( $this, 'action_init_after' ), 1000 );
+		add_action( 'init', [ $this, 'action_init' ] );
+		add_action( 'init', [ $this, 'action_init_after' ], 1000 );
 
-		add_action( 'admin_init', array( $this, 'action_admin_init' ) );
-		add_action( 'admin_menu', array( $this, 'action_admin_menu' ) );
+		add_action( 'admin_init', [ $this, 'action_admin_init' ] );
+		add_action( 'admin_menu', [ $this, 'action_admin_menu' ] );
 	}
 
 	/**
@@ -179,11 +179,11 @@ class VIP_Workflow {
 		$main_module = self::instance()->modules->custom_status;
 		$menu_title  = __( 'VIP Workflow', 'vip-workflow' );
 
-		add_menu_page( $menu_title, $menu_title, 'manage_options', $main_module->settings_slug, array( $this, 'menu_controller' ) );
+		add_menu_page( $menu_title, $menu_title, 'manage_options', $main_module->settings_slug, [ $this, 'menu_controller' ] );
 
 		foreach ( self::instance()->modules as $mod_name => $mod_data ) {
 			if ( $mod_data->configure_page_cb && $mod_name !== $main_module->name ) {
-				add_submenu_page( $main_module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, array( $this, 'menu_controller' ) );
+				add_submenu_page( $main_module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, [ $this, 'menu_controller' ] );
 			}
 		}
 	}
@@ -269,34 +269,34 @@ class VIP_Workflow {
 	/**
 	 * Register a new module
 	 */
-	public function register_module( $name, $args = array() ) {
+	public function register_module( $name, $args = [] ) {
 
 		// A title and name is required for every module
 		if ( ! isset( $args['title'], $name ) ) {
 			return false;
 		}
 
-		$defaults = array(
+		$defaults = [
 			'title'                => '',
 			'short_description'    => '',
 			'extended_description' => '',
 			'img_url'              => false,
 			'slug'                 => '',
 			'post_type_support'    => '',
-			'default_options'      => array(),
+			'default_options'      => [],
 			'options'              => false,
 			'configure_page_cb'    => false,
 			'configure_link_text'  => __( 'Configure', 'vip-workflow' ),
 			// These messages are applied to modules and can be overridden if custom messages are needed
-			'messages'             => array(
+			'messages'             => [
 				'settings-updated'    => __( 'Settings updated.', 'vip-workflow' ),
 				'form-error'          => __( 'Please correct your form errors below and try again.', 'vip-workflow' ),
 				'nonce-failed'        => __( 'Cheatin&#8217; uh?', 'vip-workflow' ),
 				'invalid-permissions' => __( 'You do not have necessary permissions to complete this action.', 'vip-workflow' ),
 				'missing-post'        => __( 'Post does not exist', 'vip-workflow' ),
-			),
+			],
 			'autoload'             => false, // autoloading a module will remove the ability to enable or disable it
-		);
+		];
 		if ( isset( $args['messages'] ) ) {
 			$args['messages'] = array_merge( (array) $args['messages'], $defaults['messages'] );
 		}
