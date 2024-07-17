@@ -121,6 +121,7 @@ class VIP_Workflow {
 		add_action( 'init', array( $this, 'action_init_after' ), 1000 );
 
 		add_action( 'admin_init', array( $this, 'action_admin_init' ) );
+		add_action( 'admin_menu', array( $this, 'action_admin_menu' ) );
 	}
 
 	/**
@@ -172,6 +173,100 @@ class VIP_Workflow {
 	}
 
 	/**
+	 * Add module pages to the admin menu
+	 */
+	public function action_admin_menu() {
+		$main_module = self::instance()->modules->custom_status;
+		$menu_title  = __( 'VIP Workflow', 'vip-workflow' );
+
+		add_menu_page( $menu_title, $menu_title, 'manage_options', $main_module->settings_slug, array( $this, 'menu_controller' ) );
+
+		foreach ( self::instance()->modules as $mod_name => $mod_data ) {
+			if ( $mod_data->configure_page_cb && $mod_name !== $main_module->name ) {
+				add_submenu_page( $main_module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, array( $this, 'menu_controller' ) );
+			}
+		}
+	}
+
+	/**
+	 * Handles all settings and configuration page requests. Required element for VIP Workflow
+	 */
+	public function menu_controller() {
+		$page_requested   = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : 'settings';
+		$requested_module = self::instance()->get_module_by( 'settings_slug', $page_requested );
+		if ( ! $requested_module ) {
+			wp_die( esc_html__( 'Not a registered VIP Workflow module', 'vip-workflow' ) );
+		}
+
+		$configure_callback    = $requested_module->configure_page_cb;
+		$requested_module_name = $requested_module->name;
+
+		$this->print_default_header( $requested_module );
+		self::instance()->$requested_module_name->$configure_callback();
+	}
+
+	/**
+	 * Disabling nonce verification because that is not available here, it's just rendering it. The actual save is done in helper_settings_validate_and_save and that's guarded well.
+	 * phpcs:disable:WordPress.Security.NonceVerification.Missing
+	 */
+	public function print_default_header( $current_module ) {
+		// If there's been a message, let's display it
+		if ( isset( $_GET['message'] ) ) {
+			$message = $_GET['message'];
+		} elseif ( isset( $_REQUEST['message'] ) ) {
+			$message = $_REQUEST['message'];
+		} elseif ( isset( $_POST['message'] ) ) {
+			$message = $_POST['message'];
+		} else {
+			$message = false;
+		}
+		if ( $message && isset( $current_module->messages[ $message ] ) ) {
+			$display_text = '<span class="vip-workflow-updated-message vip-workflow-message">' . esc_html( $current_module->messages[ $message ] ) . '</span>';
+		}
+
+		// If there's been an error, let's display it
+		if ( isset( $_GET['error'] ) ) {
+			$error = $_GET['error'];
+		} elseif ( isset( $_REQUEST['error'] ) ) {
+			$error = $_REQUEST['error'];
+		} elseif ( isset( $_POST['error'] ) ) {
+			$error = $_POST['error'];
+		} else {
+			$error = false;
+		}
+		if ( $error && isset( $current_module->messages[ $error ] ) ) {
+			$display_text = '<span class="vip-workflow-error-message vip-workflow-message">' . esc_html( $current_module->messages[ $error ] ) . '</span>';
+		}
+
+		if ( $current_module->img_url ) {
+			$page_icon = '<img src="' . esc_url( $current_module->img_url ) . '" class="module-icon icon32" />';
+		} else {
+			$page_icon = '<div class="icon32" id="icon-options-general"><br/></div>';
+		}
+		?>
+		<div class="wrap vip-workflow-admin">
+		<?php if ( 'settings' != $current_module->name ) : ?>
+				<?php echo wp_kses_post( $page_icon ); ?>
+			<h2><a href="<?php echo esc_url( VIP_WORKFLOW_SETTINGS_PAGE ); ?>"><?php _e( 'VIP Workflow', 'vip-workflow' ); ?></a>:&nbsp;<?php echo esc_attr( $current_module->title ); ?><?php echo ( isset( $display_text ) ? wp_kses_post( $display_text ) : '' ); ?></h2>
+			<?php else : ?>
+				<?php echo wp_kses_post( $page_icon ); ?>
+			<h2><?php _e( 'VIP Workflow', 'vip-workflow' ); ?><?php echo ( isset( $display_text ) ? wp_kses_post( $display_text ) : '' ); ?></h2>
+			<?php endif; ?>
+
+			<div class="explanation">
+			<?php if ( $current_module->short_description ) : ?>
+				<h3><?php echo wp_kses_post( $current_module->short_description ); ?></h3>
+				<?php endif; ?>
+			<?php if ( $current_module->extended_description ) : ?>
+				<p><?php echo wp_kses_post( $current_module->extended_description ); ?></p>
+				<?php endif; ?>
+			</div>
+			<?php
+	}
+	//phpcs:enable:WordPress.Security.NonceVerification.Missing
+
+
+	/**
 	 * Register a new module
 	 */
 	public function register_module( $name, $args = array() ) {
@@ -209,7 +304,7 @@ class VIP_Workflow {
 		$args['name']               = $name;
 		$args['options_group_name'] = $this->options_group . $name . '_options';
 		if ( ! isset( $args['settings_slug'] ) ) {
-			$args['settings_slug'] = 'vw-' . $args['slug'] . '-settings';
+			$args['settings_slug'] = 'vw-' . $args['slug'];
 		}
 		if ( empty( $args['post_type_support'] ) ) {
 			$args['post_type_support'] = 'vw_' . $name;

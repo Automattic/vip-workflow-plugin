@@ -15,27 +15,25 @@ class Settings extends Module {
 	public function __construct() {
 		// Register the module with VIP Workflow
 		$this->module_url = $this->get_module_url( __FILE__ );
-		$args = array(
-			'title' => __( 'VIP Workflow', 'vip-workflow' ),
-			'short_description' => __( 'VIP Workflow redefines your WordPress publishing workflow.', 'vip-workflow' ),
-			'extended_description' => __( 'Check out custom status and notifications, to help you and your team save time so everyone can focus on what matters most: the content.', 'vip-workflow' ),
-			'module_url' => $this->module_url,
-			'slug' => 'settings',
-			'settings_slug' => 'vw-settings',
-			'default_options' => array(
-				'post_types'           => [
+		$args             = array(
+			'title'             => __( 'Settings', 'vip-workflow' ),
+			'short_description' => __( 'Configure VIP Workflow settings.', 'vip-workflow' ),
+			'module_url'        => $this->module_url,
+			'slug'              => 'settings',
+			'default_options'   => array(
+				'post_types'          => [
 					'post' => 'on',
 					'page' => 'on',
 				],
-				'publish_guard'        => 'off', // TODO: should default this to 'on' once everything has been implemented
+				'publish_guard'       => 'off', // TODO: should default this to 'on' once everything has been implemented
 				'always_notify_admin' => 'on',
 				'send_to_webhook'     => 'off',
 				'webhook_url'         => '',
 			),
 			'configure_page_cb' => 'print_default_settings',
-			'autoload' => true,
+			'autoload'          => true,
 		);
-		$this->module = VIP_Workflow::instance()->register_module( 'settings', $args );
+		$this->module     = VIP_Workflow::instance()->register_module( 'settings', $args );
 	}
 
 	/**
@@ -48,20 +46,6 @@ class Settings extends Module {
 		add_action( 'admin_print_styles', array( $this, 'action_admin_print_styles' ) );
 		add_action( 'admin_print_scripts', array( $this, 'action_admin_print_scripts' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'action_admin_enqueue_scripts' ) );
-		add_action( 'admin_menu', array( $this, 'action_admin_menu' ) );
-	}
-
-	/**
-	 * Add necessary things to the admin menu
-	 */
-	public function action_admin_menu() {
-		add_menu_page( $this->module->title, $this->module->title, 'manage_options', $this->module->settings_slug, array( $this, 'settings_page_controller' ) );
-
-		foreach ( VIP_Workflow::instance()->modules as $mod_name => $mod_data ) {
-			if ( $mod_data->configure_page_cb && $mod_name != $this->module->name ) {
-				add_submenu_page( $this->module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, array( $this, 'settings_page_controller' ) );
-			}
-		}
 	}
 
 	public function action_admin_enqueue_scripts() {
@@ -88,23 +72,6 @@ class Settings extends Module {
 			<?php
 	}
 
-	/**
-	 * Handles all settings and configuration page requests. Required element for VIP Workflow
-	 */
-	public function settings_page_controller() {
-		$page_requested = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : 'settings';
-		$requested_module = VIP_Workflow::instance()->get_module_by( 'settings_slug', $page_requested );
-		if ( ! $requested_module ) {
-			wp_die( esc_html__( 'Not a registered VIP Workflow module', 'vip-workflow' ) );
-		}
-
-		$configure_callback = $requested_module->configure_page_cb;
-		$requested_module_name = $requested_module->name;
-
-		$this->print_default_header( $requested_module );
-		VIP_Workflow::instance()->$requested_module_name->$configure_callback();
-	}
-
 	public function register_settings() {
 		add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
 
@@ -115,66 +82,6 @@ class Settings extends Module {
 		add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'vip-workflow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 	}
-
-	/**
-	 * Disabling nonce verification because that is not available here, it's just rendering it. The actual save is done in helper_settings_validate_and_save and that's guarded well.
-	 * phpcs:disable:WordPress.Security.NonceVerification.Missing
-	 */
-	public function print_default_header( $current_module ) {
-		// If there's been a message, let's display it
-		if ( isset( $_GET['message'] ) ) {
-			$message = $_GET['message'];
-		} else if ( isset( $_REQUEST['message'] ) ) {
-			$message = $_REQUEST['message'];
-		} else if ( isset( $_POST['message'] ) ) {
-			$message = $_POST['message'];
-		} else {
-			$message = false;
-		}
-		if ( $message && isset( $current_module->messages[ $message ] ) ) {
-			$display_text = '<span class="vip-workflow-updated-message vip-workflow-message">' . esc_html( $current_module->messages[ $message ] ) . '</span>';
-		}
-
-		// If there's been an error, let's display it
-		if ( isset( $_GET['error'] ) ) {
-			$error = $_GET['error'];
-		} else if ( isset( $_REQUEST['error'] ) ) {
-			$error = $_REQUEST['error'];
-		} else if ( isset( $_POST['error'] ) ) {
-			$error = $_POST['error'];
-		} else {
-			$error = false;
-		}
-		if ( $error && isset( $current_module->messages[ $error ] ) ) {
-			$display_text = '<span class="vip-workflow-error-message vip-workflow-message">' . esc_html( $current_module->messages[ $error ] ) . '</span>';
-		}
-
-		if ( $current_module->img_url ) {
-			$page_icon = '<img src="' . esc_url( $current_module->img_url ) . '" class="module-icon icon32" />';
-		} else {
-			$page_icon = '<div class="icon32" id="icon-options-general"><br/></div>';
-		}
-		?>
-		<div class="wrap vip-workflow-admin">
-		<?php if ( 'settings' != $current_module->name ) : ?>
-				<?php echo wp_kses_post( $page_icon ); ?>
-			<h2><a href="<?php echo esc_url( VIP_WORKFLOW_SETTINGS_PAGE ); ?>"><?php _e( 'VIP Workflow', 'vip-workflow' ); ?></a>:&nbsp;<?php echo esc_attr( $current_module->title ); ?><?php echo ( isset( $display_text ) ? wp_kses_post( $display_text ) : '' ); ?></h2>
-			<?php else : ?>
-				<?php echo wp_kses_post( $page_icon ); ?>
-			<h2><?php _e( 'VIP Workflow', 'vip-workflow' ); ?><?php echo ( isset( $display_text ) ? wp_kses_post( $display_text ) : '' ); ?></h2>
-			<?php endif; ?>
-
-			<div class="explanation">
-			<?php if ( $current_module->short_description ) : ?>
-				<h3><?php echo wp_kses_post( $current_module->short_description ); ?></h3>
-				<?php endif; ?>
-			<?php if ( $current_module->extended_description ) : ?>
-				<p><?php echo wp_kses_post( $current_module->extended_description ); ?></p>
-				<?php endif; ?>
-			</div>
-			<?php
-	}
-	//phpcs:enable:WordPress.Security.NonceVerification.Missing
 
 	/**
 	 * Adds Settings page for VIP Workflow.
