@@ -649,6 +649,10 @@ class Custom_Status extends Module {
 			return $wpdb->prepare( '%d', $post_id );
 		}, $old_status_post_ids );
 
+		// Note: The code below is a direct query because the WP_Query class doesn't support bulk updates.
+		// We're using $wpdb->query() instead of using $wpdb->update() because update() doesn't support WHERE clauses
+		// with array values like the IDs we're specifying here. We need individual post IDs for cache clearing later.
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bulk update required for performance, cache is manually cleared below.
 		$query_result = $wpdb->query( $wpdb->prepare(
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- IDs are prepared in statement above
@@ -660,6 +664,9 @@ class Custom_Status extends Module {
 			return new WP_Error( 'invalid', __( 'Failed to reassign post statuses.', 'vip-workflow' ) );
 		}
 
+		// We don't have an option to bulk clean cache for the affected posts, so do it in a loop. This step will
+		// usually take the longest due to serialized cache calls. We are running this step last, so at least the
+		// underlying data is updated even if cache clearing fails.
 		foreach ( $old_status_post_ids as $post_id ) {
 			clean_post_cache( $post_id );
 		}
