@@ -206,68 +206,47 @@ class VIP_Workflow {
 
 		$this->print_default_header( $requested_module );
 		self::instance()->$requested_module_name->$configure_callback();
+		$this->print_default_footer();
 	}
 
 	/**
-	 * Disabling nonce verification because that is not available here, it's just rendering it. The actual save is done in helper_settings_validate_and_save and that's guarded well.
-	 * phpcs:disable:WordPress.Security.NonceVerification.Missing
+	 * Print the header on the top of each module page
 	 */
 	public function print_default_header( $current_module ) {
 		// If there's been a message, let's display it
-		if ( isset( $_GET['message'] ) ) {
-			$message = $_GET['message'];
-		} elseif ( isset( $_REQUEST['message'] ) ) {
-			$message = $_REQUEST['message'];
-		} elseif ( isset( $_POST['message'] ) ) {
-			$message = $_POST['message'];
-		} else {
-			$message = false;
-		}
-		if ( $message && isset( $current_module->messages[ $message ] ) ) {
-			$display_text = '<span class="vip-workflow-updated-message vip-workflow-message">' . esc_html( $current_module->messages[ $message ] ) . '</span>';
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Message slugs correspond to preset read-only strings and do not require nonce checks.
+		$message_slug = isset( $_REQUEST['message'] ) ? sanitize_title( $_REQUEST['message'] ) : false;
+
+		if ( $message_slug && isset( $current_module->messages[ $message_slug ] ) ) {
+			$display_text = sprintf( '<span class="vip-workflow-updated-message vip-workflow-message">%s</span>', esc_html( $current_module->messages[ $message_slug ] ) );
 		}
 
 		// If there's been an error, let's display it
-		if ( isset( $_GET['error'] ) ) {
-			$error = $_GET['error'];
-		} elseif ( isset( $_REQUEST['error'] ) ) {
-			$error = $_REQUEST['error'];
-		} elseif ( isset( $_POST['error'] ) ) {
-			$error = $_POST['error'];
-		} else {
-			$error = false;
-		}
-		if ( $error && isset( $current_module->messages[ $error ] ) ) {
-			$display_text = '<span class="vip-workflow-error-message vip-workflow-message">' . esc_html( $current_module->messages[ $error ] ) . '</span>';
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Error slugs correspond to preset read-only strings and do not require nonce checks.
+		$error_slug = isset( $_REQUEST['error'] ) ? sanitize_title( $_REQUEST['error'] ) : false;
+
+		if ( $error_slug && isset( $current_module->messages[ $error_slug ] ) ) {
+			$display_text = sprintf( '<span class="vip-workflow-error-message vip-workflow-message">%s</span>', esc_html( $current_module->messages[ $error_slug ] ) );
 		}
 
 		if ( $current_module->img_url ) {
-			$page_icon = '<img src="' . esc_url( $current_module->img_url ) . '" class="module-icon icon32" />';
+			$page_icon = sprintf( '<img src="%s" class="module-icon icon32" />', esc_url( $current_module->img_url ) );
 		} else {
 			$page_icon = '<div class="icon32" id="icon-options-general"><br/></div>';
 		}
-		?>
-		<div class="wrap vip-workflow-admin">
-		<?php if ( 'settings' != $current_module->name ) : ?>
-				<?php echo wp_kses_post( $page_icon ); ?>
-			<h2><a href="<?php echo esc_url( VIP_WORKFLOW_SETTINGS_PAGE ); ?>"><?php _e( 'VIP Workflow', 'vip-workflow' ); ?></a>:&nbsp;<?php echo esc_attr( $current_module->title ); ?><?php echo ( isset( $display_text ) ? wp_kses_post( $display_text ) : '' ); ?></h2>
-			<?php else : ?>
-				<?php echo wp_kses_post( $page_icon ); ?>
-			<h2><?php _e( 'VIP Workflow', 'vip-workflow' ); ?><?php echo ( isset( $display_text ) ? wp_kses_post( $display_text ) : '' ); ?></h2>
-			<?php endif; ?>
 
-			<div class="explanation">
-			<?php if ( $current_module->short_description ) : ?>
-				<h3><?php echo wp_kses_post( $current_module->short_description ); ?></h3>
-				<?php endif; ?>
-			<?php if ( $current_module->extended_description ) : ?>
-				<p><?php echo wp_kses_post( $current_module->extended_description ); ?></p>
-				<?php endif; ?>
-			</div>
-			<?php
+		include_once __DIR__ . '/common/php/views/module-header.php';
 	}
-	//phpcs:enable:WordPress.Security.NonceVerification.Missing
 
+	/**
+	 * Print the footer for each module page
+	 */
+	public function print_default_footer() {
+		// End the wrap <div> started in the header
+		echo '</div>';
+	}
 
 	/**
 	 * Register a new module
@@ -292,11 +271,7 @@ class VIP_Workflow {
 			'configure_link_text'  => __( 'Configure', 'vip-workflow' ),
 			// These messages are applied to modules and can be overridden if custom messages are needed
 			'messages'             => [
-				'settings-updated'    => __( 'Settings updated.', 'vip-workflow' ),
-				'form-error'          => __( 'Please correct your form errors below and try again.', 'vip-workflow' ),
-				'nonce-failed'        => __( 'Cheatin&#8217; uh?', 'vip-workflow' ),
-				'invalid-permissions' => __( 'You do not have necessary permissions to complete this action.', 'vip-workflow' ),
-				'missing-post'        => __( 'Post does not exist', 'vip-workflow' ),
+				'settings-updated' => __( 'Settings updated.', 'vip-workflow' ),
 			],
 			'autoload'             => false, // autoloading a module will remove the ability to enable or disable it
 		];
