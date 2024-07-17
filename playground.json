@@ -1,0 +1,25 @@
+{
+    "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+    "landingPage": "/wp-admin/admin.php?page=vw-custom-status-settings",
+    "preferredVersions": {
+        "php": "8.0",
+        "wp": "latest"
+    },
+    "steps": [
+        {
+            "step": "installPlugin",
+            "pluginZipFile": {
+                "resource": "url",
+                "url": "https://github-proxy.com/proxy/?repo=Automattic/vip-block-data-api&release=1.2.4&asset=vip-block-data-api-1.2.4.zip"
+            },
+            "options": {
+                "activate": true
+            }
+        },
+        {
+            "step": "login",
+            "username": "admin",
+            "password": "password"
+        }
+    ]
+}
