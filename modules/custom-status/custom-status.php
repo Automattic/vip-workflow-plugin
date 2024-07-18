@@ -393,25 +393,34 @@ class Custom_Status extends Module {
 		}
 	}
 
+	/**
+	 * Remove or add the publish capability for users based on the post status
+	 *
+	 * @param array $allcaps All capabilities for the user
+	 * @param string $cap Capability name
+	 * @param array $args Arguments
+	 *
+	 * @return array $allcaps All capabilities for the user
+	 */
 	public function remove_or_add_publish_capability_for_user( $allcaps, $cap, $args ) {
 		global $post;
 
+		// Bail early if publish guard is off, or the post is already published, or the post type is not supported or the publish capability is not being checked
 		if ( 'off' === VIP_Workflow::instance()->settings->module->options->publish_guard || 'publish' === $post->post_status || 'publish_posts' !== $args[0] || ! $post ) {
-			// Post is already published, no need to do anything
 			return $allcaps;
 		}
 
-		// get custom statuses
 		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
 		$status_slugs = wp_list_pluck( $custom_statuses, 'slug' );
 
+		// Bail early if the post is not using a custom status, or is not a supported post type
 		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module( ) ) ) {
-			// Post is not using a custom status, or is not a supported post type
 			return $allcaps;
 		}
 
 		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
 
+		// If the post status is not the last status, remove the publish capability or else add it back in
 		if ( $status_before_publish->slug !== $post->post_status ) {
 			$allcaps['publish_posts'] = false;
 		} else {
