@@ -12,6 +12,7 @@ use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
 use VIPWorkflow\Modules\CustomStatus\REST\EditStatus;
 use WP_Error;
+use WP_Query;
 use function VIPWorkflow\Common\PHP\_vw_wp_link_page;
 
 class Custom_Status extends Module {
@@ -605,25 +606,53 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Assign new statuses to posts using value provided
+	 * Assign new statuses to posts using value provided. Returns true if successful, or a WP_Error describing an error otherwise.
 	 *
 	 * @param string $old_status Slug for the old status
 	 * @param string $new_status Slug for the new status
+	 * @return true|WP_Error
 	 */
 	public function reassign_post_status( $old_status, $new_status ) {
-		global $wpdb;
+		$old_status_post_ids = ( new WP_Query( [
+			'post_type'      => $this->get_post_types_for_module( $this->module ),
+			'post_status'    => $old_status,
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+		] ) )->posts;
 
-		if ( empty( $new_status ) ) {
-			return new WP_Error( 'invalid', __( 'No new status provided for reassignment.', 'vip-workflow' ) );
+		if ( empty( $old_status_post_ids ) ) {
+			// No existing posts to reassign
+			return true;
 		}
 
-		// Make the database call
-		$result = $wpdb->update( $wpdb->posts, [ 'post_status' => $new_status ], [ 'post_status' => $old_status ], [ '%s' ] );
+		global $wpdb;
+		$prepared_post_ids = array_map( function ( $post_id ) use ( $wpdb ) {
+			return $wpdb->prepare( '%d', $post_id );
+		}, $old_status_post_ids );
 
-		// Check if result was successful
-		if ( false === $result ) {
+		// Note: The code below is a direct query because the WP_Query class doesn't support bulk updates.
+		// We're using $wpdb->query() instead of using $wpdb->update() because update() doesn't support WHERE clauses
+		// with array values like the IDs we're specifying here. We need individual post IDs for cache clearing later.
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bulk update required for performance, cache is manually cleared below.
+		$query_result = $wpdb->query( $wpdb->prepare(
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- IDs are prepared in statement above
+			"UPDATE $wpdb->posts SET post_status = %s WHERE ID IN (" . implode( ',', $prepared_post_ids ) . ')',
+			$new_status
+		) );
+
+		if ( false === $query_result ) {
 			return new WP_Error( 'invalid', __( 'Failed to reassign post statuses.', 'vip-workflow' ) );
 		}
+
+		// We don't have an option to bulk clean cache for the affected posts, so do it in a loop. This step will
+		// usually take the longest due to serialized cache calls. We are running this step last, so at least the
+		// underlying data is updated even if cache clearing fails.
+		foreach ( $old_status_post_ids as $post_id ) {
+			clean_post_cache( $post_id );
+		}
+
+		return true;
 	}
 
 	/**
