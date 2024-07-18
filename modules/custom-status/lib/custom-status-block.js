@@ -57,12 +57,6 @@ const VIPWorkflowCustomPostStati = ( { onUpdate, status } ) => (
 				? __( 'Note: this will override all status settings above.', 'vip-workflow' )
 				: __( 'To select a custom status, please unpublish the content first.', 'vip-workflow' ) }
 		</small>
-
-		<h4 className="vip-workflow-publishing-warning">
-			{ status !== statuses[ statuses.length - 1 ].value
-				? __( 'This post can not be published.', 'vip-workflow' )
-				: '' }
-		</h4>
 	</PluginPostStatusInfo>
 );
 
