@@ -18,8 +18,6 @@ const statuses = window.VipWorkflowCustomStatuses.map( customStatus => ( {
 /**
  * Subscribe to changes so we can set a default status and update a button's text.
  */
-let buttonTextObserver = null;
-let postLocked = false;
 subscribe( function () {
 	const postId = select( 'core/editor' ).getCurrentPostId();
 	if ( ! postId ) {
@@ -34,77 +32,7 @@ subscribe( function () {
 			status: statuses[ 0 ].value,
 		} );
 	}
-
-	// If the save button exists, let's update the text if needed.
-	maybeUpdateButtonText( document.querySelector( '.editor-post-save-draft' ) );
-
-	// The post is being saved, so we need to set up an observer to update the button text when it's back.
-	if (
-		buttonTextObserver === null &&
-		window.MutationObserver &&
-		select( 'core/editor' ).isSavingPost()
-	) {
-		buttonTextObserver = createButtonObserver(
-			document.querySelector( '.edit-post-header__settings' )
-		);
-	}
-
-	// Lock post if the status is not the last one.
-	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
-	if (
-		vw_publish_guard_enabled &&
-		selectedStatus !== statuses[ statuses.length - 1 ].value &&
-		! postLocked
-	) {
-		postLocked = true;
-		dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
-	} else if (
-		( ! vw_publish_guard_enabled || selectedStatus === statuses[ statuses.length - 1 ].value ) &&
-		postLocked
-	) {
-		postLocked = false;
-		dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
-	}
 } );
-
-/**
- * Create a mutation observer that will update the
- * save button text right away when it's changed/re-added.
- *
- * Ideally there will be better ways to go about this in the future.
- * @see https://github.com/Automattic/Edit-Flow/issues/583
- */
-function createButtonObserver( parentNode ) {
-	if ( ! parentNode ) {
-		return null;
-	}
-
-	const observer = new MutationObserver( mutationsList => {
-		for ( const mutation of mutationsList ) {
-			for ( const node of mutation.addedNodes ) {
-				maybeUpdateButtonText( node );
-			}
-		}
-	} );
-
-	observer.observe( parentNode, { childList: true } );
-	return observer;
-}
-
-function maybeUpdateButtonText( saveButton ) {
-	/*
-	 * saveButton.children < 1 accounts for when a user hovers over the save button
-	 * and a tooltip is rendered
-	 */
-	if (
-		saveButton &&
-		saveButton.children < 1 &&
-		( saveButton.innerText === __( 'Save Draft' ) ||
-			saveButton.innerText === __( 'Save as Pending' ) )
-	) {
-		saveButton.innerText = __( 'Save' );
-	}
-}
 
 /**
  * Custom status component

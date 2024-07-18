@@ -87,6 +87,8 @@ class Custom_Status extends Module {
 
 		// REST endpoints
 		EditStatus::init();
+
+		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user'], 10, 3 );
 	}
 
 	/**
@@ -389,6 +391,34 @@ class Custom_Status extends Module {
 				<?php
 
 		}
+	}
+
+	public function remove_or_add_publish_capability_for_user( $allcaps, $cap, $args ) {
+		global $post;
+
+		if ( 'off' === VIP_Workflow::instance()->settings->module->options->publish_guard || 'publish' === $post->post_status || 'publish_posts' !== $args[0] || ! $post ) {
+			// Post is already published, no need to do anything
+			return $allcaps;
+		}
+
+		// get custom statuses
+		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
+		$status_slugs = wp_list_pluck( $custom_statuses, 'slug' );
+
+		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module( ) ) ) {
+			// Post is not using a custom status, or is not a supported post type
+			return $allcaps;
+		}
+
+		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
+
+		if ( $status_before_publish->slug !== $post->post_status ) {
+			$allcaps['publish_posts'] = false;
+		} else {
+			$allcaps['publish_posts'] = true;
+		}
+
+		return $allcaps;
 	}
 
 	/**
