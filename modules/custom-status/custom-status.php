@@ -398,18 +398,32 @@ class Custom_Status extends Module {
 	 */
 	public function remove_or_add_publish_capability_for_user( $allcaps, $cap, $args ) {
 		global $post;
-		$supported_publish_caps = [ 'publish_posts', 'publish_pages' ];
+		$supported_publish_caps_map = [
+			'post' => 'publish_posts',
+			'page' => 'publish_pages',
+		];
 
-		// Bail early if publish guard is off, or the post is already published, or the post type is not supported or the publish capability is not being checked
-		if ( 'off' === VIP_Workflow::instance()->settings->module->options->publish_guard || 'publish' === $post->post_status || ! in_array( $args[0], $supported_publish_caps ) || ! $post ) {
+		// Bail early if publish guard is off, or the post is already published, or the post is not available
+		if ( 'off' === VIP_Workflow::instance()->settings->module->options->publish_guard || ! $post || 'publish' === $post->post_status ) {
+			return $allcaps;
+		}
+
+		// Bail early if the post type is not supported or if its a not supported capability for this guard
+		if ( ! in_array( $post->post_type, $this->get_post_types_for_module() ) || ! isset( $supported_publish_caps_map[ $post->post_type ] ) ) {
+			return $allcaps;
+		}
+
+		// Bail early if the publish_{post_type} capability is not being checked or if the user doesn't have the capability set
+		$cap_to_check = $supported_publish_caps_map[ $post->post_type ];
+		if ( $cap_to_check !== $args[0] || ! isset( $allcaps[ $cap_to_check ] ) ) {
 			return $allcaps;
 		}
 
 		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
 		$status_slugs = wp_list_pluck( $custom_statuses, 'slug' );
 
-		// Bail early if the post is not using a custom status, or is not a supported post type
-		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
+		// Bail early if the post is not using a custom status
+		if ( ! in_array( $post->post_status, $status_slugs ) ) {
 			return $allcaps;
 		}
 
@@ -417,17 +431,11 @@ class Custom_Status extends Module {
 
 		// If the post status is not the last status, remove the publish capability or else add it back in
 		if ( $status_before_publish->slug !== $post->post_status ) {
-			if ( 'publish_posts' === $args[0] ) {
-				$allcaps['publish_posts'] = false;
-			} else {
-				$allcaps['publish_pages'] = false;
-			}
+			// Remove the publish capability based on the post type
+			$allcaps[ $supported_publish_caps_map[ $post->post_type ] ] = false;
 		} else {
-			if ( 'publish_posts' === $args[0] ) {
-				$allcaps['publish_posts'] = true;
-			} else {
-				$allcaps['publish_pages'] = true;
-			}
+			// Remove the publish capability based on the post type
+			$allcaps[ $supported_publish_caps_map[ $post->post_type ] ] = true;
 		}
 
 		return $allcaps;
