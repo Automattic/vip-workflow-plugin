@@ -373,23 +373,17 @@ class Custom_Status extends Module {
 				];
 			}
 
-			$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? 1 : 0;
-
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
 
 			// Now, let's print the JS vars
 			?>
-			<script type="text/javascript">
-				var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
-				var current_status = '<?php echo esc_js( $selected ); ?>';
-				var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
-				var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
-				var current_user_can_edit_published_posts = <?php echo current_user_can( $post_type_obj->cap->edit_published_posts ) ? 1 : 0; ?>;
-				const vw_publish_guard_enabled = <?php echo esc_js( $publish_guard_enabled ); ?>;
-			</script>
-
-				<?php
-
+				<script type="text/javascript">
+					var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
+					var current_status = '<?php echo esc_js( $selected ); ?>';
+					var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
+					var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
+				</script>
+			<?php
 		}
 	}
 
@@ -404,9 +398,10 @@ class Custom_Status extends Module {
 	 */
 	public function remove_or_add_publish_capability_for_user( $allcaps, $cap, $args ) {
 		global $post;
+		$supported_publish_caps = [ 'publish_posts', 'publish_pages' ];
 
 		// Bail early if publish guard is off, or the post is already published, or the post type is not supported or the publish capability is not being checked
-		if ( 'off' === VIP_Workflow::instance()->settings->module->options->publish_guard || 'publish' === $post->post_status || 'publish_posts' !== $args[0] || ! $post ) {
+		if ( 'off' === VIP_Workflow::instance()->settings->module->options->publish_guard || 'publish' === $post->post_status || ! in_array( $args[0], $supported_publish_caps ) || ! $post ) {
 			return $allcaps;
 		}
 
@@ -422,9 +417,17 @@ class Custom_Status extends Module {
 
 		// If the post status is not the last status, remove the publish capability or else add it back in
 		if ( $status_before_publish->slug !== $post->post_status ) {
-			$allcaps['publish_posts'] = false;
+			if ( 'publish_posts' === $args[0] ) {
+				$allcaps['publish_posts'] = false;
+			} else {
+				$allcaps['publish_pages'] = false;
+			}
 		} else {
-			$allcaps['publish_posts'] = true;
+			if ( 'publish_posts' === $args[0] ) {
+				$allcaps['publish_posts'] = true;
+			} else {
+				$allcaps['publish_pages'] = true;
+			}
 		}
 
 		return $allcaps;
