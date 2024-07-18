@@ -88,7 +88,7 @@ class Custom_Status extends Module {
 		// REST endpoints
 		EditStatus::init();
 
-		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user'], 10, 3 );
+		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
 	}
 
 	/**
@@ -414,7 +414,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $custom_statuses, 'slug' );
 
 		// Bail early if the post is not using a custom status, or is not a supported post type
-		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module( ) ) ) {
+		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
 			return $allcaps;
 		}
 
