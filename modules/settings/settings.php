@@ -25,7 +25,7 @@ class Settings extends Module {
 					'post' => 'on',
 					'page' => 'on',
 				],
-				'publish_guard'       => 'off', // TODO: should default this to 'on' once everything has been implemented
+				'publish_guard'       => 'on',
 				'always_notify_admin' => 'on',
 				'send_to_webhook'     => 'off',
 				'webhook_url'         => '',
