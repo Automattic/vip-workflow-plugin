@@ -205,6 +205,12 @@ class Notifications extends Module {
 		}
 	}
 
+	/**
+	 * Get the footer for the email notification
+	 *
+	 * @param WP_Post $post
+	 * @return string Footer for the email notification
+	 */
 	public function get_notification_footer( $post ) {
 		$body  = '';
 		$body .= "\r\n--------------------\r\n";
@@ -219,7 +225,12 @@ class Notifications extends Module {
 	}
 
 	/**
-	 * send_email()
+	 * Send email notifications
+	 *
+	 * @param string $action (status-change)
+	 * @param string $subject Subject of the email
+	 * @param string $message Body of the email
+	 * @param string $message_headers. (optional) Message headers
 	 */
 	public function send_email( $action, $post, $subject, $message, $message_headers = '' ) {
 

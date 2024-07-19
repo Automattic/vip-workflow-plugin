@@ -1239,6 +1239,9 @@ class Custom_Status extends Module {
 		}
 	}
 
+	/**
+	 * Register REST API endpoints for custom statuses
+	 */
 	public function register_rest_endpoints() {
 		EditStatus::init();
 	}
