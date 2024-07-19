@@ -15,8 +15,11 @@ const statuses = window.VipWorkflowCustomStatuses.map( customStatus => ( {
 	value: customStatus.slug,
 } ) );
 
+// This is necessary to prevent a call stack exceeded problem within Gutenberg, as our code is called several times for some reason.
+let postLocked = false;
+
 /**
- * Subscribe to changes so we can set a default status and update a button's text.
+ * Subscribe to changes so we can set a default status and issue a notice when we lock/unlock the publishing capability.
  */
 subscribe( function () {
 	const postId = select( 'core/editor' ).getCurrentPostId();
@@ -31,6 +34,25 @@ subscribe( function () {
 		dispatch( 'core/editor' ).editPost( {
 			status: statuses[ 0 ].value,
 		} );
+	}
+
+	const has_publish_capability =
+		select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
+
+	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
+	// check if the post status is in the list of custom statuses, and only then issue the notices
+	if ( statuses.find( status => status.value === selectedStatus ) ) {
+		if ( postLocked && has_publish_capability ) {
+			postLocked = false;
+			dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
+		} else if ( ! postLocked && ! has_publish_capability ) {
+			postLocked = true;
+			dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
+				id: 'publish-guard-lock',
+				type: 'snackbar',
+				explicitDismiss: true,
+			} );
+		}
 	}
 } );
 
