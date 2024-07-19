@@ -1,14 +1,13 @@
 {
   "name": "vip-workflow",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "VIP Workflow",
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack --watch",
     "dev:hot": "wp-scripts start -c webpack.config.js --hot",
     "wp-env": "wp-env",
-    "lint-js": "eslint modules",
-    "lint-js-fix": "eslint modules --fix"
+    "lint-js": "eslint . --ext .js"
   },
   "repository": {
     "type": "git",
@@ -42,7 +41,7 @@
     "glob": "^10.4.2",
     "prettier": "npm:wp-prettier@2.8.5",
     "react": "^18.3.1",
-    "webpack": "^5.91.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "webpack": "^5.91.0"
   }
 }
