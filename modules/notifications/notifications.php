@@ -250,12 +250,10 @@ class Notifications extends Module {
 			return;
 		}
 
-		$datetime = new DateTime();
-
 		// Set up the payload
 		$payload = [
 			'type'      => 'environment:post:update',
-			'timestamp' => $datetime->format( DateTime::ATOM ),
+			'timestamp' => $post->post_modified_gmt,
 			'data'      => $message,
 		];
 
