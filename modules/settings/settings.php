@@ -214,6 +214,7 @@ class Settings extends Module {
 		}
 
 		// White list validation for the 'slack_webhook_url' option
+		$new_options['webhook_url'] = trim( $new_options['webhook_url'] );
 		if ( ! isset( $new_options['webhook_url'] ) || esc_url_raw( $new_options['webhook_url'] ) !== $new_options['webhook_url'] ) {
 			$new_options['webhook_url'] = '';
 		} else {
