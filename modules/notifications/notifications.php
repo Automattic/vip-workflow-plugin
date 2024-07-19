@@ -252,7 +252,7 @@ class Notifications extends Module {
 
 		// Set up the payload
 		$payload = [
-			'type'      => 'environment:post:update',
+			'type'      => 'plugin:vip-workflow:post-update',
 			'timestamp' => $post->post_modified_gmt,
 			'data'      => $message,
 		];
