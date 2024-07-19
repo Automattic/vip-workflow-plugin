@@ -381,6 +381,7 @@ class Custom_Status extends Module {
 					var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
 					var current_status = '<?php echo esc_js( $selected ); ?>';
 					var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
+					var vw_publish_guard_enabled = '<?php echo VIP_Workflow::instance()->settings->module->options->publish_guard; ?>';
 					var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
 				</script>
 			<?php

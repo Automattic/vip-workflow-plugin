@@ -36,12 +36,11 @@ subscribe( function () {
 		} );
 	}
 
-	const has_publish_capability =
-		select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
-
 	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
 	// check if the post status is in the list of custom statuses, and only then issue the notices
-	if ( statuses.find( status => status.value === selectedStatus ) ) {
+	if ( vw_publish_guard_enabled && statuses.find( status => status.value === selectedStatus ) ) {
+		const has_publish_capability =
+			select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
 		if ( postLocked && has_publish_capability ) {
 			postLocked = false;
 			dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
@@ -50,7 +49,6 @@ subscribe( function () {
 			dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
 				id: 'publish-guard-lock',
 				type: 'snackbar',
-				explicitDismiss: true,
 			} );
 		}
 	}
