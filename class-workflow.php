@@ -55,10 +55,6 @@ class VIP_Workflow {
 			self::$instance = new VIP_Workflow();
 			self::$instance->setup_globals();
 			self::$instance->setup_actions();
-			// ToDo: Take this away, along with any backwards compat code.
-			// Backwards compat for when we promoted use of the $edit_flow global
-			global $vip_workflow;
-			$vip_workflow = self::$instance;
 		}
 		return self::$instance;
 	}
@@ -76,18 +72,12 @@ class VIP_Workflow {
 	 * Include the common resources to VIP Workflow and dynamically load the modules
 	 */
 	private function load_modules() {
-
-		// We use the WP_List_Table API for some of the table gen
-		if ( ! class_exists( 'WP_List_Table' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
-		}
-
 		// VIP Workflow base module
 		require_once VIP_WORKFLOW_ROOT . '/common/php/class-module.php';
 
 		// Scan the modules directory and include any modules that exist there
 		$module_dirs = scandir( VIP_WORKFLOW_ROOT . '/modules/' );
-		$class_names = array();
+		$class_names = [];
 		foreach ( $module_dirs as $module_dir ) {
 			if ( file_exists( VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php" ) ) {
 				include_once VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php";
@@ -127,14 +117,15 @@ class VIP_Workflow {
 	 * @uses add_action() To add various actions
 	 */
 	private function setup_actions() {
-		add_action( 'init', array( $this, 'action_init' ) );
-		add_action( 'init', array( $this, 'action_init_after' ), 1000 );
+		add_action( 'init', [ $this, 'action_init' ] );
+		add_action( 'init', [ $this, 'action_init_after' ], 1000 );
 
-		add_action( 'admin_init', array( $this, 'action_admin_init' ) );
+		add_action( 'admin_init', [ $this, 'action_admin_init' ] );
+		add_action( 'admin_menu', [ $this, 'action_admin_menu' ] );
 	}
 
 	/**
-	 * Inititalizes the Edit Flows!
+	 * Inititalizes the entire plugin
 	 * Loads options for each registered module and then initializes it if it's active
 	 */
 	public function action_init() {
@@ -182,36 +173,108 @@ class VIP_Workflow {
 	}
 
 	/**
+	 * Add module pages to the admin menu
+	 */
+	public function action_admin_menu() {
+		$main_module = self::instance()->modules->custom_status;
+		$menu_title  = __( 'VIP Workflow', 'vip-workflow' );
+
+		add_menu_page( $menu_title, $menu_title, 'manage_options', $main_module->settings_slug, function () use ( $main_module ) {
+			return $this->menu_controller( $main_module->settings_slug );
+		} );
+
+		foreach ( self::instance()->modules as $mod_name => $mod_data ) {
+			if ( $mod_data->configure_page_cb && $mod_name !== $main_module->name ) {
+				add_submenu_page( $main_module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, function () use ( $mod_data ) {
+					return $this->menu_controller( $mod_data->settings_slug );
+				} );
+			}
+		}
+	}
+
+	/**
+	 * Handles all settings and configuration page requests. Required element for VIP Workflow
+	 */
+	public function menu_controller( $mod_slug ) {
+		$requested_module = self::instance()->get_module_by( 'settings_slug', $mod_slug );
+		if ( ! $requested_module ) {
+			wp_die( esc_html__( 'Not a registered VIP Workflow module', 'vip-workflow' ) );
+		}
+
+		$configure_callback    = $requested_module->configure_page_cb;
+		$requested_module_name = $requested_module->name;
+
+		$this->print_default_header( $requested_module );
+		self::instance()->$requested_module_name->$configure_callback();
+		$this->print_default_footer();
+	}
+
+	/**
+	 * Print the header on the top of each module page
+	 */
+	public function print_default_header( $current_module ) {
+		// If there's been a message, let's display it
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Message slugs correspond to preset read-only strings and do not require nonce checks.
+		$message_slug = isset( $_REQUEST['message'] ) ? sanitize_title( $_REQUEST['message'] ) : false;
+
+		if ( $message_slug && isset( $current_module->messages[ $message_slug ] ) ) {
+			$display_text = sprintf( '<span class="vip-workflow-updated-message vip-workflow-message">%s</span>', esc_html( $current_module->messages[ $message_slug ] ) );
+		}
+
+		// If there's been an error, let's display it
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Error slugs correspond to preset read-only strings and do not require nonce checks.
+		$error_slug = isset( $_REQUEST['error'] ) ? sanitize_title( $_REQUEST['error'] ) : false;
+
+		if ( $error_slug && isset( $current_module->messages[ $error_slug ] ) ) {
+			$display_text = sprintf( '<span class="vip-workflow-error-message vip-workflow-message">%s</span>', esc_html( $current_module->messages[ $error_slug ] ) );
+		}
+
+		if ( $current_module->img_url ) {
+			$page_icon = sprintf( '<img src="%s" class="module-icon icon32" />', esc_url( $current_module->img_url ) );
+		} else {
+			$page_icon = '<div class="icon32" id="icon-options-general"><br/></div>';
+		}
+
+		include_once __DIR__ . '/common/php/views/module-header.php';
+	}
+
+	/**
+	 * Print the footer for each module page
+	 */
+	public function print_default_footer() {
+		// End the wrap <div> started in the header
+		echo '</div>';
+	}
+
+	/**
 	 * Register a new module
 	 */
-	public function register_module( $name, $args = array() ) {
+	public function register_module( $name, $args = [] ) {
 
 		// A title and name is required for every module
 		if ( ! isset( $args['title'], $name ) ) {
 			return false;
 		}
 
-		$defaults = array(
+		$defaults = [
 			'title'                => '',
 			'short_description'    => '',
 			'extended_description' => '',
 			'img_url'              => false,
 			'slug'                 => '',
 			'post_type_support'    => '',
-			'default_options'      => array(),
+			'default_options'      => [],
 			'options'              => false,
 			'configure_page_cb'    => false,
 			'configure_link_text'  => __( 'Configure', 'vip-workflow' ),
 			// These messages are applied to modules and can be overridden if custom messages are needed
-			'messages'             => array(
-				'settings-updated'    => __( 'Settings updated.', 'vip-workflow' ),
-				'form-error'          => __( 'Please correct your form errors below and try again.', 'vip-workflow' ),
-				'nonce-failed'        => __( 'Cheatin&#8217; uh?', 'vip-workflow' ),
-				'invalid-permissions' => __( 'You do not have necessary permissions to complete this action.', 'vip-workflow' ),
-				'missing-post'        => __( 'Post does not exist', 'vip-workflow' ),
-			),
+			'messages'             => [
+				'settings-updated' => __( 'Settings updated.', 'vip-workflow' ),
+			],
 			'autoload'             => false, // autoloading a module will remove the ability to enable or disable it
-		);
+		];
 		if ( isset( $args['messages'] ) ) {
 			$args['messages'] = array_merge( (array) $args['messages'], $defaults['messages'] );
 		}
@@ -219,15 +282,10 @@ class VIP_Workflow {
 		$args['name']               = $name;
 		$args['options_group_name'] = $this->options_group . $name . '_options';
 		if ( ! isset( $args['settings_slug'] ) ) {
-			$args['settings_slug'] = 'vw-' . $args['slug'] . '-settings';
+			$args['settings_slug'] = 'vw-' . $args['slug'];
 		}
 		if ( empty( $args['post_type_support'] ) ) {
 			$args['post_type_support'] = 'vw_' . $name;
-		}
-		// If there's a Help Screen registered for the module, make sure we
-		// auto-load it
-		if ( ! empty( $args['settings_help_tab'] ) ) {
-			add_action( 'load-vip-workflow_page_' . $args['settings_slug'], array( &$this->$name, 'action_settings_help_menu' ) );
 		}
 
 		$this->modules->$name = (object) $args;
@@ -258,8 +316,6 @@ class VIP_Workflow {
 
 	/**
 	 * Load the post type options again so we give add_post_type_support() a chance to work
-	 *
-	 * @see http://dev.editflow.org/2011/11/17/edit-flow-v0-7-alpha2-notes/#comment-232
 	 */
 	public function action_init_after() {
 		foreach ( $this->modules as $mod_name => $mod_data ) {
@@ -318,32 +374,7 @@ class VIP_Workflow {
 	 */
 	public function register_scripts_and_styles() {
 		wp_enqueue_style( 'vw-admin-css', VIP_WORKFLOW_URL . 'common/css/vip-workflow-admin.css', false, VIP_WORKFLOW_VERSION, 'all' );
-
-		wp_register_script( 'jquery-listfilterizer', VIP_WORKFLOW_URL . 'common/js/jquery.listfilterizer.js', array( 'jquery' ), VIP_WORKFLOW_VERSION, true );
-		wp_register_style( 'jquery-listfilterizer', VIP_WORKFLOW_URL . 'common/css/jquery.listfilterizer.css', false, VIP_WORKFLOW_VERSION, 'all' );
-
-
-		wp_localize_script(
-			'jquery-listfilterizer',
-			'__i18n_jquery_filterizer',
-			array(
-				'all'      => esc_html__( 'All', 'vip-workflow' ),
-				'selected' => esc_html__( 'Selected', 'vip-workflow' ),
-			)
-		);
 	}
 }
 
 VIP_Workflow::instance();
-
-/**
- * Caps don't get loaded on install on VIP Go. Instead, let's add
- * them via filters.
- */
-add_filter( 'vw_kill_add_caps_to_role', '__return_true' );
-add_filter( 'vw_edit_post_subscriptions_cap', function () {
-	return 'edit_others_posts';
-} );
-add_filter( 'vw_manage_usergroups_cap', function () {
-	return 'manage_options';
-} );

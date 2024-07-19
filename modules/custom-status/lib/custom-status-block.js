@@ -2,7 +2,7 @@ import './editor.scss';
 
 import { SelectControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
-import { subscribe, dispatch, select, withSelect, withDispatch } from '@wordpress/data';
+import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
 import { PluginPostStatusInfo } from '@wordpress/edit-post';
 import { __ } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
@@ -10,7 +10,10 @@ import { registerPlugin } from '@wordpress/plugins';
 /**
  * Map Custom Statuses as options for SelectControl
  */
-const statuses = window.VipWorkflowCustomStatuses.map( s => ( { label: s.name, value: s.slug } ) );
+const statuses = window.VipWorkflowCustomStatuses.map( customStatus => ( {
+	label: customStatus.name,
+	value: customStatus.slug,
+} ) );
 
 /**
  * Subscribe to changes so we can set a default status and update a button's text.
@@ -24,11 +27,11 @@ subscribe( function () {
 		return;
 	}
 
-	// For new posts, we need to force the default custom status.
+	// For new posts, we need to force the default custom status which is the first entry.
 	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
 	if ( isCleanNewPost ) {
 		dispatch( 'core/editor' ).editPost( {
-			status: vw_default_custom_status,
+			status: statuses[ 0 ].value,
 		} );
 	}
 
@@ -48,12 +51,17 @@ subscribe( function () {
 
 	// Lock post if the status is not the last one.
 	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
-	if ( vw_publish_guard_enabled && selectedStatus !== statuses[ statuses.length - 1 ].value ) {
-		if ( ! postLocked ) {
-			postLocked = true;
-			dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
-		}
-	} else if ( postLocked ) {
+	if (
+		vw_publish_guard_enabled &&
+		selectedStatus !== statuses[ statuses.length - 1 ].value &&
+		! postLocked
+	) {
+		postLocked = true;
+		dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
+	} else if (
+		( ! vw_publish_guard_enabled || selectedStatus === statuses[ statuses.length - 1 ].value ) &&
+		postLocked
+	) {
 		postLocked = false;
 		dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
 	}

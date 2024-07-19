@@ -53,7 +53,7 @@ export function useRefDimensions( ref ) {
 	const [ height, setHeight ] = useState( 0 );
 
 	useLayoutEffect( () => {
-		let sizeObserver = new ResizeObserver( entries => {
+		const sizeObserver = new ResizeObserver( entries => {
 			entries.forEach( entry => {
 				setWidth( Math.floor( entry.contentRect.width ) );
 				setHeight( Math.floor( entry.contentRect.height ) );
