@@ -35,6 +35,8 @@ if ( version_compare( phpversion(), '8.0', '<' ) ) {
 	return;
 }
 
+// ToDo: Add a duplicate plugin loading check.
+
 // Define contants
 define( 'VIP_WORKFLOW_VERSION', '0.1.0' );
 define( 'VIP_WORKFLOW_ROOT', __DIR__ );
