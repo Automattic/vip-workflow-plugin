@@ -98,6 +98,20 @@
 	margin-left: 10px;
 }
 
+.vip-workflow-admin .explanation,
+.vip-workflow-admin .explanation p {
+	font-size: 16px;
+	line-height: 22px;
+}
+
+.vip-workflow-admin .explanation {
+	margin-bottom: 1em;
+}
+
+.vip-workflow-admin .explanation p {
+	margin: 0.5em 0;
+}
+
 /* Module specific image styles */
 
 .button-inline-block {
