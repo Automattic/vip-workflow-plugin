@@ -10,6 +10,7 @@ The WordPress VIP Workflow Plugin allows you to control your editorial workflow.
 
 This plugin is currently developed for use on WordPress sites hosted on [WordPress VIP](https://wpvip.com).
 
+- [Try it out](#try-it-out)
 - [Installation](#installation)
 	- [Install via `git subtree`](#install-via-git-subtree)
 	- [Install via ZIP file](#install-via-zip-file)
