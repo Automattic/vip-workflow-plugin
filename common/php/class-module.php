@@ -24,23 +24,6 @@ class Module {
 	public function __construct() {}
 
 	/**
-	 * Returns whether analytics has been enabled or not.
-	 *
-	 * It's only enabled if the site is a production WPVIP site.
-	 *
-	 * @return true, if analytics is enabled, false otherwise
-	 */
-	public function is_analytics_enabled() {
-		// Check if the site is a production WPVIP site and only then enable it
-		$is_analytics_enabled = $this->is_vip_site( true );
-
-		// filter to disable it.
-		$is_analytics_enabled = apply_filters( 'vw_should_analytics_be_enabled', $is_analytics_enabled );
-
-		return $is_analytics_enabled;
-	}
-
-	/**
 	 * Check if the site is a WPVIP site.
 	 *
 	 * @param bool $only_production Whether to only allow production sites to be considered WPVIP sites

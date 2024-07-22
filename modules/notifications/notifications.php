@@ -65,7 +65,12 @@ class Notifications extends Module {
 			return;
 		}
 
-		// No need to notify if it's a revision, auto-draft, or if post status wasn't changed
+		/**
+		 * Filter the statuses that should be ignored when sending notifications
+		 *
+		 * @param array $ignored_statuses Array of statuses that should be ignored when sending notifications
+		 * @param string $post_type The post type of the post
+		 */
 		$ignored_statuses = apply_filters( 'vw_notification_ignored_statuses', [ $old_status, 'inherit', 'auto-draft' ], $post->post_type );
 
 		if ( ! in_array( $new_status, $ignored_statuses ) ) {
@@ -200,6 +205,12 @@ class Notifications extends Module {
 		}
 	}
 
+	/**
+	 * Get the footer for the email notification
+	 *
+	 * @param WP_Post $post
+	 * @return string Footer for the email notification
+	 */
 	public function get_notification_footer( $post ) {
 		$body  = '';
 		$body .= "\r\n--------------------\r\n";
@@ -214,7 +225,12 @@ class Notifications extends Module {
 	}
 
 	/**
-	 * send_email()
+	 * Send email notifications
+	 *
+	 * @param string $action (status-change)
+	 * @param string $subject Subject of the email
+	 * @param string $message Body of the email
+	 * @param string $message_headers. (optional) Message headers
 	 */
 	public function send_email( $action, $post, $subject, $message, $message_headers = '' ) {
 
@@ -256,7 +272,14 @@ class Notifications extends Module {
 			'data'      => $message,
 		];
 
-		// apply filters to the payload
+		/**
+		 * Filter the payload before sending it to the webhook
+		 *
+		 * @param array $payload Payload to be sent to the webhook
+		 * @param string $action Action being taken
+		 * @param WP_User $user User who is taking the action
+		 * @param WP_Post $post Post that the action is being taken on
+		 */
 		$payload = apply_filters( 'vw_notification_send_to_webhook_payload', $payload, $action, $user, $post );
 
 		// Send the notification

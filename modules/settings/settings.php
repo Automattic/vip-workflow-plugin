@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * class Settings
+ *
+ * Settings module for VIP Workflow
+ */
 namespace VIPWorkflow\Modules;
 
 use VIPWorkflow\VIP_Workflow;
@@ -48,6 +53,9 @@ class Settings extends Module {
 		add_action( 'admin_enqueue_scripts', array( $this, 'action_admin_enqueue_scripts' ) );
 	}
 
+	/**
+	 * Add settings JS to the settings page
+	 */
 	public function action_admin_enqueue_scripts() {
 		if ( $this->is_whitelisted_settings_view() ) {
 			wp_enqueue_script( 'vip-workflow-settings-js', $this->module_url . 'lib/settings.js', array( 'jquery' ), VIP_WORKFLOW_VERSION, true );
@@ -72,6 +80,9 @@ class Settings extends Module {
 			<?php
 	}
 
+	/**
+	 * Register the settings for the module
+	 */
 	public function register_settings() {
 		add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
 

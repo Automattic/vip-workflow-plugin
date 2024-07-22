@@ -1,13 +1,13 @@
-name: E2E and JS tests
+name: JS tests
 
-on: push
+on: pull_request
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
+  build-js:
     runs-on: ubuntu-latest
     continue-on-error: false
 
@@ -29,11 +29,5 @@ jobs:
           npm ci
           npm run build
 
-      # - name: Install WordPress with wp-env
-      #   run: npm run wp-env start
-
       - name: Run Lint JS
         run: npm run lint-js
-
-      # - name: Run tests
-      #   run: npm run test

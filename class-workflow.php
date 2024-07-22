@@ -352,7 +352,11 @@ class VIP_Workflow {
 	}
 
 	/**
-	 * Update the $edit_flow object with new value and save to the database
+	 * Update a module option, using the module's name and the key
+	 *
+	 * @param string $mod_name The module name
+	 * @param string $key The option key
+	 * @param mixed $value The new value
 	 */
 	public function update_module_option( $mod_name, $key, $value ) {
 		$this->modules->$mod_name->options->$key = $value;
@@ -360,6 +364,12 @@ class VIP_Workflow {
 		return update_option( $this->options_group . $mod_name . '_options', $this->modules->$mod_name->options );
 	}
 
+	/**
+	 * Update all module options
+	 *
+	 * @param Sttring $mod_name The module name
+	 * @param stdClass $new_options The new options to save
+	 */
 	public function update_all_module_options( $mod_name, $new_options ) {
 		if ( is_array( $new_options ) ) {
 			$new_options = (object) $new_options;

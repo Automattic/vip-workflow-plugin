@@ -15,10 +15,16 @@ use WP_Term;
 defined( 'ABSPATH' ) || exit;
 
 class EditStatus {
+	/**
+	 * Initialize the class
+	 */
 	public static function init() {
 		add_action( 'rest_api_init', [ __CLASS__, 'register_routes' ] );
 	}
 
+	/**
+	 * Register the REST routes
+	 */
 	public static function register_routes() {
 		register_rest_route( VIP_WORKFLOW_REST_NAMESPACE, '/custom-status', [
 			'methods'             => 'POST',
@@ -139,12 +145,17 @@ class EditStatus {
 		] );
 	}
 
+	/**
+	 * Check if the current user has permission to manage options
+	 */
 	public static function permission_callback() {
 		return current_user_can( 'manage_options' );
 	}
 
 	/**
 	 * Handle a request to create a new status
+	 *
+	 * @param WP_REST_Request $request
 	 */
 	public static function handle_create_status( WP_REST_Request $request ) {
 		$status_name        = sanitize_text_field( $request->get_param( 'name' ) );
@@ -203,6 +214,8 @@ class EditStatus {
 
 	/**
 	 * Handle a request to update the status
+	 *
+	 * @param WP_REST_Request $request
 	 */
 	public static function handle_update_status( WP_REST_Request $request ) {
 		$term_id            = $request->get_param( 'id' );
@@ -265,6 +278,8 @@ class EditStatus {
 
 	/**
 	 * Handle a request to delete the status
+	 *
+	 * @param WP_REST_Request $request
 	 */
 	public static function handle_delete_status( WP_REST_Request $request ) {
 		$term_id = $request->get_param( 'id' );
@@ -288,6 +303,11 @@ class EditStatus {
 		}
 	}
 
+	/**
+	 * Handle a request to reorder the statuses
+	 *
+	 * @param WP_REST_Request $request
+	 */
 	public static function handle_reorder_status( WP_REST_Request $request ) {
 		$status_order = $request->get_param( 'status_positions' );
 
@@ -319,10 +339,20 @@ class EditStatus {
 
 	// Public API
 
+	/**
+	 * Get the URL for the custom status CRUD endpoint
+	 *
+	 * @return string The CRUD URL
+	 */
 	public static function get_crud_url() {
 		return rest_url( sprintf( '%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status/' ) );
 	}
 
+	/**
+	 * Get the URL for the custom status reorder endpoint
+	 *
+	 * @return string The reorder URL
+	 */
 	public static function get_reorder_url() {
 		return rest_url( sprintf( '%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status/reorder' ) );
 	}
