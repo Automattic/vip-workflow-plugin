@@ -25,6 +25,12 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 	- [Using Hot Module Replacement](#using-hot-module-replacement)
 - [Credits](#credits)
 
+## Try it out
+
+Try out the VIP Workflow plugin in your browser [with WordPress Playground][playground-blueprint]:
+
+[<img src="https://github.com/Automattic/vip-workflow-plugin/blob/media/playground-workflow-landing-page.png">][playground-blueprint]
+
 ## Installation
 
 The latest version of the plugin is available in the default `trunk` branch of this repository.
@@ -199,6 +205,8 @@ React hot reloading is supported. A few configuration steps are required for the
 This plugin has been based on the wonderful [EditFlow](https://github.com/Automattic/Edit-Flow) plugin developed by Daniel Bachhuber, Scott Bressler, Mohammad Jangda, and others.
 
 <!-- Links -->
+[media-playground]: https://github.com/Automattic/vip-workflow-plugin/blob/media/playground-workflow-landing-page.png
+[playground-blueprint]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/Automattic/vip-workflow-plugin/trunk/blueprint.json
 [repo-releases]: https://github.com/Automattic/vip-workflow-plugin/releases
 [wpvip-plugin-activate]: https://docs.wpvip.com/how-tos/activate-plugins-through-code/
 [wpvip-plugin-submodules]: https://docs.wpvip.com/technical-references/plugins/installing-plugins-best-practices/#h-submodules
