@@ -100,19 +100,20 @@ When a post changes status, configured notifications are sent. You can use this 
 * @param array $ignored_statuses Array of statuses that should be ignored when sending notifications
 * @param string $post_type The post type of the post
 */
+
 apply_filters( 'vw_notification_ignored_statuses', [ $old_status, 'inherit', 'auto-draft' ], $post->post_type );
 ```
 
 For example, this filter can be used to add `assigned` to the ignored statuses for a post of `post_type` page, so no notifications are sent for such posts:
 
 ```php
-add_filter( 'vw_notification_ignored_statuses', function filter_ignore_pending_review_for_admin($ignored_statuses, $post_type ) {
-	    if ( $post_type === 'page' ) {
-				$ignored_statuses[] = 'assigned';
-			}
+add_filter( 'vw_notification_ignored_statuses', function ( $ignored_statuses, $post_type ) {
+    if ( $post_type === 'page' ) {
+        $ignored_statuses[] = 'assigned';
+    }
 
-			return $ignored_statuses
-		}, 10, 2 );
+    return $ignored_statuses;
+}, 10, 2 );
 ```
 
 ### `vw_notification_send_to_webhook_payload`
@@ -136,17 +137,18 @@ Change the payload sent to the webhook, when the status of a post changes. By de
 * @param WP_User $user User who is taking the action
 * @param WP_Post $post Post that the action is being taken on
 */
+
 apply_filters( 'vw_notification_send_to_webhook_payload', $payload, $action, $user, $post );
 ```
 
 For example, this filter can be used to customize the payload so that it's compatible with Slack's [incoming webhooks](https://api.slack.com/messaging/webhooks):
 
 ```php
-add_filter( 'vw_notification_send_to_webhook_payload', function filter_webhook_payload_for_slack( $payload, $action, $user, $post ) {
-			return [
+add_filter( 'vw_notification_send_to_webhook_payload', function ( $payload, $action, $user, $post ) {
+    return [
         'text' => $payload['data'],
-    	];
-		}, 10, 4 );
+    ];
+}, 10, 4 );
 ```
 
 ## Development
