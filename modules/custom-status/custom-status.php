@@ -88,6 +88,8 @@ class Custom_Status extends Module {
 
 		// REST endpoints
 		EditStatus::init();
+
+		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
 	}
 
 	/**
@@ -378,18 +380,69 @@ class Custom_Status extends Module {
 
 			// Now, let's print the JS vars
 			?>
-			<script type="text/javascript">
-				var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
-				var current_status = '<?php echo esc_js( $selected ); ?>';
-				var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
-				var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
-				var current_user_can_edit_published_posts = <?php echo current_user_can( $post_type_obj->cap->edit_published_posts ) ? 1 : 0; ?>;
-				const vw_publish_guard_enabled = <?php echo esc_js( $publish_guard_enabled ); ?>;
-			</script>
-
-				<?php
-
+				<script type="text/javascript">
+					var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
+					var current_status = '<?php echo esc_js( $selected ); ?>';
+					var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
+					var vw_publish_guard_enabled = '<?php echo esc_js( $publish_guard_enabled ); ?>';
+					var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
+				</script>
+			<?php
 		}
+	}
+
+	/**
+	 * Remove or add the publish capability for users based on the post status
+	 *
+	 * @param array $allcaps All capabilities for the user
+	 * @param string $cap Capability name
+	 * @param array $args Arguments
+	 *
+	 * @return array $allcaps All capabilities for the user
+	 */
+	public function remove_or_add_publish_capability_for_user( $allcaps, $cap, $args ) {
+		global $post;
+		$supported_publish_caps_map = [
+			'post' => 'publish_posts',
+			'page' => 'publish_pages',
+		];
+
+		// Bail early if publish guard is off, or the post is already published, or the post is not available
+		if ( 'off' === VIP_Workflow::instance()->settings->module->options->publish_guard || ! $post || 'publish' === $post->post_status ) {
+			return $allcaps;
+		}
+
+		// Bail early if the post type is not supported or if its a not supported capability for this guard
+		if ( ! in_array( $post->post_type, $this->get_post_types_for_module() ) || ! isset( $supported_publish_caps_map[ $post->post_type ] ) ) {
+			return $allcaps;
+		}
+
+		// Bail early if the publish_{post_type} capability is not being checked or if the user doesn't have the capability set
+		$cap_to_check = $supported_publish_caps_map[ $post->post_type ];
+		if ( $cap_to_check !== $args[0] || ! isset( $allcaps[ $cap_to_check ] ) ) {
+			return $allcaps;
+		}
+
+		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
+		$status_slugs = wp_list_pluck( $custom_statuses, 'slug' );
+
+		// Bail early if the post is not using a custom status
+		if ( ! in_array( $post->post_status, $status_slugs ) ) {
+			return $allcaps;
+		}
+
+		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
+
+		// If the post status is not the last status, remove the publish capability or else add it back in
+		if ( $status_before_publish->slug !== $post->post_status ) {
+			// Remove the publish capability based on the post type
+			$allcaps[ $supported_publish_caps_map[ $post->post_type ] ] = false;
+		} else {
+			// Remove the publish capability based on the post type
+			$allcaps[ $supported_publish_caps_map[ $post->post_type ] ] = true;
+		}
+
+		return $allcaps;
 	}
 
 	/**

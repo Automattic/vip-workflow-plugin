@@ -15,11 +15,12 @@ const statuses = window.VipWorkflowCustomStatuses.map( customStatus => ( {
 	value: customStatus.slug,
 } ) );
 
-/**
- * Subscribe to changes so we can set a default status and update a button's text.
- */
-let buttonTextObserver = null;
+// This is necessary to prevent a call stack exceeded problem within Gutenberg, as our code is called several times for some reason.
 let postLocked = false;
+
+/**
+ * Subscribe to changes so we can set a default status and issue a notice when we lock/unlock the publishing capability.
+ */
 subscribe( function () {
 	const postId = select( 'core/editor' ).getCurrentPostId();
 	if ( ! postId ) {
@@ -35,76 +36,23 @@ subscribe( function () {
 		} );
 	}
 
-	// If the save button exists, let's update the text if needed.
-	maybeUpdateButtonText( document.querySelector( '.editor-post-save-draft' ) );
-
-	// The post is being saved, so we need to set up an observer to update the button text when it's back.
-	if (
-		buttonTextObserver === null &&
-		window.MutationObserver &&
-		select( 'core/editor' ).isSavingPost()
-	) {
-		buttonTextObserver = createButtonObserver(
-			document.querySelector( '.edit-post-header__settings' )
-		);
-	}
-
-	// Lock post if the status is not the last one.
 	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
-	if (
-		vw_publish_guard_enabled &&
-		selectedStatus !== statuses[ statuses.length - 1 ].value &&
-		! postLocked
-	) {
-		postLocked = true;
-		dispatch( 'core/editor' ).lockPostSaving( 'vip-workflow' );
-	} else if (
-		( ! vw_publish_guard_enabled || selectedStatus === statuses[ statuses.length - 1 ].value ) &&
-		postLocked
-	) {
-		postLocked = false;
-		dispatch( 'core/editor' ).unlockPostSaving( 'vip-workflow' );
+	// check if the post status is in the list of custom statuses, and only then issue the notices
+	if ( vw_publish_guard_enabled && statuses.find( status => status.value === selectedStatus ) ) {
+		const has_publish_capability =
+			select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
+		if ( postLocked && has_publish_capability ) {
+			postLocked = false;
+			dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
+		} else if ( ! postLocked && ! has_publish_capability ) {
+			postLocked = true;
+			dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
+				id: 'publish-guard-lock',
+				type: 'snackbar',
+			} );
+		}
 	}
 } );
-
-/**
- * Create a mutation observer that will update the
- * save button text right away when it's changed/re-added.
- *
- * Ideally there will be better ways to go about this in the future.
- * @see https://github.com/Automattic/Edit-Flow/issues/583
- */
-function createButtonObserver( parentNode ) {
-	if ( ! parentNode ) {
-		return null;
-	}
-
-	const observer = new MutationObserver( mutationsList => {
-		for ( const mutation of mutationsList ) {
-			for ( const node of mutation.addedNodes ) {
-				maybeUpdateButtonText( node );
-			}
-		}
-	} );
-
-	observer.observe( parentNode, { childList: true } );
-	return observer;
-}
-
-function maybeUpdateButtonText( saveButton ) {
-	/*
-	 * saveButton.children < 1 accounts for when a user hovers over the save button
-	 * and a tooltip is rendered
-	 */
-	if (
-		saveButton &&
-		saveButton.children < 1 &&
-		( saveButton.innerText === __( 'Save Draft' ) ||
-			saveButton.innerText === __( 'Save as Pending' ) )
-	) {
-		saveButton.innerText = __( 'Save' );
-	}
-}
 
 /**
  * Custom status component
@@ -128,9 +76,6 @@ const VIPWorkflowCustomPostStati = ( { onUpdate, status } ) => (
 			{ status !== 'publish'
 				? __( 'Note: this will override all status settings above.', 'vip-workflow' )
 				: __( 'To select a custom status, please unpublish the content first.', 'vip-workflow' ) }
-			{ status !== statuses[ statuses.length - 1 ].value
-				? __( " This post is currently locked from publishing due to it's status.", 'vip-workflow' )
-				: '' }
 		</small>
 	</PluginPostStatusInfo>
 );
