@@ -6,7 +6,7 @@
 
 [![PHP Tests](https://github.com/Automattic/vip-workflow-plugin/actions/workflows/php-tests.yml/badge.svg)](https://github.com/Automattic/vip-workflow-plugin/actions/workflows/php-tests.yml)[![JS Tests](https://github.com/Automattic/vip-workflow-plugin/actions/workflows/js-tests.yml/badge.svg)](https://github.com/Automattic/vip-workflow-plugin/actions/workflows/php-tests.yml)
 
-The WordPress VIP Workflow Plugin allows you to control your editorial workflow. You can set up custom statuses for every phase of your workflow. Each of these custom statuses can be restricted to certain user roles and transitions between statuses generate actions, like notifications.
+The WordPress VIP Workflow Plugin allows you to control your editorial workflow. You can set up custom statuses for every phase of your workflow, and transitions between statuses generate actions, like notifications.
 
 This plugin is currently developed for use on WordPress sites hosted on [WordPress VIP](https://wpvip.com).
 
@@ -16,7 +16,7 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 	- [Plugin activation](#plugin-activation)
 - [Usage](#usage)
 	- [Admin](#admin)
-	- [Block Editor](#block-editor)
+	- [Editorial Experience](#editorial-experience)
 - [Code Filters](#code-filters)
 	- [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
 	- [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
@@ -75,6 +75,8 @@ By default, the following post statuses are created:
 4. Draft
 5. Pending Review
 
+Note that, these statuses are also available in the quick edit experience on the posts page alongside the core post statuses.
+
 The plugin doesn't expect any specific configuration, so your first step is to set up statuses that reflect your workflow. You may notice that the steps are listed in a linear order. The plugin assumes a linear workflow where content is moving from creation to publish.
 
 By default, the plugin prevents publishing a post or page (the supported post types are configurable within settings) unless it has reached the last status on your list. This feature can be turned off under settings under the `Publish Guard` option.
@@ -83,7 +85,7 @@ The plugin also sends notifications when a post's status changes. By default, em
 
 ### Editorial Experience
 
-To switch your post status, simply select the new status from the dropdown in the sidebar. 
+To switch your post status, simply select the new status from the dropdown in the sidebar.
 
 ## Code Filters
 
@@ -101,13 +103,27 @@ When a post changes status, configured notifications are sent. You can use this 
 apply_filters( 'vw_notification_ignored_statuses', [ $old_status, 'inherit', 'auto-draft' ], $post->post_type );
 ```
 
+For example, this filter can be used to add `assigned` to the ignored statuses for a post of `post_type` page, so no notifications are sent for such posts:
+
+```php
+add_filter( 'vw_notification_ignored_statuses', function filter_ignore_pending_review_for_admin($ignored_statuses, $post_type ) {
+	    if ( $post_type === 'page' ) {
+				$ignored_statuses[] = 'assigned';
+			}
+
+			return $ignored_statuses
+		}, 10, 2 );
+```
+
 ### `vw_notification_send_to_webhook_payload`
 
 Change the payload sent to the webhook, when the status of a post changes. By default, it is as follows:
 
 ```
 {
-  "text": "*vipgo* changed the status of *Post #59 - <http://test-site.vipdev.lndo.site/wp-admin/post.php?post=59&action=edit|hello>* from *Draft* to *Pending Review*"
+  "type": "plugin:vip-workflow:post-update",
+  "timestamp": "2024-07-22 00:03:19",
+  "data": "*vipgo* changed the status of *Post #85 - <http://test-site.vipdev.lndo.site/wp-admin/post.php?post=85&action=edit|hello>* from *In Progress* to *Draft*"
 }
 ```
 
@@ -121,6 +137,16 @@ Change the payload sent to the webhook, when the status of a post changes. By de
 * @param WP_Post $post Post that the action is being taken on
 */
 apply_filters( 'vw_notification_send_to_webhook_payload', $payload, $action, $user, $post );
+```
+
+For example, this filter can be used to customize the payload so that it's compatible with Slack's [incoming webhooks](https://api.slack.com/messaging/webhooks):
+
+```php
+add_filter( 'vw_notification_send_to_webhook_payload', function filter_webhook_payload_for_slack( $payload, $action, $user, $post ) {
+			return [
+        'text' => $payload['data'],
+    	];
+		}, 10, 4 );
 ```
 
 ## Development
