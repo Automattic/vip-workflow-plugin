@@ -1,6 +1,6 @@
 {
   "$schema": "https://playground.wordpress.net/blueprint-schema.json",
-  "landingPage": "/wp-admin/admin.php?page=vw-custom-status-settings",
+  "landingPage": "/wp-admin/admin.php?page=vw-custom-status",
   "preferredVersions": {
     "php": "8.0",
     "wp": "latest"
@@ -14,7 +14,7 @@
       "step": "installPlugin",
       "pluginZipFile": {
         "resource": "url",
-        "url": "https://github-proxy.com/proxy/?repo=Automattic/vip-workflow-plugin&release=0.1.0&asset=vip-workflow-0.1.0.zip"
+        "url": "https://github-proxy.com/proxy/?repo=Automattic/vip-workflow-plugin"
       },
       "options": {
         "activate": true
