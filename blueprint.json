@@ -5,6 +5,10 @@
     "php": "8.0",
     "wp": "latest"
   },
+  "features": {
+    "networking": true
+  },
+  "login": true,
   "steps": [
     {
       "step": "installPlugin",
@@ -15,11 +19,6 @@
       "options": {
         "activate": true
       }
-    },
-    {
-      "step": "login",
-      "username": "admin",
-      "password": "password"
     }
   ]
 }
