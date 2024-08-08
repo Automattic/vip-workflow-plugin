@@ -1,6 +1,6 @@
 import './editor.scss';
 
-import { SelectControl } from '@wordpress/components';
+import { SelectControl, Button, __experimentalVStack as VStack } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
 import { PluginPostStatusInfo } from '@wordpress/edit-post';
@@ -62,6 +62,11 @@ const VIPWorkflowCustomPostStati = ( { onUpdate, status } ) => (
 	<PluginPostStatusInfo
 		className={ `vip-workflow-extended-post-status vip-workflow-extended-post-status-${ status }` }
 	>
+		<div className="vip-workflow-secure-preview-row">
+			<div className="vip-workflow-secure-preview-label">{ __( 'Secure Preview', 'vip-workflow' ) }</div>
+			<Button className="vip-workflow-secure-preview-button" variant="secondary">{ __( 'Generate Link', 'vip-workflow' ) }</Button>
+		</div>
+
 		<h4>
 			{ status !== 'publish'
 				? __( 'Extended Post Status', 'vip-workflow' )
