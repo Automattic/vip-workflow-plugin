@@ -280,7 +280,7 @@ class Custom_Status extends Module {
 	public function load_styles_for_block_editor() {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 
-		wp_enqueue_style( 'edit-flow-workflow-manager-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.css', [ 'wp-components' ], $asset_file['version'] );
+		wp_enqueue_style( 'vip-workflow-manager-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.css', [ 'wp-components' ], $asset_file['version'] );
 	}
 
 	/**
@@ -424,7 +424,7 @@ class Custom_Status extends Module {
 		}
 
 		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
-		$status_slugs = wp_list_pluck( $custom_statuses, 'slug' );
+		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
 
 		// Bail early if the post is not using a custom status
 		if ( ! in_array( $post->post_status, $status_slugs ) ) {
@@ -1237,6 +1237,27 @@ class Custom_Status extends Module {
 		} else {
 			return false;
 		}
+	}
+
+
+	/**
+	 * Given a post ID, return true if the post type is supported and using a custom status, false otherwise.
+	 *
+	 * @param int $post_id The post ID being queried.
+	 * @return bool True if the post is using a custom status, false otherwise.
+	 */
+	public function is_post_using_custom_status( $post_id ) {
+		$post = get_post( $post_id );
+
+		if ( null === $post ) {
+			return false;
+		}
+
+		$custom_post_types = $this->get_post_types_for_module();
+		$custom_statuses   = $this->get_custom_statuses();
+		$status_slugs      = wp_list_pluck( $custom_statuses, 'slug' );
+
+		return in_array( $post->post_type, $custom_post_types ) && in_array( $post->post_status, $status_slugs );
 	}
 
 	/**
