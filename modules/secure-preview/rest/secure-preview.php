@@ -44,11 +44,10 @@ class SecurePreviewEndpoint {
 	}
 
 	/**
-	 * Check if the current user has permission to manage options
+	 * Check if the current user has permission to manage edit the post
 	 */
-	public function permission_callback( WP_REST_Request $request ) {
+	public static function permission_callback( WP_REST_Request $request ) {
 		$post_id = $request->get_param( 'post_id' );
-
 		return current_user_can( 'edit_posts', $post_id );
 	}
 

@@ -48,8 +48,15 @@ class Secure_Preview extends Module {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/secure-preview/secure-preview.asset.php';
 		wp_enqueue_script( 'vip-workflow-secure-preview-script', VIP_WORKFLOW_URL . 'dist/modules/secure-preview/secure-preview.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-		wp_localize_script( 'vip-workflow-secure-preview-script', 'VipWorkflowSecurePreview', [
-			'secure_preview_url' => rest_url( 'vip-workflow/v1/secure-preview' ),
+		$generate_preview_url = '';
+		$post_id              = get_the_ID();
+		if ( $post_id ) {
+			$generate_preview_url = SecurePreviewEndpoint::get_url( $post_id );
+		}
+
+		wp_localize_script( 'vip-workflow-secure-preview-script', 'VW_SECURE_PREVIEW', [
+			'url_generate_preview' => $generate_preview_url,
+			'text_preview_error'   => __( 'There was an error generating a preview link:', 'vip-workflow' ),
 		] );
 	}
 
