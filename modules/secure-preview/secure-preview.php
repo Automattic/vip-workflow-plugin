@@ -38,7 +38,7 @@ class Secure_Preview extends Module {
 		SecurePreviewEndpoint::init();
 
 		// Load block editor JS
-		add_action( 'enqueue_block_editor_assets', [ $this, 'load_block_editor_scripts' ] );
+		add_action( 'enqueue_block_editor_assets', [ $this, 'load_block_editor_scripts' ], 9 /* Load before custom status module */ );
 
 		// Load block editor CSS
 		add_action( 'enqueue_block_editor_assets', [ $this, 'load_block_editor_styles' ] );
