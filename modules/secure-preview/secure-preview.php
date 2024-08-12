@@ -7,6 +7,7 @@
 
 namespace VIPWorkflow\Modules;
 
+require_once __DIR__ . '/token.php';
 require_once __DIR__ . '/rest/secure-preview.php';
 
 use VIPWorkflow\Modules\SecurePreview\SecurePreviewEndpoint;

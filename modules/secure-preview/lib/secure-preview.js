@@ -21,7 +21,6 @@ const handleGenerateSecureUrl = async () => {
 		dispatch( 'core/notices' ).createErrorNotice( errorMessage, {
 			id: 'vw-secure-preview',
 			isDismissible: true,
-			type: 'snackbar',
 		} );
 		return;
 	}

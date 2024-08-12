@@ -57,8 +57,16 @@ class SecurePreviewEndpoint {
 	 * @param WP_REST_Request $request
 	 */
 	public static function handle_generate_preview_token( WP_REST_Request $request ) {
+		$post_id = $request->get_param( 'post_id' );
+
+		$token = Token::generate_token( $post_id, 'edit_posts' );
+
+		if ( is_wp_error( $token ) ) {
+			return $token;
+		}
+
 		return [
-			'token' => '123',
+			'token' => $token,
 		];
 	}
 
