@@ -67,6 +67,9 @@ class SecurePreviewEndpoint {
 
 		$preview_url = get_preview_post_link( $post_id, [ 'vw-token' => $token ] );
 
+		// Remove unused 'preview_id` query param
+		$preview_url = remove_query_arg( 'preview_id', $preview_url );
+
 		return [
 			'url' => $preview_url,
 		];
