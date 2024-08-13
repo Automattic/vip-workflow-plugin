@@ -81,7 +81,7 @@ class Token {
 				 * @param bool   $expire_on_use Whether the token should expire on use.
 				 * @param int    $post_id       Post ID.
 				 */
-				$expire_on_use = (bool) apply_filters( 'vw_secure_preview_token_expire_on_use', true, $post_id );
+				$expire_on_use = (bool) apply_filters( 'vw_secure_preview_token_expire_on_use', false, $post_id );
 
 				if ( $expire_on_use ) {
 					$is_expired = true;
