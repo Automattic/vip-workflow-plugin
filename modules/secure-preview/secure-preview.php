@@ -60,7 +60,13 @@ class Secure_Preview extends Module {
 			$generate_preview_url = SecurePreviewEndpoint::get_url( $post_id );
 		}
 
+		$custom_status_module = VIP_Workflow::instance()->custom_status;
+		$custom_status_slugs  = wp_list_pluck( $custom_status_module->get_custom_statuses(), 'slug' );
+		$custom_post_types    = $custom_status_module->get_post_types_for_module();
+
 		wp_localize_script( 'vip-workflow-secure-preview-script', 'VW_SECURE_PREVIEW', [
+			'custom_post_types'    => $custom_post_types,
+			'custom_status_slugs'  => $custom_status_slugs,
 			'url_generate_preview' => $generate_preview_url,
 			'text_preview_error'   => __( 'There was an error generating a preview link:', 'vip-workflow' ),
 		] );

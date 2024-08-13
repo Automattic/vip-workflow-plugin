@@ -9,10 +9,11 @@ import {
 	Spinner,
 	__experimentalTruncate as Truncate,
 } from '@wordpress/components';
-import { useCopyToClipboard } from '@wordpress/compose';
-import { dispatch } from '@wordpress/data';
+import { compose, useCopyToClipboard } from '@wordpress/compose';
+import { dispatch, withSelect } from '@wordpress/data';
 import { PluginPostStatusInfo } from '@wordpress/edit-post';
-import { useRef, useState } from '@wordpress/element';
+import { store as editorStore } from '@wordpress/editor';
+import { useMemo, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { copySmall } from '@wordpress/icons';
 import { store as noticesStore } from '@wordpress/notices';
@@ -22,23 +23,36 @@ import { registerPlugin } from '@wordpress/plugins';
  * Custom status component
  * @param object props
  */
-const VIPWorkflowSecurePreview = () => {
+const VIPWorkflowSecurePreview = ( { status, postType } ) => {
 	const [ securePreviewUrl, setSecurePreviewUrl ] = useState( null );
 
+	console.log( 'Post properties:', { status, postType } );
+
+	const isSecurePreviewAvailable = useMemo( () => {
+		return (
+			VW_SECURE_PREVIEW.custom_status_slugs.includes( status ) &&
+			VW_SECURE_PREVIEW.custom_post_types.includes( postType )
+		);
+	}, [ status, postType ] );
+
 	return (
-		<PluginPostStatusInfo className={ `vip-workflow-secure-preview` }>
-			<div className="vip-workflow-secure-preview-row">
-				<div className="vip-workflow-secure-preview-label">
-					{ __( 'Secure Preview', 'vip-workflow' ) }
-				</div>
+		<>
+			{ isSecurePreviewAvailable && (
+				<PluginPostStatusInfo className={ `vip-workflow-secure-preview` }>
+					<div className="vip-workflow-secure-preview-row">
+						<div className="vip-workflow-secure-preview-label">
+							{ __( 'Secure Preview', 'vip-workflow' ) }
+						</div>
 
-				{ ! securePreviewUrl && (
-					<GenerateSecurePreviewButton onUrl={ url => setSecurePreviewUrl( url ) } />
-				) }
+						{ ! securePreviewUrl && (
+							<GenerateSecurePreviewButton onUrl={ url => setSecurePreviewUrl( url ) } />
+						) }
 
-				{ securePreviewUrl && <SecurePreviewDropdown url={ securePreviewUrl } /> }
-			</div>
-		</PluginPostStatusInfo>
+						{ securePreviewUrl && <SecurePreviewDropdown url={ securePreviewUrl } /> }
+					</div>
+				</PluginPostStatusInfo>
+			) }
+		</>
 	);
 };
 
@@ -142,8 +156,17 @@ const SecurePreviewDropdown = ( { url } ) => {
 	);
 };
 
+const getPostProperties = select => {
+	return {
+		status: select( editorStore ).getEditedPostAttribute( 'status' ),
+		postType: select( editorStore ).getCurrentPostType(),
+	};
+};
+
+const plugin = compose( withSelect( getPostProperties ) )( VIPWorkflowSecurePreview );
+
 // Register secure preview row in the sidebar
 registerPlugin( 'vip-workflow-secure-preview', {
 	icon: 'vip-workflow',
-	render: VIPWorkflowSecurePreview,
+	render: plugin,
 } );
