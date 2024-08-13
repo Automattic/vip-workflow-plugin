@@ -6,6 +6,7 @@ import {
 	Button,
 	Dropdown,
 	ExternalLink,
+	Spinner,
 	__experimentalTruncate as Truncate,
 } from '@wordpress/components';
 import { dispatch } from '@wordpress/data';
@@ -21,10 +22,32 @@ import { registerPlugin } from '@wordpress/plugins';
 const VIPWorkflowSecurePreview = () => {
 	const [ securePreviewUrl, setSecurePreviewUrl ] = useState( null );
 
+	return (
+		<PluginPostStatusInfo className={ `vip-workflow-secure-preview` }>
+			<div className="vip-workflow-secure-preview-row">
+				<div className="vip-workflow-secure-preview-label">
+					{ __( 'Secure Preview', 'vip-workflow' ) }
+				</div>
+
+				{ ! securePreviewUrl && (
+					<GenerateSecurePreviewButton onUrl={ url => setSecurePreviewUrl( url ) } />
+				) }
+
+				{ securePreviewUrl && <SecurePreviewDropdown url={ securePreviewUrl } /> }
+			</div>
+		</PluginPostStatusInfo>
+	);
+};
+
+const GenerateSecurePreviewButton = ( { onUrl } ) => {
+	const [ isLoading, setIsLoading ] = useState( false );
+
 	const handleGenerateSecureUrl = async () => {
-		let result;
+		let result = {};
 
 		try {
+			setIsLoading( true );
+
 			result = await apiFetch( {
 				url: VW_SECURE_PREVIEW.url_generate_preview,
 				method: 'POST',
@@ -36,31 +59,28 @@ const VIPWorkflowSecurePreview = () => {
 				id: 'vw-secure-preview',
 				isDismissible: true,
 			} );
+		} finally {
+			setIsLoading( false );
 		}
 
-		setSecurePreviewUrl( result.url );
+		if ( result?.url ) {
+			onUrl( result.url );
+		}
 	};
 
 	return (
-		<PluginPostStatusInfo className={ `vip-workflow-secure-preview` }>
-			<div className="vip-workflow-secure-preview-row">
-				<div className="vip-workflow-secure-preview-label">
-					{ __( 'Secure Preview', 'vip-workflow' ) }
-				</div>
-
-				{ ! securePreviewUrl && (
-					<Button
-						className="vip-workflow-secure-preview-button"
-						variant="secondary"
-						onClick={ handleGenerateSecureUrl }
-					>
-						{ __( 'Generate Link', 'vip-workflow' ) }
-					</Button>
-				) }
-
-				{ securePreviewUrl && <SecurePreviewDropdown url={ securePreviewUrl } /> }
-			</div>
-		</PluginPostStatusInfo>
+		<>
+			{ isLoading && <Spinner /> }
+			{ ! isLoading && (
+				<Button
+					className="vip-workflow-secure-preview-button"
+					variant="secondary"
+					onClick={ handleGenerateSecureUrl }
+				>
+					{ __( 'Generate Link', 'vip-workflow' ) }
+				</Button>
+			) }
+		</>
 	);
 };
 
