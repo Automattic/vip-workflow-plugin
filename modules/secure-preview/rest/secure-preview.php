@@ -7,6 +7,7 @@
 namespace VIPWorkflow\Modules\SecurePreview;
 
 use VIPWorkflow\VIP_Workflow;
+use WP_Error;
 use WP_REST_Request;
 
 defined( 'ABSPATH' ) || exit;
@@ -33,7 +34,7 @@ class SecurePreviewEndpoint {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$post_id = absint( $param );
-						return VIP_Workflow::instance()->custom_status->is_post_using_custom_status( $post_id );
+						return get_post( $post_id ) instanceof \WP_Post;
 					},
 					'sanitize_callback' => function ( $param ) {
 						return absint( $param );
@@ -58,6 +59,14 @@ class SecurePreviewEndpoint {
 	 */
 	public static function handle_generate_preview_token( WP_REST_Request $request ) {
 		$post_id = $request->get_param( 'post_id' );
+
+		if ( ! VIP_Workflow::instance()->custom_status->is_post_using_custom_status( $post_id ) ) {
+			if ( 'publish' === get_post_status( $post_id ) ) {
+				return new WP_Error( 'vip-workflow-published-post', __( 'Secure links can not be generated for published posts.', 'vip-workflow' ) );
+			} else {
+				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Secure links can only be generated for posts with a custom status', 'vip-workflow' ) );
+			}
+		}
 
 		$token = Token::generate_token( $post_id, 'edit_posts' );
 

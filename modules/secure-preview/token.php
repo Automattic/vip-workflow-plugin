@@ -23,7 +23,7 @@ class Token {
 	 */
 	public static function generate_token( $post_id, $cap ) {
 		if ( ! current_user_can( $cap, $post_id ) ) {
-			return new WP_Error( 'vw-token-permission-denied', __( 'You do not have sufficient permissions to access this page.', 'vip-workflow' ) );
+			return new WP_Error( 'vip-workflow-token-permission-denied', __( 'You do not have sufficient permissions to access this page.', 'vip-workflow' ) );
 		}
 
 		$token_lifetime = self::get_token_lifetime_in_seconds( $post_id );
