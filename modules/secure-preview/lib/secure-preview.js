@@ -9,10 +9,13 @@ import {
 	Spinner,
 	__experimentalTruncate as Truncate,
 } from '@wordpress/components';
+import { useCopyToClipboard } from '@wordpress/compose';
 import { dispatch } from '@wordpress/data';
 import { PluginPostStatusInfo } from '@wordpress/edit-post';
 import { useRef, useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
+import { copySmall } from '@wordpress/icons';
+import { store as noticesStore } from '@wordpress/notices';
 import { registerPlugin } from '@wordpress/plugins';
 
 /**
@@ -55,7 +58,7 @@ const GenerateSecurePreviewButton = ( { onUrl } ) => {
 		} catch ( error ) {
 			const errorMessage = VW_SECURE_PREVIEW.text_preview_error + ' ' + error.message;
 
-			dispatch( 'core/notices' ).createErrorNotice( errorMessage, {
+			dispatch( noticesStore ).createErrorNotice( errorMessage, {
 				id: 'vw-secure-preview',
 				isDismissible: true,
 			} );
@@ -87,6 +90,12 @@ const GenerateSecurePreviewButton = ( { onUrl } ) => {
 const SecurePreviewDropdown = ( { url } ) => {
 	const anchorRef = useRef( null );
 
+	const clipboardRef = useCopyToClipboard( url, () => {
+		dispatch( noticesStore ).createNotice( 'info', __( 'Link copied to clipboard.' ), {
+			isDismissible: true,
+			type: 'snackbar',
+		} );
+	} );
 	const popoverProps = {
 		anchorRef,
 		placement: 'left-start',
@@ -98,7 +107,7 @@ const SecurePreviewDropdown = ( { url } ) => {
 	const urlTail = '/' + url.split( '/' ).pop();
 
 	return (
-		<div ref={ anchorRef }>
+		<div className="vip-workflow-secure-preview-dropdown" ref={ anchorRef }>
 			<Dropdown
 				popoverProps={ popoverProps }
 				focusOnMount
@@ -118,13 +127,22 @@ const SecurePreviewDropdown = ( { url } ) => {
 					</div>
 				) }
 			/>
+
+			<Button
+				icon={ copySmall }
+				label={ sprintf(
+					// Translators: %s is a placeholder for the link URL, e.g. "Copy link: https://example.com".
+					__( 'Copy link: %s' ),
+					url
+				) }
+				ref={ clipboardRef }
+				size="compact"
+			/>
 		</div>
 	);
 };
 
-/**
- * Kick it off
- */
+// Register secure preview row in the sidebar
 registerPlugin( 'vip-workflow-secure-preview', {
 	icon: 'vip-workflow',
 	render: VIPWorkflowSecurePreview,
