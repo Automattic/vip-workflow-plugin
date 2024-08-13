@@ -13,6 +13,7 @@ require_once __DIR__ . '/rest/secure-preview.php';
 use VIPWorkflow\Modules\SecurePreview\SecurePreviewEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\SecurePreview\Token;
 
 class Secure_Preview extends Module {
 	public $module;
@@ -43,6 +44,10 @@ class Secure_Preview extends Module {
 
 		// Load block editor CSS
 		add_action( 'enqueue_block_editor_assets', [ $this, 'load_block_editor_styles' ] );
+
+		// Preview rendering
+		add_filter( 'query_vars', [ $this, 'add_preview_query_vars' ] );
+		add_action( 'posts_results', [ $this, 'allow_secure_preview_results' ], 10, 2 );
 	}
 
 	public function load_block_editor_scripts() {
@@ -65,5 +70,35 @@ class Secure_Preview extends Module {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/secure-preview/secure-preview.asset.php';
 
 		wp_enqueue_style( 'vip-workflow-secure-preview-styles', VIP_WORKFLOW_URL . 'dist/modules/secure-preview/secure-preview.css', [ 'wp-components' ], $asset_file['version'] );
+	}
+
+	public function add_preview_query_vars( $query_vars ) {
+		$query_vars[] = 'vw-token';
+
+		return $query_vars;
+	}
+
+	public function allow_secure_preview_results( $posts, &$query ) {
+		$token = $query->query_vars['vw-token'] ?? false;
+
+		// If there's no token, go back to result processing quickly
+		if ( false === $token ) {
+			return $posts;
+		}
+
+		// Only allow secure preview on individual post queries
+		$is_preview = $query->is_preview() && 1 === count( $posts );
+
+		if ( ! $is_preview ) {
+			return $posts;
+		}
+
+		if ( Token::validate_token( $token, $posts[0]->ID ) ) {
+			// Temporarily set post_status to 'publish' to stop WP_Query->get_posts() from clearing out
+			// unpublished posts before render
+			$posts[0]->post_status = 'publish';
+		}
+
+		return $posts;
 	}
 }

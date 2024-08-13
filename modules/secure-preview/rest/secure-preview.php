@@ -65,8 +65,10 @@ class SecurePreviewEndpoint {
 			return $token;
 		}
 
+		$preview_url = get_preview_post_link( $post_id, [ 'vw-token' => $token ] );
+
 		return [
-			'token' => $token,
+			'url' => $preview_url,
 		];
 	}
 
