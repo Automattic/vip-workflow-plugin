@@ -6,7 +6,6 @@
 
 	.vip-workflow-secure-preview-label {
 		flex-basis: 45%;
-		font-weight: bold;
 	}
 }
 
@@ -22,4 +21,8 @@
 
 .vip-workflow-secure-preview-dropdown {
 	display: flex;
+}
+
+.vip-workflow-one-time-use-checkbox {
+	margin: 1.5rem 0 2rem;
 }

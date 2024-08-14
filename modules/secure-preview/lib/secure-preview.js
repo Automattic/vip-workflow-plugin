@@ -6,14 +6,18 @@ import {
 	Button,
 	Dropdown,
 	ExternalLink,
+	Modal,
+	SelectControl,
 	Spinner,
 	__experimentalTruncate as Truncate,
+	Flex,
+	CheckboxControl,
 } from '@wordpress/components';
-import { compose, useCopyToClipboard } from '@wordpress/compose';
+import { compose, useCopyToClipboard, useMergeRefs } from '@wordpress/compose';
 import { dispatch, withSelect } from '@wordpress/data';
 import { PluginPostStatusInfo } from '@wordpress/edit-post';
 import { store as editorStore } from '@wordpress/editor';
-import { useMemo, useRef, useState } from '@wordpress/element';
+import { useLayoutEffect, useMemo, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { copySmall } from '@wordpress/icons';
 import { store as noticesStore } from '@wordpress/notices';
@@ -23,6 +27,7 @@ import { registerPlugin } from '@wordpress/plugins';
  * Custom component to generate and copy a secure preview link in the post sidebar.
  */
 const VIPWorkflowSecurePreview = ( { status, postType } ) => {
+	const [ isModalVisible, setIsModalVisible ] = useState( false );
 	const [ securePreviewUrl, setSecurePreviewUrl ] = useState( null );
 
 	const isSecurePreviewAvailable = useMemo( () => {
@@ -31,6 +36,10 @@ const VIPWorkflowSecurePreview = ( { status, postType } ) => {
 			VW_SECURE_PREVIEW.custom_post_types.includes( postType )
 		);
 	}, [ status, postType ] );
+
+	const openModal = () => {
+		setIsModalVisible( true );
+	};
 
 	return (
 		<>
@@ -42,7 +51,20 @@ const VIPWorkflowSecurePreview = ( { status, postType } ) => {
 						</div>
 
 						{ ! securePreviewUrl && (
-							<GenerateSecurePreviewButton onUrl={ url => setSecurePreviewUrl( url ) } />
+							<Button
+								className="vip-workflow-secure-preview-button"
+								variant="tertiary"
+								onClick={ openModal }
+							>
+								{ __( 'Generate Link', 'vip-workflow' ) }
+							</Button>
+						) }
+
+						{ isModalVisible && (
+							<SecurePreviewModal
+								onUrl={ setSecurePreviewUrl }
+								onCloseModal={ () => setIsModalVisible( false ) }
+							/>
 						) }
 
 						{ securePreviewUrl && <SecurePreviewDropdown url={ securePreviewUrl } /> }
@@ -53,10 +75,12 @@ const VIPWorkflowSecurePreview = ( { status, postType } ) => {
 	);
 };
 
-const GenerateSecurePreviewButton = ( { onUrl } ) => {
+const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
 	const [ isLoading, setIsLoading ] = useState( false );
+	const [ isOneTimeUse, setIsOneTimeUse ] = useState( false );
+	const [ expiration, setExpiration ] = useState( '1-hour' );
 
-	const handleGenerateSecureUrl = async () => {
+	const getSecureUrl = async () => {
 		let result = {};
 
 		try {
@@ -65,6 +89,7 @@ const GenerateSecurePreviewButton = ( { onUrl } ) => {
 			result = await apiFetch( {
 				url: VW_SECURE_PREVIEW.url_generate_preview,
 				method: 'POST',
+				data: { expiration, isOneTimeUse },
 			} );
 		} catch ( error ) {
 			const errorMessage = VW_SECURE_PREVIEW.text_preview_error + ' ' + error.message;
@@ -74,6 +99,8 @@ const GenerateSecurePreviewButton = ( { onUrl } ) => {
 				isDismissible: true,
 			} );
 		} finally {
+			onCloseModal();
+
 			setIsLoading( false );
 		}
 
@@ -82,18 +109,81 @@ const GenerateSecurePreviewButton = ( { onUrl } ) => {
 		}
 	};
 
+	const handleLinkCopied = () => {
+		dispatch( noticesStore ).createNotice( 'info', __( 'Link copied to clipboard.' ), {
+			isDismissible: true,
+			type: 'snackbar',
+		} );
+
+		onCloseModal();
+	};
+
+	return (
+		<Modal title="Generate secure preview" size="medium" onRequestClose={ onCloseModal }>
+			<SelectControl
+				label={ __( 'Link expiration', 'vip-workflow' ) }
+				onChange={ setExpiration }
+				options={ [
+					{ label: '1 hour', value: '1-hour' },
+					{ label: '8 hours', value: '8-hours' },
+					{ label: '1 day', value: '1-day' },
+				] }
+			/>
+
+			<CheckboxControl
+				className="vip-workflow-one-time-use-checkbox"
+				label={ __( 'One-time use', 'vip-workflow' ) }
+				help={ __( 'The link will expire after one visit.', 'vip-workflow' ) }
+				checked={ isOneTimeUse }
+				onChange={ () => setIsOneTimeUse( isOneTimeUse => ! isOneTimeUse ) }
+			/>
+
+			<Flex justify="flex-end">
+				{ isLoading && <Spinner /> }
+
+				<CopyFromAsyncFunctionButton
+					variant="primary"
+					asyncFunction={ getSecureUrl }
+					onCopied={ handleLinkCopied }
+				>
+					{ __( 'Copy Link', 'vip-workflow' ) }
+				</CopyFromAsyncFunctionButton>
+			</Flex>
+		</Modal>
+	);
+};
+
+const CopyFromAsyncFunctionButton = props => {
+	const { asyncFunction, onCopied, children, ...buttonProps } = props;
+
+	const [ textToCopy, setTextToCopy ] = useState( null );
+
+	const copyButtonRef = useRef( null );
+	const copyToClipboardRef = useCopyToClipboard( textToCopy, onCopied );
+
+	useLayoutEffect( () => {
+		if ( textToCopy ) {
+			copyButtonRef.current?.click();
+		}
+	}, [ textToCopy ] );
+
+	const handleCopyClick = async () => {
+		const text = await asyncFunction();
+		setTextToCopy( text );
+	};
+
 	return (
 		<>
-			{ isLoading && <Spinner /> }
-			{ ! isLoading && (
-				<Button
-					className="vip-workflow-secure-preview-button"
-					variant="secondary"
-					onClick={ handleGenerateSecureUrl }
-				>
-					{ __( 'Generate Link', 'vip-workflow' ) }
-				</Button>
-			) }
+			{ /* This invisible button holds the text to be copied */ }
+			<Button
+				style={ { display: 'none' } }
+				ref={ useMergeRefs( [ copyButtonRef, copyToClipboardRef ] ) }
+			></Button>
+
+			{ /* This is the visible button */ }
+			<Button { ...buttonProps } onClick={ handleCopyClick }>
+				{ children }
+			</Button>
 		</>
 	);
 };
