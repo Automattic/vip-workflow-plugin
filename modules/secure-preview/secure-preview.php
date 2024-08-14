@@ -18,9 +18,6 @@ use VIPWorkflow\Modules\SecurePreview\Token;
 class Secure_Preview extends Module {
 	public $module;
 
-	/**
-	 * Register the module with VIP Workflow but don't do anything else
-	 */
 	public function __construct() {
 		// Register the module with VIP Workflow
 		$this->module_url = $this->get_module_url( __FILE__ );
@@ -56,6 +53,7 @@ class Secure_Preview extends Module {
 
 		$generate_preview_url = '';
 		$post_id              = get_the_ID();
+
 		if ( $post_id ) {
 			$generate_preview_url = SecurePreviewEndpoint::get_url( $post_id );
 		}

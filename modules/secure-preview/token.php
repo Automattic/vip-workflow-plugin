@@ -69,14 +69,9 @@ class Token {
 			if ( ! $is_expired && $token === $saved['token'] && self::TOKEN_ACTION === $saved['action'] ) {
 				/**
 				 * Filter whether to expire the token on use. By default, tokens are
-				 * "one-time use" and we mark them as expired as soon as they are used.
-				 * If you want to allow tokens to be used more than once, filter this
-				 * value to `false`. Understand the security implications of this change:
-				 * Within the expiration window, tokens / preview URLs become bearer
-				 * tokens for viewing the associated draft post preview. Anyone who
-				 * possesses them will be able to view and share the preview, even if they
-				 * are not an authorized WordPress user, and could share them with anyone
-				 * else.
+				 * multiple-use and we mark them as expired after one hour of use by default.
+				 * If you want to require tokens can only be used once, filter this
+				 * value to `true`.
 				 *
 				 * @param bool   $expire_on_use Whether the token should expire on use.
 				 * @param int    $post_id       Post ID.

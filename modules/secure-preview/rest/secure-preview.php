@@ -45,7 +45,7 @@ class SecurePreviewEndpoint {
 	}
 
 	/**
-	 * Check if the current user has permission to manage edit the post
+	 * Users allowed to edit the post can generate preview links
 	 */
 	public static function permission_callback( WP_REST_Request $request ) {
 		$post_id = $request->get_param( 'post_id' );
@@ -53,7 +53,7 @@ class SecurePreviewEndpoint {
 	}
 
 	/**
-	 * Handle a request to create a new status
+	 * Handle a request to create a preview token
 	 *
 	 * @param WP_REST_Request $request
 	 */
@@ -62,7 +62,7 @@ class SecurePreviewEndpoint {
 
 		if ( ! VIP_Workflow::instance()->custom_status->is_post_using_custom_status( $post_id ) ) {
 			if ( 'publish' === get_post_status( $post_id ) ) {
-				return new WP_Error( 'vip-workflow-published-post', __( 'Secure links can not be generated for published posts.', 'vip-workflow' ) );
+				return new WP_Error( 'vip-workflow-published-post', __( 'Secure links can not be generated for published posts', 'vip-workflow' ) );
 			} else {
 				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Secure links can only be generated for posts with a custom status', 'vip-workflow' ) );
 			}
@@ -76,7 +76,7 @@ class SecurePreviewEndpoint {
 
 		$preview_url = get_preview_post_link( $post_id, [ 'vw-token' => $token ] );
 
-		// Remove unused 'preview_id` query param
+		// Remove unused 'preview_id' query param
 		$preview_url = remove_query_arg( 'preview_id', $preview_url );
 
 		return [
@@ -87,7 +87,7 @@ class SecurePreviewEndpoint {
 	// Public API
 
 	/**
-	 * Given a post ID, returns the URL for the preview endpoint for that post.
+	 * Given a post ID, returns the URL for a preview link generation endpoint.
 	 *
 	 * @param int $post_id The post to generate a preview URL for.
 	 * @return string The URL for the preview endpoint.

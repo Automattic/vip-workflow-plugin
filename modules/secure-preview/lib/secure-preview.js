@@ -20,13 +20,10 @@ import { store as noticesStore } from '@wordpress/notices';
 import { registerPlugin } from '@wordpress/plugins';
 
 /**
- * Custom status component
- * @param object props
+ * Custom component to generate and copy a secure preview link in the post sidebar.
  */
 const VIPWorkflowSecurePreview = ( { status, postType } ) => {
 	const [ securePreviewUrl, setSecurePreviewUrl ] = useState( null );
-
-	console.log( 'Post properties:', { status, postType } );
 
 	const isSecurePreviewAvailable = useMemo( () => {
 		return (
@@ -110,6 +107,7 @@ const SecurePreviewDropdown = ( { url } ) => {
 			type: 'snackbar',
 		} );
 	} );
+
 	const popoverProps = {
 		anchorRef,
 		placement: 'left-start',
@@ -145,7 +143,7 @@ const SecurePreviewDropdown = ( { url } ) => {
 			<Button
 				icon={ copySmall }
 				label={ sprintf(
-					// Translators: %s is a placeholder for the link URL, e.g. "Copy link: https://example.com".
+					// Translators: %s is a placeholder for the link URL, e.g. "Copy link: https://my-site.com/?p=123".
 					__( 'Copy link: %s' ),
 					url
 				) }
