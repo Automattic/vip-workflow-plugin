@@ -105,6 +105,11 @@ class Secure_Preview extends Module {
 
 			// Change headers and ensure this page isn't cached
 			nocache_headers();
+		} elseif ( current_user_can( 'edit_post', $posts[0]->ID ) ) {
+			// If the user is already able to view this preview and the token is invalid, redirect to the preview URL.
+			// This ensures that an expired token doesn't appear to work for logged-in users due to permissions.
+			wp_safe_redirect( get_preview_post_link( $posts[0]->ID ) );
+			exit;
 		}
 
 		return $posts;
