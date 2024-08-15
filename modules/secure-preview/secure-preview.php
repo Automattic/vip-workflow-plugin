@@ -102,6 +102,9 @@ class Secure_Preview extends Module {
 			// Temporarily set post_status to 'publish' to stop WP_Query->get_posts() from clearing out
 			// unpublished posts before render
 			$posts[0]->post_status = 'publish';
+
+			// Change headers and ensure this page isn't cached
+			nocache_headers();
 		}
 
 		return $posts;
