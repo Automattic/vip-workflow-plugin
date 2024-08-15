@@ -15,8 +15,7 @@ import {
 } from '@wordpress/components';
 import { compose, useCopyToClipboard } from '@wordpress/compose';
 import { dispatch, withSelect } from '@wordpress/data';
-import { PluginPostStatusInfo } from '@wordpress/edit-post';
-import { store as editorStore } from '@wordpress/editor';
+import { store as editorStore, PluginPostStatusInfo } from '@wordpress/editor';
 import { useMemo, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { copySmall } from '@wordpress/icons';
@@ -28,16 +27,17 @@ import CopyFromAsyncButton from './components/copy-from-async-button';
 /**
  * Custom component to generate and copy a secure preview link in the post sidebar.
  */
-const VIPWorkflowSecurePreview = ( { status, postType } ) => {
+const VIPWorkflowSecurePreview = ( { status, postType, isDraft } ) => {
 	const [ isModalVisible, setIsModalVisible ] = useState( false );
 	const [ securePreviewUrl, setSecurePreviewUrl ] = useState( null );
 
 	const isSecurePreviewAvailable = useMemo( () => {
 		return (
 			VW_SECURE_PREVIEW.custom_status_slugs.includes( status ) &&
-			VW_SECURE_PREVIEW.custom_post_types.includes( postType )
+			VW_SECURE_PREVIEW.custom_post_types.includes( postType ) &&
+			! isDraft
 		);
-	}, [ status, postType ] );
+	}, [ status, postType, isDraft ] );
 
 	const openModal = () => {
 		setIsModalVisible( true );
@@ -218,9 +218,15 @@ const SecurePreviewDropdown = ( { url } ) => {
 };
 
 const getPostProperties = select => {
+	const { getEditedPostAttribute, getCurrentPostType, getCurrentPost } = select( editorStore );
+
+	const post = getCurrentPost();
+	const isDraft = post?.status === 'auto-draft';
+
 	return {
-		status: select( editorStore ).getEditedPostAttribute( 'status' ),
-		postType: select( editorStore ).getCurrentPostType(),
+		status: getEditedPostAttribute( 'status' ),
+		postType: getCurrentPostType(),
+		isDraft,
 	};
 };
 
