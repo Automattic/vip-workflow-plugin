@@ -87,10 +87,14 @@ class SecurePreviewEndpoint {
 		$is_one_time_use  = $request->get_param( 'is_one_time_use' );
 
 		if ( ! VIP_Workflow::instance()->custom_status->is_post_using_custom_status( $post_id ) ) {
-			if ( 'publish' === get_post_status( $post_id ) ) {
-				return new WP_Error( 'vip-workflow-published-post', __( 'Secure links can not be generated for published posts', 'vip-workflow' ) );
+			$post_status = get_post_status( $post_id );
+
+			if ( 'publish' === $post_status ) {
+				return new WP_Error( 'vip-workflow-published-post', __( 'Secure links can not be generated for published posts.', 'vip-workflow' ) );
+			} elseif ( 'auto-draft' === $post_status ) {
+				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Posts must be saved before a secure link can be generated.', 'vip-workflow' ) );
 			} else {
-				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Secure links can only be generated for posts with a custom status', 'vip-workflow' ) );
+				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Secure links can only be generated for pre-published posts with a custom status.', 'vip-workflow' ) );
 			}
 		}
 
@@ -144,10 +148,10 @@ class SecurePreviewEndpoint {
 
 		if ( empty( $selected_expiration_option ) ) {
 			// Translators: %s: the invalid expiration value selected, e.g. "1h"
-			return new WP_Error( 'vip-workflow-invalid-expiration', sprintf( __( 'Invalid expiration selection: "%s"', 'vip-workflow' ), $expiration_value ) );
+			return new WP_Error( 'vip-workflow-invalid-expiration', sprintf( __( 'Invalid expiration selection: "%s".', 'vip-workflow' ), $expiration_value ) );
 		} elseif ( count( $selected_expiration_option ) !== 1 || ! isset( $selected_expiration_option[0]['second_count'] ) ) {
 			// Translators: %s: the invalid expiration value selected, e.g. "1h"
-			return new WP_Error( 'vip-workflow-invalid-expiration', sprintf( __( 'Unable to determine the expiration for selection: "%s"', 'vip-workflow' ), $expiration_value ) );
+			return new WP_Error( 'vip-workflow-invalid-expiration', sprintf( __( 'Unable to determine the expiration for selection: "%s".', 'vip-workflow' ), $expiration_value ) );
 		}
 
 		$expiration_seconds = $selected_expiration_option[0]['second_count'];
