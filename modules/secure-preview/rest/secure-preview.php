@@ -94,20 +94,10 @@ class SecurePreviewEndpoint {
 			}
 		}
 
-		$expiration_options         = VIP_Workflow::instance()->secure_preview->get_link_expiration_options();
-		$selected_expiration_option = array_values( array_filter( $expiration_options, function ( $option ) use ( $expiration_value ) {
-			return $option['value'] === $expiration_value;
-		} ) );
-
-		if ( empty( $selected_expiration_option ) ) {
-			// Translators: %s: the invalid expiration value selected, e.g. "1h"
-			return new WP_Error( 'vip-workflow-invalid-expiration', sprintf( __( 'Invalid expiration selection: "%s"', 'vip-workflow' ), $expiration_value ) );
-		} elseif ( count( $selected_expiration_option ) !== 1 || ! isset( $selected_expiration_option[0]['second_count'] ) ) {
-			// Translators: %s: the invalid expiration value selected, e.g. "1h"
-			return new WP_Error( 'vip-workflow-invalid-expiration', sprintf( __( 'Unable to determine the expiration for selection: "%s"', 'vip-workflow' ), $expiration_value ) );
+		$expiration_seconds = self::get_expiration_seconds( $expiration_value );
+		if ( is_wp_error( $expiration_seconds ) ) {
+			return $expiration_seconds;
 		}
-
-		$expiration_seconds = $selected_expiration_option[0]['second_count'];
 
 		$token = Token::generate_token( $post_id, 'edit_posts', $is_one_time_use, $expiration_seconds );
 
@@ -135,5 +125,32 @@ class SecurePreviewEndpoint {
 	 */
 	public static function get_url( $post_id ) {
 		return rest_url( sprintf( '%s/preview/%d', VIP_WORKFLOW_REST_NAMESPACE, absint( $post_id ) ) );
+	}
+
+	// Utility methods
+
+	/**
+	 * Given an expiration value (e.g. "1h"), returns the number of seconds that the expiration represents
+	 * or a WP_Error if the value is invalid. Expiration definitions are provided in the secure_preview module.
+	 *
+	 * @param int $post_id The post to generate a preview URL for.
+	 * @return string The URL for the preview endpoint.
+	 */
+	private static function get_expiration_seconds( $expiration_value ) {
+		$expiration_options         = VIP_Workflow::instance()->secure_preview->get_link_expiration_options();
+		$selected_expiration_option = array_values( array_filter( $expiration_options, function ( $option ) use ( $expiration_value ) {
+			return $option['value'] === $expiration_value;
+		} ) );
+
+		if ( empty( $selected_expiration_option ) ) {
+			// Translators: %s: the invalid expiration value selected, e.g. "1h"
+			return new WP_Error( 'vip-workflow-invalid-expiration', sprintf( __( 'Invalid expiration selection: "%s"', 'vip-workflow' ), $expiration_value ) );
+		} elseif ( count( $selected_expiration_option ) !== 1 || ! isset( $selected_expiration_option[0]['second_count'] ) ) {
+			// Translators: %s: the invalid expiration value selected, e.g. "1h"
+			return new WP_Error( 'vip-workflow-invalid-expiration', sprintf( __( 'Unable to determine the expiration for selection: "%s"', 'vip-workflow' ), $expiration_value ) );
+		}
+
+		$expiration_seconds = $selected_expiration_option[0]['second_count'];
+		return $expiration_seconds;
 	}
 }
