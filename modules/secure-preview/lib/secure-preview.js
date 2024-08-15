@@ -78,7 +78,13 @@ const VIPWorkflowSecurePreview = ( { status, postType } ) => {
 const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
 	const [ isLoading, setIsLoading ] = useState( false );
 	const [ isOneTimeUse, setIsOneTimeUse ] = useState( false );
-	const [ expiration, setExpiration ] = useState( '1-hour' );
+
+	const expirationOptions = VW_SECURE_PREVIEW.expiration_options;
+	const defaultOption =
+		expirationOptions.find( option => option.default === true )?.value ||
+		expirationOptions?.[ 0 ]?.value;
+
+	const [ expiration, setExpiration ] = useState( defaultOption );
 
 	const getSecureUrl = async () => {
 		let result = {};
@@ -89,7 +95,7 @@ const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
 			result = await apiFetch( {
 				url: VW_SECURE_PREVIEW.url_generate_preview,
 				method: 'POST',
-				data: { expiration, isOneTimeUse },
+				data: { expiration, is_one_time_use: isOneTimeUse },
 			} );
 		} catch ( error ) {
 			const errorMessage = VW_SECURE_PREVIEW.text_preview_error + ' ' + error.message;
@@ -99,35 +105,35 @@ const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
 				isDismissible: true,
 			} );
 		} finally {
-			onCloseModal();
-
 			setIsLoading( false );
 		}
 
 		if ( result?.url ) {
-			onUrl( result.url );
+			return result.url;
 		}
 	};
 
-	const handleLinkCopied = () => {
+	const handleUrlCopied = url => {
 		dispatch( noticesStore ).createNotice( 'info', __( 'Link copied to clipboard.' ), {
 			isDismissible: true,
 			type: 'snackbar',
 		} );
 
 		onCloseModal();
+		onUrl( url );
 	};
+
+	const selectOptions = expirationOptions.map( ( { label, value } ) => {
+		return { label, value };
+	} );
 
 	return (
 		<Modal title="Generate secure preview" size="medium" onRequestClose={ onCloseModal }>
 			<SelectControl
 				label={ __( 'Link expiration', 'vip-workflow' ) }
+				value={ expiration }
 				onChange={ setExpiration }
-				options={ [
-					{ label: '1 hour', value: '1-hour' },
-					{ label: '8 hours', value: '8-hours' },
-					{ label: '1 day', value: '1-day' },
-				] }
+				options={ selectOptions }
 			/>
 
 			<CheckboxControl
@@ -144,7 +150,7 @@ const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
 				<CopyFromAsyncFunctionButton
 					variant="primary"
 					asyncFunction={ getSecureUrl }
-					onCopied={ handleLinkCopied }
+					onCopied={ handleUrlCopied }
 				>
 					{ __( 'Copy Link', 'vip-workflow' ) }
 				</CopyFromAsyncFunctionButton>
@@ -159,7 +165,9 @@ const CopyFromAsyncFunctionButton = props => {
 	const [ textToCopy, setTextToCopy ] = useState( null );
 
 	const copyButtonRef = useRef( null );
-	const copyToClipboardRef = useCopyToClipboard( textToCopy, onCopied );
+	const copyToClipboardRef = useCopyToClipboard( textToCopy, () => {
+		onCopied( textToCopy );
+	} );
 
 	useLayoutEffect( () => {
 		if ( textToCopy ) {

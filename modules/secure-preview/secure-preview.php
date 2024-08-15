@@ -65,8 +65,9 @@ class Secure_Preview extends Module {
 		wp_localize_script( 'vip-workflow-secure-preview-script', 'VW_SECURE_PREVIEW', [
 			'custom_post_types'    => $custom_post_types,
 			'custom_status_slugs'  => $custom_status_slugs,
-			'url_generate_preview' => $generate_preview_url,
+			'expiration_options'   => $this->get_link_expiration_options(),
 			'text_preview_error'   => __( 'There was an error generating a preview link:', 'vip-workflow' ),
+			'url_generate_preview' => $generate_preview_url,
 		] );
 	}
 
@@ -104,5 +105,38 @@ class Secure_Preview extends Module {
 		}
 
 		return $posts;
+	}
+
+	/**
+	 * Get the expiration options available in the secure preview modal dropdown.
+	 */
+	public function get_link_expiration_options() {
+		/**
+		 * Filter the expiration options available in the secure preview modal dropdown.
+		 *
+		 * @param array $expiration_options Array of expiration options. Each option uses keys:
+		 *     'label': The visible label for the option, e.g. "1 hour"
+		 *     'value': The value to be sent to the API, e.g. "1h"
+		 *     'second_count': The number of seconds the this expiration should be valid for, e.g. 3600
+		 *     'default': Optional. Whether this option should be selected by default.
+		 */
+		return apply_filters( 'vw_secure_preview_expiration_options', [
+			[
+				'label'        => __( '1 hour', 'vip-workflow' ),
+				'value'        => '1h',
+				'second_count' => HOUR_IN_SECONDS,
+			],
+			[
+				'label'        => __( '8 hours', 'vip-workflow' ),
+				'value'        => '8h',
+				'second_count' => 8 * HOUR_IN_SECONDS,
+				'default'      => true,
+			],
+			[
+				'label'        => __( '1 day', 'vip-workflow' ),
+				'value'        => '1d',
+				'second_count' => DAY_IN_SECONDS,
+			],
+		]);
 	}
 }
