@@ -137,8 +137,8 @@ class SecurePreviewEndpoint {
 	 * Given an expiration value (e.g. "1h"), returns the number of seconds that the expiration represents
 	 * or a WP_Error if the value is invalid. Expiration definitions are provided in the secure_preview module.
 	 *
-	 * @param int $post_id The post to generate a preview URL for.
-	 * @return string The URL for the preview endpoint.
+	 * @param int $expiration_value A value defined in get_link_expiration_options(), e.g. "1h".
+	 * @return int|WP_Error The number of seconds that the expiration represents or a WP_Error if the value is invalid.
 	 */
 	private static function get_expiration_seconds( $expiration_value ) {
 		$expiration_options         = VIP_Workflow::instance()->secure_preview->get_link_expiration_options();
