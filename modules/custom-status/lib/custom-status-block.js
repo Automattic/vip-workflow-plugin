@@ -38,7 +38,11 @@ subscribe( function () {
 
 	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
 	// check if the post status is in the list of custom statuses, and only then issue the notices
-	if ( vw_publish_guard_enabled && statuses.find( status => status.value === selectedStatus ) ) {
+	if (
+		typeof vw_publish_guard_enabled !== 'undefined' &&
+		vw_publish_guard_enabled &&
+		statuses.find( status => status.value === selectedStatus )
+	) {
 		const has_publish_capability =
 			select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
 		if ( postLocked && has_publish_capability ) {
