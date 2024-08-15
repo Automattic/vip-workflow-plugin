@@ -56,6 +56,7 @@ const VIPWorkflowSecurePreview = ( { status, postType, isDraft } ) => {
 							<Button
 								className="vip-workflow-secure-preview-button"
 								variant="tertiary"
+								size="compact"
 								onClick={ openModal }
 							>
 								{ __( 'Generate Link', 'vip-workflow' ) }

@@ -1,16 +1,20 @@
 .vip-workflow-secure-preview {
+	margin-top: 0;
+
 	/* Ensure layout in sidebar is ordered before "Extended Post Status" section, as layout order is not guaranteed */
 	order: 10;
 }
 
 .vip-workflow-secure-preview-row {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
 	width: 100%;
+	flex-basis: 100%;
+	gap: 8px;
 
 	.vip-workflow-secure-preview-label {
-		flex-basis: 45%;
+		width: 30%;
+		padding: 6px 0;
 	}
 }
 
