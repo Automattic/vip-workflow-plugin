@@ -3,7 +3,7 @@ import './editor.scss';
 import { SelectControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
-import { PluginPostStatusInfo } from '@wordpress/edit-post';
+import { PluginPostStatusInfo } from '@wordpress/editor';
 import { __ } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
 

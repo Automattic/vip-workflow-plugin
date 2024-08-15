@@ -1,6 +1,9 @@
 .vip-workflow-extended-post-status {
 	flex-flow: row wrap;
 
+	/* Ensure layout in sidebar is ordered after "Secure Preview" section, as layout order is not guaranteed */
+	order: 11;
+
 	> * {
 		flex-basis: 45%;
 	}

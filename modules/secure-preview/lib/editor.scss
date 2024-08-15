@@ -1,3 +1,8 @@
+.vip-workflow-secure-preview {
+	/* Ensure layout in sidebar is ordered before "Extended Post Status" section, as layout order is not guaranteed */
+	order: 10;
+}
+
 .vip-workflow-secure-preview-row {
 	display: flex;
 	justify-content: space-between;
