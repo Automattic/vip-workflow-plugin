@@ -13,15 +13,17 @@ import {
 	Flex,
 	CheckboxControl,
 } from '@wordpress/components';
-import { compose, useCopyToClipboard, useMergeRefs } from '@wordpress/compose';
+import { compose, useCopyToClipboard } from '@wordpress/compose';
 import { dispatch, withSelect } from '@wordpress/data';
 import { PluginPostStatusInfo } from '@wordpress/edit-post';
 import { store as editorStore } from '@wordpress/editor';
-import { useLayoutEffect, useMemo, useRef, useState } from '@wordpress/element';
+import { useMemo, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { copySmall } from '@wordpress/icons';
 import { store as noticesStore } from '@wordpress/notices';
 import { registerPlugin } from '@wordpress/plugins';
+
+import CopyFromAsyncButton from './components/copy-from-async-button';
 
 /**
  * Custom component to generate and copy a secure preview link in the post sidebar.
@@ -147,52 +149,15 @@ const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
 			<Flex justify="flex-end">
 				{ isLoading && <Spinner /> }
 
-				<CopyFromAsyncFunctionButton
+				<CopyFromAsyncButton
 					variant="primary"
 					asyncFunction={ getSecureUrl }
 					onCopied={ handleUrlCopied }
 				>
 					{ __( 'Copy Link', 'vip-workflow' ) }
-				</CopyFromAsyncFunctionButton>
+				</CopyFromAsyncButton>
 			</Flex>
 		</Modal>
-	);
-};
-
-const CopyFromAsyncFunctionButton = props => {
-	const { asyncFunction, onCopied, children, ...buttonProps } = props;
-
-	const [ textToCopy, setTextToCopy ] = useState( null );
-
-	const copyButtonRef = useRef( null );
-	const copyToClipboardRef = useCopyToClipboard( textToCopy, () => {
-		onCopied( textToCopy );
-	} );
-
-	useLayoutEffect( () => {
-		if ( textToCopy ) {
-			copyButtonRef.current?.click();
-		}
-	}, [ textToCopy ] );
-
-	const handleCopyClick = async () => {
-		const text = await asyncFunction();
-		setTextToCopy( text );
-	};
-
-	return (
-		<>
-			{ /* This invisible button holds the text to be copied */ }
-			<Button
-				style={ { display: 'none' } }
-				ref={ useMergeRefs( [ copyButtonRef, copyToClipboardRef ] ) }
-			></Button>
-
-			{ /* This is the visible button */ }
-			<Button { ...buttonProps } onClick={ handleCopyClick }>
-				{ children }
-			</Button>
-		</>
 	);
 };
 
