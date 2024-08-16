@@ -149,13 +149,6 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Upgrade our data in case we need to
-	 */
-	public function upgrade( $previous_version ) {
-		// No upgrades yet
-	}
-
-	/**
 	 * Makes the call to register_post_status to register the user's custom statuses.
 	 * Also unregisters draft and pending, in case the user doesn't want them.
 	 */
@@ -331,7 +324,7 @@ class Custom_Status extends Module {
 
 			if ( ! empty( $post ) ) {
 				// Get the status of the current post
-				if ( 0 == $post->ID || 'auto-draft' == $post->post_status || 'edit.php' == $pagenow ) {
+				if ( 0 === $post->ID || 'auto-draft' === $post->post_status || 'edit.php' === $pagenow ) {
 					$selected = $custom_statuses[0]->slug;
 				} else {
 					$selected = $post->post_status;
@@ -339,7 +332,7 @@ class Custom_Status extends Module {
 
 				// Get the label of current status
 				foreach ( $custom_statuses as $status ) {
-					if ( $status->slug == $selected ) {
+					if ( $status->slug === $selected ) {
 						$selected_name = $status->name;
 					}
 				}
@@ -462,9 +455,18 @@ class Custom_Status extends Module {
 	 * @return array|WP_Error $response The Term ID and Term Taxonomy ID
 	 */
 	public function add_custom_status( $term, $args = [] ) {
+		// Term is always added to the end of the list
+		$default_position = count( $this->get_custom_statuses() ) + 2;
+
 		$slug = ( ! empty( $args['slug'] ) ) ? $args['slug'] : sanitize_title( $term );
 		unset( $args['slug'] );
+
+		if ( ! isset( $args['position'] ) ) {
+			$args['position'] = $default_position;
+		}
+
 		$encoded_description = $this->get_encoded_description( $args );
+
 		$response            = wp_insert_term( $term, self::TAXONOMY_KEY, [
 			'slug'        => $slug,
 			'description' => $encoded_description,
@@ -540,7 +542,12 @@ class Custom_Status extends Module {
 	 */
 	public function delete_custom_status( $status_id, $args = [] ) {
 		// Get slug for the old status
-		$old_status_slug = $this->get_custom_status_by( 'id', $status_id )->slug;
+		$old_status = $this->get_custom_status_by( 'id', $status_id );
+		if ( ! $old_status || is_wp_error( $old_status ) ) {
+			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
+		}
+
+		$old_status_slug = $old_status->slug;
 
 		// Reset our internal object cache
 		$this->custom_statuses_cache = [];
@@ -564,7 +571,12 @@ class Custom_Status extends Module {
 			// Reset status cache again, as reassign_post_status() will recache prior statuses
 			$this->custom_statuses_cache = [];
 
-			return wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
+			$result = wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
+			if ( ! $result || is_wp_error( $result ) ) {
+				return new WP_Error( 'invalid', __( 'Unable to delete custom status.', 'vip-workflow' ) );
+			}
+
+			return $result;
 		} else {
 			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $this->get_custom_status_by( 'id', $status_id )->name . ')' );
 		}
@@ -644,7 +656,7 @@ class Custom_Status extends Module {
 			return false;
 		}
 
-		if ( 'id' == $field ) {
+		if ( 'id' === $field ) {
 			$field = 'term_id';
 		}
 
@@ -798,7 +810,7 @@ class Custom_Status extends Module {
 		// Handles the transition to 'publish' on edit.php
 		if ( VIP_Workflow::instance() !== null && 'edit.php' === $pagenow && isset( $_REQUEST['bulk_edit'] ) ) {
 			// For every post_id, set the post_status as 'pending' only when there's no timestamp set for $post_date_gmt
-			if ( isset( $_REQUEST['post'] ) && isset( $_REQUEST['_status'] ) && 'publish' == $_REQUEST['_status'] ) {
+			if ( isset( $_REQUEST['post'] ) && isset( $_REQUEST['_status'] ) && 'publish' === $_REQUEST['_status'] ) {
 				$post_ids = array_map( 'intval', (array) $_REQUEST['post'] );
 				foreach ( $post_ids as $post_id ) {
 					$wpdb->update( $wpdb->posts, [ 'post_status' => 'pending' ], [
@@ -811,7 +823,7 @@ class Custom_Status extends Module {
 		}
 
 		// Handles the transition to 'publish' on post.php
-		if ( VIP_Workflow::instance() !== null && 'post.php' == $pagenow && isset( $_POST['publish'] ) ) {
+		if ( VIP_Workflow::instance() !== null && 'post.php' === $pagenow && isset( $_POST['publish'] ) ) {
 			// Set the post_status as 'pending' only when there's no timestamp set for $post_date_gmt
 			if ( isset( $_POST['post_ID'] ) ) {
 				$post_id = (int) $_POST['post_ID'];
@@ -840,7 +852,7 @@ class Custom_Status extends Module {
 	 * This helper is only used for the check_timestamp_on_publish method above
 	 */
 	public function helper_timestamp_hack() {
-		return ( 'pre_post_date' == current_filter() ) ? current_time( 'mysql' ) : '';
+		return ( 'pre_post_date' === current_filter() ) ? current_time( 'mysql' ) : '';
 	}
 
 	/**
@@ -867,7 +879,7 @@ class Custom_Status extends Module {
 
 		//If empty, keep empty.
 		if ( empty( $postarr['post_date_gmt'] )
-		|| '0000-00-00 00:00:00' == $postarr['post_date_gmt'] ) {
+		|| '0000-00-00 00:00:00' === $postarr['post_date_gmt'] ) {
 			$data['post_date_gmt'] = '0000-00-00 00:00:00';
 		}
 
@@ -951,7 +963,7 @@ class Custom_Status extends Module {
 		|| ! in_array( $post->post_status, $status_slugs )
 		|| ! in_array( $post->post_type, $this->get_post_types_for_module() )
 		|| strpos( $preview_link, 'preview_id' ) !== false
-		|| 'sample' == $post->filter ) {
+		|| 'sample' === $post->filter ) {
 			return $preview_link;
 		}
 
@@ -985,12 +997,12 @@ class Custom_Status extends Module {
 
 		//Are we overriding the permalink? Don't do anything
 		// phpcs:ignore:WordPress.Security.NonceVerification.Missing
-		if ( isset( $_POST['action'] ) && 'sample-permalink' == $_POST['action'] ) {
+		if ( isset( $_POST['action'] ) && 'sample-permalink' === $_POST['action'] ) {
 			return $permalink;
 		}
 
 		//Are we previewing the post from the normal post screen?
-		if ( ( 'post.php' == $pagenow || 'post-new.php' == $pagenow )
+		if ( ( 'post.php' === $pagenow || 'post-new.php' === $pagenow )
 		// phpcs:ignore:WordPress.Security.NonceVerification.Missing
 		&& ! isset( $_POST['wp-preview'] ) ) {
 			return $permalink;
@@ -1144,11 +1156,11 @@ class Custom_Status extends Module {
 	 */
 	private function get_preview_link( $post ) {
 
-		if ( 'page' == $post->post_type ) {
+		if ( 'page' === $post->post_type ) {
 			$args = [
 				'page_id' => $post->ID,
 			];
-		} elseif ( 'post' == $post->post_type ) {
+		} elseif ( 'post' === $post->post_type ) {
 			$args = [
 				'p'       => $post->ID,
 				'preview' => 'true',
@@ -1186,11 +1198,11 @@ class Custom_Status extends Module {
 			return $actions;
 		}
 
-		if ( 'page' == $post->post_type ) {
+		if ( 'page' === $post->post_type ) {
 			$args = [
 				'page_id' => $post->ID,
 			];
-		} elseif ( 'post' == $post->post_type ) {
+		} elseif ( 'post' === $post->post_type ) {
 			$args = [
 				'p' => $post->ID,
 			];
@@ -1231,7 +1243,7 @@ class Custom_Status extends Module {
 
 		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
 
-		if ( $status_before_publish->slug == $post->post_status ) {
+		if ( $status_before_publish->slug === $post->post_status ) {
 			// Post is in the last status, so it can be published
 			return true;
 		} else {

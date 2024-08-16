@@ -43,20 +43,6 @@ class Notifications extends Module {
 	}
 
 	/**
-	 * Load the capabilities onto users the first time the module is run
-	 */
-	public function install() {
-		// Nothing to do here yet
-	}
-
-	/**
-	 * Upgrade our data in case we need to
-	 */
-	public function upgrade( $previous_version ) {
-		// Nothing to do here yet
-	}
-
-	/**
 	 * Set up and send post status change notification email
 	 */
 	public function notification_status_change( $new_status, $old_status, $post ) {
