@@ -27,7 +27,7 @@ import CopyFromAsyncButton from './components/copy-from-async-button';
 /**
  * Custom component to generate and copy a preview link in the post sidebar.
  */
-const VIPWorkflowPreview = ( { status, postType, isDraft } ) => {
+const VIPWorkflowPreview = ( { status, postType, isUnsavedPost } ) => {
 	const [ isModalVisible, setIsModalVisible ] = useState( false );
 	const [ previewUrl, setPreviewUrl ] = useState( null );
 
@@ -35,9 +35,9 @@ const VIPWorkflowPreview = ( { status, postType, isDraft } ) => {
 		return (
 			VW_PREVIEW.custom_status_slugs.includes( status ) &&
 			VW_PREVIEW.custom_post_types.includes( postType ) &&
-			! isDraft
+			! isUnsavedPost
 		);
-	}, [ status, postType, isDraft ] );
+	}, [ status, postType, isUnsavedPost ] );
 
 	const openModal = () => {
 		setIsModalVisible( true );
@@ -220,12 +220,14 @@ const getPostProperties = select => {
 	const { getEditedPostAttribute, getCurrentPostType, getCurrentPost } = select( editorStore );
 
 	const post = getCurrentPost();
-	const isDraft = post?.status === 'auto-draft';
+
+	// Brand-new unsaved posts have the 'auto-draft' status. We can not generate preview links for unsaved posts.
+	const isUnsavedPost = post?.status === 'auto-draft';
 
 	return {
 		status: getEditedPostAttribute( 'status' ),
 		postType: getCurrentPostType(),
-		isDraft,
+		isUnsavedPost,
 	};
 };
 
