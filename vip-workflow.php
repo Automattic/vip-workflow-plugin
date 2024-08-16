@@ -6,7 +6,7 @@
  * Author: WordPress VIP
  * Text Domain: vip-workflow
  * Version: 0.1.0
- * Requires at least: 6.0
+ * Requires at least: 6.6
  * Requires PHP: 8.0
  * License: GPL-3
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
