@@ -103,7 +103,7 @@ class SecurePreviewEndpoint {
 			return $expiration_seconds;
 		}
 
-		$token = Token::generate_token( $post_id, 'edit_posts', $is_one_time_use, $expiration_seconds );
+		$token = Token::generate_token( $post_id, $is_one_time_use, $expiration_seconds );
 
 		if ( is_wp_error( $token ) ) {
 			return $token;
