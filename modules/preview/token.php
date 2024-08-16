@@ -4,18 +4,18 @@
  *
  * @package vip-workflow
  */
-namespace VIPWorkflow\Modules\SecurePreview;
+namespace VIPWorkflow\Modules\Preview;
 
 use WP_Error;
 
 class Token {
-	const META_KEY     = 'vw_secure_preview_token';
+	const META_KEY     = 'vw_preview_token';
 	const TOKEN_ACTION = 'preview';
 
 	/**
 	 * Generate a one-time-use authentication token that can be returned with a
 	 * subsequent request and validated. Upon verification, both the token and the
-	 * expiration should be validated. (See validate_token.)
+	 * expiration should be validated. (See validate_token)
 	 *
 	 * @param  int    $post_id            Post ID.
 	 * @param  string $is_one_time_use    Whether this token should be deleted after one use.

@@ -4,7 +4,7 @@
  * REST endpoint for updating a custom status
  */
 
-namespace VIPWorkflow\Modules\SecurePreview;
+namespace VIPWorkflow\Modules\Preview;
 
 use VIPWorkflow\VIP_Workflow;
 use WP_Error;
@@ -12,7 +12,7 @@ use WP_REST_Request;
 
 defined( 'ABSPATH' ) || exit;
 
-class SecurePreviewEndpoint {
+class PreviewEndpoint {
 	/**
 	 * Initialize the class
 	 */
@@ -45,7 +45,7 @@ class SecurePreviewEndpoint {
 				'expiration'      => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
-						$expiration_options = VIP_Workflow::instance()->secure_preview->get_link_expiration_options();
+						$expiration_options = VIP_Workflow::instance()->preview->get_link_expiration_options();
 						$expiration_values  = wp_list_pluck( $expiration_options, 'value' );
 
 						return in_array( $param, $expiration_values );
@@ -90,11 +90,11 @@ class SecurePreviewEndpoint {
 			$post_status = get_post_status( $post_id );
 
 			if ( 'publish' === $post_status ) {
-				return new WP_Error( 'vip-workflow-published-post', __( 'Secure links can not be generated for published posts.', 'vip-workflow' ) );
+				return new WP_Error( 'vip-workflow-published-post', __( 'Preview links can not be generated for published posts.', 'vip-workflow' ) );
 			} elseif ( 'auto-draft' === $post_status ) {
-				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Posts must be saved before a secure link can be generated.', 'vip-workflow' ) );
+				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Posts must be saved before a preview link can be generated.', 'vip-workflow' ) );
 			} else {
-				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Secure links can only be generated for pre-published posts with a custom status.', 'vip-workflow' ) );
+				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Preview links can only be generated for pre-published posts with a custom status.', 'vip-workflow' ) );
 			}
 		}
 
@@ -135,13 +135,13 @@ class SecurePreviewEndpoint {
 
 	/**
 	 * Given an expiration value (e.g. "1h"), returns the number of seconds that the expiration represents
-	 * or a WP_Error if the value is invalid. Expiration definitions are provided in the secure_preview module.
+	 * or a WP_Error if the value is invalid. Expiration definitions are provided in the preview module.
 	 *
 	 * @param int $expiration_value A value defined in get_link_expiration_options(), e.g. "1h".
 	 * @return int|WP_Error The number of seconds that the expiration represents or a WP_Error if the value is invalid.
 	 */
 	private static function get_expiration_seconds( $expiration_value ) {
-		$expiration_options         = VIP_Workflow::instance()->secure_preview->get_link_expiration_options();
+		$expiration_options         = VIP_Workflow::instance()->preview->get_link_expiration_options();
 		$selected_expiration_option = array_values( array_filter( $expiration_options, function ( $option ) use ( $expiration_value ) {
 			return $option['value'] === $expiration_value;
 		} ) );

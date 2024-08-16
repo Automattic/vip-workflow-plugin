@@ -1,40 +1,40 @@
 <?php
 /**
- * The secure preview module, for sharing pre-published content.
+ * The preview module for sharing pre-published content.
  *
- * @package vip-bundle-decoupled
+ * @package vip-workflow
  */
 
 namespace VIPWorkflow\Modules;
 
 require_once __DIR__ . '/token.php';
-require_once __DIR__ . '/rest/secure-preview.php';
+require_once __DIR__ . '/rest/preview-endpoint.php';
 
-use VIPWorkflow\Modules\SecurePreview\SecurePreviewEndpoint;
+use VIPWorkflow\Modules\Preview\PreviewEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
-use VIPWorkflow\Modules\SecurePreview\Token;
+use VIPWorkflow\Modules\Preview\Token;
 
-class Secure_Preview extends Module {
+class Preview extends Module {
 	public $module;
 
 	public function __construct() {
 		// Register the module with VIP Workflow
 		$this->module_url = $this->get_module_url( __FILE__ );
 
-		$this->module = VIP_Workflow::instance()->register_module( 'secure_preview', [
-			'title'      => __( 'Secure preview', 'vip-workflow' ),
+		$this->module = VIP_Workflow::instance()->register_module( 'preview', [
+			'title'      => __( 'Preview Link', 'vip-workflow' ),
 			'module_url' => $this->module_url,
-			'slug'       => 'secure_preview',
+			'slug'       => 'preview',
 			'autoload'   => true,
 		] );
 	}
 
 	/**
-	 * Initialize secure preview module
+	 * Initialize preview module
 	 */
 	public function init() {
-		SecurePreviewEndpoint::init();
+		PreviewEndpoint::init();
 
 		// Load block editor JS
 		add_action( 'enqueue_block_editor_assets', [ $this, 'load_block_editor_scripts' ], 9 /* Load before custom status module */ );
@@ -44,25 +44,25 @@ class Secure_Preview extends Module {
 
 		// Preview rendering
 		add_filter( 'query_vars', [ $this, 'add_preview_query_vars' ] );
-		add_action( 'posts_results', [ $this, 'allow_secure_preview_results' ], 10, 2 );
+		add_action( 'posts_results', [ $this, 'allow_preview_results' ], 10, 2 );
 	}
 
 	public function load_block_editor_scripts() {
-		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/secure-preview/secure-preview.asset.php';
-		wp_enqueue_script( 'vip-workflow-secure-preview-script', VIP_WORKFLOW_URL . 'dist/modules/secure-preview/secure-preview.js', $asset_file['dependencies'], $asset_file['version'], true );
+		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/preview/preview.asset.php';
+		wp_enqueue_script( 'vip-workflow-preview-script', VIP_WORKFLOW_URL . 'dist/modules/preview/preview.js', $asset_file['dependencies'], $asset_file['version'], true );
 
 		$generate_preview_url = '';
 		$post_id              = get_the_ID();
 
 		if ( $post_id ) {
-			$generate_preview_url = SecurePreviewEndpoint::get_url( $post_id );
+			$generate_preview_url = PreviewEndpoint::get_url( $post_id );
 		}
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 		$custom_status_slugs  = wp_list_pluck( $custom_status_module->get_custom_statuses(), 'slug' );
 		$custom_post_types    = $custom_status_module->get_post_types_for_module();
 
-		wp_localize_script( 'vip-workflow-secure-preview-script', 'VW_SECURE_PREVIEW', [
+		wp_localize_script( 'vip-workflow-preview-script', 'VW_PREVIEW', [
 			'custom_post_types'    => $custom_post_types,
 			'custom_status_slugs'  => $custom_status_slugs,
 			'expiration_options'   => $this->get_link_expiration_options(),
@@ -72,9 +72,9 @@ class Secure_Preview extends Module {
 	}
 
 	public function load_block_editor_styles() {
-		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/secure-preview/secure-preview.asset.php';
+		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/preview/preview.asset.php';
 
-		wp_enqueue_style( 'vip-workflow-secure-preview-styles', VIP_WORKFLOW_URL . 'dist/modules/secure-preview/secure-preview.css', [ 'wp-components' ], $asset_file['version'] );
+		wp_enqueue_style( 'vip-workflow-preview-styles', VIP_WORKFLOW_URL . 'dist/modules/preview/preview.css', [ 'wp-components' ], $asset_file['version'] );
 	}
 
 	public function add_preview_query_vars( $query_vars ) {
@@ -83,7 +83,7 @@ class Secure_Preview extends Module {
 		return $query_vars;
 	}
 
-	public function allow_secure_preview_results( $posts, &$query ) {
+	public function allow_preview_results( $posts, &$query ) {
 		$token = $query->query_vars['vw-token'] ?? false;
 
 		// If there's no token, go back to result processing quickly
@@ -91,7 +91,7 @@ class Secure_Preview extends Module {
 			return $posts;
 		}
 
-		// Only allow secure preview on individual post queries
+		// Only allow preview on individual post queries
 		$is_preview = $query->is_preview() && 1 === count( $posts );
 
 		if ( ! $is_preview ) {
@@ -116,11 +116,11 @@ class Secure_Preview extends Module {
 	}
 
 	/**
-	 * Get the expiration options available in the secure preview modal dropdown.
+	 * Get the expiration options available in the preview modal dropdown.
 	 */
 	public function get_link_expiration_options() {
 		/**
-		 * Filter the expiration options available in the secure preview modal dropdown.
+		 * Filter the expiration options available in the preview modal dropdown.
 		 *
 		 * @param array $expiration_options Array of expiration options. Each option uses keys:
 		 *     'label': The visible label for the option, e.g. "1 hour"
@@ -128,7 +128,7 @@ class Secure_Preview extends Module {
 		 *     'second_count': The number of seconds the this expiration should be valid for, e.g. 3600
 		 *     'default': Optional. Whether this option should be selected by default.
 		 */
-		return apply_filters( 'vw_secure_preview_expiration_options', [
+		return apply_filters( 'vw_preview_expiration_options', [
 			[
 				'label'        => __( '1 hour', 'vip-workflow' ),
 				'value'        => '1h',

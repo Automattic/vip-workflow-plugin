@@ -25,16 +25,16 @@ import { registerPlugin } from '@wordpress/plugins';
 import CopyFromAsyncButton from './components/copy-from-async-button';
 
 /**
- * Custom component to generate and copy a secure preview link in the post sidebar.
+ * Custom component to generate and copy a preview link in the post sidebar.
  */
-const VIPWorkflowSecurePreview = ( { status, postType, isDraft } ) => {
+const VIPWorkflowPreview = ( { status, postType, isDraft } ) => {
 	const [ isModalVisible, setIsModalVisible ] = useState( false );
-	const [ securePreviewUrl, setSecurePreviewUrl ] = useState( null );
+	const [ previewUrl, setPreviewUrl ] = useState( null );
 
-	const isSecurePreviewAvailable = useMemo( () => {
+	const isPreviewAvailable = useMemo( () => {
 		return (
-			VW_SECURE_PREVIEW.custom_status_slugs.includes( status ) &&
-			VW_SECURE_PREVIEW.custom_post_types.includes( postType ) &&
+			VW_PREVIEW.custom_status_slugs.includes( status ) &&
+			VW_PREVIEW.custom_post_types.includes( postType ) &&
 			! isDraft
 		);
 	}, [ status, postType, isDraft ] );
@@ -45,16 +45,14 @@ const VIPWorkflowSecurePreview = ( { status, postType, isDraft } ) => {
 
 	return (
 		<>
-			{ isSecurePreviewAvailable && (
-				<PluginPostStatusInfo className={ `vip-workflow-secure-preview` }>
-					<div className="vip-workflow-secure-preview-row">
-						<div className="vip-workflow-secure-preview-label">
-							{ __( 'Secure Preview', 'vip-workflow' ) }
-						</div>
+			{ isPreviewAvailable && (
+				<PluginPostStatusInfo className={ `vip-workflow-preview` }>
+					<div className="vip-workflow-preview-row">
+						<div className="vip-workflow-preview-label">{ __( 'Preview', 'vip-workflow' ) }</div>
 
-						{ ! securePreviewUrl && (
+						{ ! previewUrl && (
 							<Button
-								className="vip-workflow-secure-preview-button"
+								className="vip-workflow-preview-button"
 								variant="tertiary"
 								size="compact"
 								onClick={ openModal }
@@ -64,13 +62,13 @@ const VIPWorkflowSecurePreview = ( { status, postType, isDraft } ) => {
 						) }
 
 						{ isModalVisible && (
-							<SecurePreviewModal
-								onUrl={ setSecurePreviewUrl }
+							<PreviewModal
+								onUrl={ setPreviewUrl }
 								onCloseModal={ () => setIsModalVisible( false ) }
 							/>
 						) }
 
-						{ securePreviewUrl && <SecurePreviewDropdown url={ securePreviewUrl } /> }
+						{ previewUrl && <PreviewDropdown url={ previewUrl } /> }
 					</div>
 				</PluginPostStatusInfo>
 			) }
@@ -78,33 +76,33 @@ const VIPWorkflowSecurePreview = ( { status, postType, isDraft } ) => {
 	);
 };
 
-const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
+const PreviewModal = ( { onUrl, onCloseModal } ) => {
 	const [ isLoading, setIsLoading ] = useState( false );
 	const [ isOneTimeUse, setIsOneTimeUse ] = useState( false );
 
-	const expirationOptions = VW_SECURE_PREVIEW.expiration_options;
+	const expirationOptions = VW_PREVIEW.expiration_options;
 	const defaultOption =
 		expirationOptions.find( option => option.default === true )?.value ||
 		expirationOptions?.[ 0 ]?.value;
 
 	const [ expiration, setExpiration ] = useState( defaultOption );
 
-	const getSecureUrl = async () => {
+	const getPreviewUrl = async () => {
 		let result = {};
 
 		try {
 			setIsLoading( true );
 
 			result = await apiFetch( {
-				url: VW_SECURE_PREVIEW.url_generate_preview,
+				url: VW_PREVIEW.url_generate_preview,
 				method: 'POST',
 				data: { expiration, is_one_time_use: isOneTimeUse },
 			} );
 		} catch ( error ) {
-			const errorMessage = VW_SECURE_PREVIEW.text_preview_error + ' ' + error.message;
+			const errorMessage = VW_PREVIEW.text_preview_error + ' ' + error.message;
 
 			dispatch( noticesStore ).createErrorNotice( errorMessage, {
-				id: 'vw-secure-preview',
+				id: 'vw-preview',
 				isDismissible: true,
 			} );
 		} finally {
@@ -131,7 +129,7 @@ const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
 	} );
 
 	return (
-		<Modal title="Generate secure preview" size="medium" onRequestClose={ onCloseModal }>
+		<Modal title="Generate preview link" size="medium" onRequestClose={ onCloseModal }>
 			<SelectControl
 				label={ __( 'Link expiration', 'vip-workflow' ) }
 				value={ expiration }
@@ -152,7 +150,7 @@ const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
 
 				<CopyFromAsyncButton
 					variant="primary"
-					asyncFunction={ getSecureUrl }
+					asyncFunction={ getPreviewUrl }
 					onCopied={ handleUrlCopied }
 				>
 					{ __( 'Copy Link', 'vip-workflow' ) }
@@ -162,7 +160,7 @@ const SecurePreviewModal = ( { onUrl, onCloseModal } ) => {
 	);
 };
 
-const SecurePreviewDropdown = ( { url } ) => {
+const PreviewDropdown = ( { url } ) => {
 	const anchorRef = useRef( null );
 
 	const clipboardRef = useCopyToClipboard( url, () => {
@@ -183,7 +181,7 @@ const SecurePreviewDropdown = ( { url } ) => {
 	const urlTail = '/' + url.split( '/' ).pop();
 
 	return (
-		<div className="vip-workflow-secure-preview-dropdown" ref={ anchorRef }>
+		<div className="vip-workflow-preview-dropdown" ref={ anchorRef }>
 			<Dropdown
 				popoverProps={ popoverProps }
 				focusOnMount
@@ -195,8 +193,8 @@ const SecurePreviewDropdown = ( { url } ) => {
 					</Button>
 				) }
 				renderContent={ ( { onClose } ) => (
-					<div className="vip-workflow-secure-link-dropdown-content">
-						<InspectorPopoverHeader title={ __( 'Secure Preview Link' ) } onClose={ onClose } />
+					<div className="vip-workflow-preview-dropdown-content">
+						<InspectorPopoverHeader title={ __( 'Preview Link' ) } onClose={ onClose } />
 						<ExternalLink className="editor-post-url__link" href={ url } target="_blank">
 							{ url }
 						</ExternalLink>
@@ -231,10 +229,10 @@ const getPostProperties = select => {
 	};
 };
 
-const plugin = compose( withSelect( getPostProperties ) )( VIPWorkflowSecurePreview );
+const plugin = compose( withSelect( getPostProperties ) )( VIPWorkflowPreview );
 
-// Register secure preview row in the sidebar
-registerPlugin( 'vip-workflow-secure-preview', {
+// Register preview row in the sidebar
+registerPlugin( 'vip-workflow-preview', {
 	icon: 'vip-workflow',
 	render: plugin,
 } );
