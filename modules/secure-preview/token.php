@@ -54,9 +54,13 @@ class Token {
 	 */
 	public static function validate_token( $token, $post_id ) {
 		$meta_key     = self::META_KEY;
-		$saved_tokens = get_post_meta( $post_id, $meta_key );
+		$saved_tokens = get_post_meta( $post_id, $meta_key, /* single */ false );
 		$current_time = time();
 		$is_valid     = false;
+
+		if ( ! is_array( $saved_tokens ) ) {
+			return false;
+		}
 
 		foreach ( $saved_tokens as $saved ) {
 			$is_expired = false;
