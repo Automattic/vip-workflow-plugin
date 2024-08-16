@@ -1,7 +1,8 @@
 <?php
 /**
- * class EditStatus
- * REST endpoint for updating a custom status
+ * class PreviewEndpoint
+ *
+ * REST endpoint for creating preview links to pre-published content.
  */
 
 namespace VIPWorkflow\Modules\Preview;
