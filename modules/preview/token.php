@@ -6,6 +6,7 @@
  */
 namespace VIPWorkflow\Modules\Preview;
 
+use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 
 class Token {
@@ -53,14 +54,17 @@ class Token {
 	 * @return bool
 	 */
 	public static function validate_token( $token, $post_id ) {
-		$meta_key     = self::META_KEY;
-		$saved_tokens = get_post_meta( $post_id, $meta_key, /* single */ false );
-		$current_time = time();
-		$is_valid     = false;
+		$saved_tokens                = get_post_meta( $post_id, self::META_KEY, /* single */ false );
+		$is_post_using_custom_status = VIP_Workflow::instance()->custom_status->is_post_using_custom_status( $post_id );
 
-		if ( ! is_array( $saved_tokens ) ) {
+		if ( count( $saved_tokens ) > 0 && ! $is_post_using_custom_status ) {
+			// Clear all tokens if this post is no longer using a custom status and return false.
+			delete_post_meta( $post_id, self::META_KEY );
 			return false;
 		}
+
+		$current_time = time();
+		$is_valid     = false;
 
 		foreach ( $saved_tokens as $saved ) {
 			$is_expired = false;
@@ -83,7 +87,7 @@ class Token {
 
 			// Delete expired tokens.
 			if ( $is_expired ) {
-				delete_post_meta( $post_id, $meta_key, $saved );
+				delete_post_meta( $post_id, self::META_KEY, $saved );
 			}
 		}
 
