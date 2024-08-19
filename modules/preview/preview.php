@@ -112,7 +112,7 @@ class Preview extends Module {
 				if ( 1 === count( $posts ) && $posts[0]->ID === $saved_post_id ) {
 					// If this is the same post, reset the status and unregister this callback
 					$posts[0]->post_status = $saved_post_status;
-					remove_filter( 'the_posts', $undo_filter_function );
+					remove_filter( 'the_posts', $undo_filter_function, /* priority */ 5 );
 				}
 
 				return $posts;
@@ -121,7 +121,7 @@ class Preview extends Module {
 			// 'the_posts' filter is called shortly after 'posts_results' in WP_Query::get_posts().
 			// Call $undo_filter_function to reset the post_status to avoid possible side effects from other parts of
 			// WordPress treating the post as published.
-			add_filter( 'the_posts', $undo_filter_function );
+			add_filter( 'the_posts', $undo_filter_function, /* priority */ 5 );
 		} elseif ( current_user_can( 'edit_post', $posts[0]->ID ) ) {
 			// If the user is already able to view this preview and the token is invalid, redirect to the preview URL.
 			// This ensures that an expired token doesn't appear to work for logged-in users due to permissions.
