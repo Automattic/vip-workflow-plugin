@@ -231,12 +231,6 @@ class VIP_Workflow {
 			$display_text = sprintf( '<span class="vip-workflow-error-message vip-workflow-message">%s</span>', esc_html( $current_module->messages[ $error_slug ] ) );
 		}
 
-		if ( $current_module->img_url ) {
-			$page_icon = sprintf( '<img src="%s" class="module-icon icon32" />', esc_url( $current_module->img_url ) );
-		} else {
-			$page_icon = '<div class="icon32" id="icon-options-general"><br/></div>';
-		}
-
 		include_once __DIR__ . '/common/php/views/module-header.php';
 	}
 
@@ -262,7 +256,6 @@ class VIP_Workflow {
 			'title'                => '',
 			'short_description'    => '',
 			'extended_description' => '',
-			'img_url'              => false,
 			'slug'                 => '',
 			'post_type_support'    => '',
 			'default_options'      => [],
@@ -273,7 +266,7 @@ class VIP_Workflow {
 			'messages'             => [
 				'settings-updated' => __( 'Settings updated.', 'vip-workflow' ),
 			],
-			'autoload'             => false, // autoloading a module will remove the ability to enable or disable it
+			'autoload'             => true, // autoloading a module will remove the ability to enable or disable it
 		];
 		if ( isset( $args['messages'] ) ) {
 			$args['messages'] = array_merge( (array) $args['messages'], $defaults['messages'] );

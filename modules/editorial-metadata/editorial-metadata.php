@@ -26,9 +26,7 @@ class Editorial_Metadata extends Module {
 			'short_description'     => __( 'Track details about your posts in progress.', 'vip-workflow' ),
 			'extended_description'  => __( 'Log details on every assignment using configurable editorial metadata. It is completely customizable; create fields for everything from due date to location to contact information to role assignments.', 'vip-workflow' ),
 			'module_url'            => $this->module_url,
-			'img_url'               => $this->module_url . 'lib/notifications_s128.png',
 			'slug'                  => 'editorial-metadata',
-			'autoload'              => true,
 		];
 		$this->module     = VIP_Workflow::instance()->register_module( 'editorial-metadata', $args );
 	}

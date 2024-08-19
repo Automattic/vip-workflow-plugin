@@ -25,9 +25,7 @@ class Notifications extends Module {
 			'short_description'     => __( 'Update your team of important changes to your content.', 'vip-workflow' ),
 			'extended_description'  => __( 'You can keep everyone updated about what is happening with a given content. This is possible through webhook notifications, and emails to admins. Each status change sends out a notification to the specified webhook URL(i.e.: Slack incoming webhooks) and/or email notifications to the admin.', 'vip-workflow' ),
 			'module_url'            => $this->module_url,
-			'img_url'               => $this->module_url . 'lib/notifications_s128.png',
 			'slug'                  => 'notifications',
-			'autoload'              => true,
 		];
 		$this->module     = VIP_Workflow::instance()->register_module( 'notifications', $args );
 	}

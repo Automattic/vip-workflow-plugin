@@ -36,7 +36,6 @@ class Settings extends Module {
 				'webhook_url'         => '',
 			),
 			'configure_page_cb' => 'print_default_settings',
-			'autoload'          => true,
 		);
 		$this->module     = VIP_Workflow::instance()->register_module( 'settings', $args );
 	}
