@@ -117,7 +117,8 @@ class Editorial_Metadata extends Module {
 			wp_enqueue_style( 'vip-workflow-editorial-metadata-styles', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-editorial-metadata-configure', 'VW_EDITORIAL_METADATA_CONFIGURE', [
-				'supported_metadata_types' => $this->get_supported_metadata_types(),
+				'supported_metadata_types' => array_values( $this->get_supported_metadata_types() ),
+				'editorial_metadata_terms' => $this->get_editorial_metadata_terms(),
 				// ToDo: Add the rest urls here
 			] );
 		}
@@ -147,7 +148,7 @@ class Editorial_Metadata extends Module {
 	 */
 	public function insert_editorial_metadata_term( $args ) {
 		// Term is always added to the end of the list
-		$default_position = count( $this->get_editorial_metadata_terms() ) + 2;
+		$default_position = count( $this->get_editorial_metadata_terms() ) + 1;
 
 		$defaults = [
 			'position' => $default_position,

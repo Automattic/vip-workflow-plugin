@@ -1,5 +1,12 @@
-export default function EditorialMetadataManager() {
+import { useState } from '@wordpress/element';
+
+export default function EditorialMetadataManager({ supportedMetadataTypes, editorialMetadataTerms }) {
+	const [availableMetadataTypes, setAvailableMetadataTypes] = useState( supportedMetadataTypes );
+	const [eMetadataTerms, setEMetadataTerms] = useState(editorialMetadataTerms);
+
+	console.log(eMetadataTerms);
+
 	return (<>
-		<p>Editorial Metadata Manager</p>
+		<p>{availableMetadataTypes}</p>
 	</>);
 }

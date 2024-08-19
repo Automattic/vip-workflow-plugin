@@ -454,7 +454,7 @@ class Custom_Status extends Module {
 	 */
 	public function add_custom_status( $term, $args = [] ) {
 		// Term is always added to the end of the list
-		$default_position = count( $this->get_custom_statuses() ) + 2;
+		$default_position = count( $this->get_custom_statuses() ) + 1;
 
 		$slug = ( ! empty( $args['slug'] ) ) ? $args['slug'] : sanitize_title( $term );
 		unset( $args['slug'] );
