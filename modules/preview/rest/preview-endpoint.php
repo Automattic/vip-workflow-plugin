@@ -93,7 +93,7 @@ class PreviewEndpoint {
 			if ( 'publish' === $post_status ) {
 				return new WP_Error( 'vip-workflow-published-post', __( 'Preview links can not be generated for published posts.', 'vip-workflow' ) );
 			} elseif ( 'auto-draft' === $post_status ) {
-				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Posts must be saved before a preview link can be generated.', 'vip-workflow' ) );
+				return new WP_Error( 'vip-workflow-not-saved', __( 'Posts must be saved before a preview link can be generated.', 'vip-workflow' ) );
 			} else {
 				return new WP_Error( 'vip-workflow-not-custom-status', __( 'Preview links can only be generated for pre-published posts with a custom status.', 'vip-workflow' ) );
 			}
