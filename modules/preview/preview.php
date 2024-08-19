@@ -145,7 +145,7 @@ class Preview extends Module {
 		 *
 		 * @param array $expiration_options Array of expiration options. Each option uses keys:
 		 *     'label': The visible label for the option, e.g. "1 hour"
-		 *     'value': The value to be sent to the API, e.g. "1h"
+		 *     'value': The value to be sent to the API, e.g. "1h". This value should be unique.
 		 *     'second_count': The number of seconds the this expiration should be valid for, e.g. 3600
 		 *     'default': Optional. Whether this option should be selected by default.
 		 */
