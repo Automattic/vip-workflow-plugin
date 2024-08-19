@@ -44,7 +44,7 @@ class Preview extends Module {
 
 		// Preview rendering
 		add_filter( 'query_vars', [ $this, 'add_preview_query_vars' ] );
-		add_action( 'posts_results', [ $this, 'allow_preview_results' ], 10, 2 );
+		add_action( 'posts_results', [ $this, 'allow_preview_result' ], 10, 2 );
 	}
 
 	public function load_block_editor_scripts() {
@@ -83,7 +83,7 @@ class Preview extends Module {
 		return $query_vars;
 	}
 
-	public function allow_preview_results( $posts, &$query ) {
+	public function allow_preview_result( $posts, &$query ) {
 		$token = $query->query_vars['vw-token'] ?? false;
 
 		// If there's no token, go back to result processing quickly
@@ -101,10 +101,27 @@ class Preview extends Module {
 		if ( Token::validate_token( $token, $posts[0]->ID ) ) {
 			// Temporarily set post_status to 'publish' to stop WP_Query->get_posts() from clearing out
 			// unpublished posts before render
+			$saved_post_id         = $posts[0]->ID;
+			$saved_post_status     = $posts[0]->post_status;
 			$posts[0]->post_status = 'publish';
 
 			// Change headers and ensure this page isn't cached
 			nocache_headers();
+
+			$undo_filter_function = function ( $posts ) use ( $saved_post_id, $saved_post_status, &$undo_filter_function ) {
+				if ( 1 === count( $posts ) && $posts[0]->ID === $saved_post_id ) {
+					// If this is the same post, reset the status and unregister this callback
+					$posts[0]->post_status = $saved_post_status;
+					remove_filter( 'the_posts', $undo_filter_function );
+				}
+
+				return $posts;
+			};
+
+			// 'the_posts' filter is called shortly after 'posts_results' in WP_Query::get_posts().
+			// Call $undo_filter_function to reset the post_status to avoid possible side effects from other parts of
+			// WordPress treating the post as published.
+			add_filter( 'the_posts', $undo_filter_function );
 		} elseif ( current_user_can( 'edit_post', $posts[0]->ID ) ) {
 			// If the user is already able to view this preview and the token is invalid, redirect to the preview URL.
 			// This ensures that an expired token doesn't appear to work for logged-in users due to permissions.
