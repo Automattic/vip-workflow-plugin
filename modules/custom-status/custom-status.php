@@ -779,10 +779,7 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Primary configuration page for custom status class.
-	 * Shows form to add new custom statuses on the left and a
-	 * WP_List_Table with the custom status terms on the right
-	 *
+	 * Primary configuration page for custom status class, which is also the main entry point for configuring the plugin
 	 */
 	public function print_configure_view() {
 		include_once __DIR__ . '/views/manage-workflow.php';

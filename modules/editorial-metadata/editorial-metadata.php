@@ -4,7 +4,7 @@
  * Class Editorial_Metadata
  * Editorial Metadata for VIP Workflow
  */
-namespace VIP_Workflow\Modules;
+namespace VIPWorkflow\Modules;
 
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
@@ -27,13 +27,17 @@ class Editorial_Metadata extends Module {
 			'extended_description'  => __( 'Log details on every assignment using configurable editorial metadata. It is completely customizable; create fields for everything from due date to location to contact information to role assignments.', 'vip-workflow' ),
 			'module_url'            => $this->module_url,
 			'slug'                  => 'editorial-metadata',
+			'configure_page_cb'    => 'print_configure_view',
 		];
-		$this->module     = VIP_Workflow::instance()->register_module( 'editorial-metadata', $args );
+		$this->module     = VIP_Workflow::instance()->register_module( 'editorial_metadata', $args );
 	}
 
 	public function init() {
 		// Register the taxonomy we use for Editorial Metadata with WordPress core
 		$this->register_taxonomy();
+
+		// Load CSS and JS resources that we probably need in the admin page
+		add_action( 'admin_enqueue_scripts', [ $this, 'action_admin_enqueue_scripts' ] );
 	}
 
 	/**
@@ -99,6 +103,23 @@ class Editorial_Metadata extends Module {
 			if ( ! term_exists( $term['slug'], self::METADATA_TAXONOMY ) ) {
 				$this->insert_editorial_metadata_term( $term );
 			}
+		}
+	}
+
+	/**
+	 * Enqueue resources that we need in the admin settings page
+	 */
+	public function action_admin_enqueue_scripts() {
+		// Load Javascript we need to use on the configuration views
+		if ( $this->is_whitelisted_settings_view() ) {
+			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/editorial-metadata/editorial-metadata-configure.asset.php';
+			wp_enqueue_script( 'vip-workflow-editorial-metadata-configure', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
+			wp_enqueue_style( 'vip-workflow-editorial-metadata-styles', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.css', [ 'wp-components' ], $asset_file['version'] );
+
+			wp_localize_script( 'vip-workflow-editorial-metadata-configure', 'VW_EDITORIAL_METADATA_CONFIGURE', [
+				'supported_metadata_types' => $this->get_supported_metadata_types(),
+				// ToDo: Add the rest urls here
+			] );
 		}
 	}
 
@@ -323,5 +344,9 @@ class Editorial_Metadata extends Module {
 		$this->editorial_metadata_terms_cache = array();
 
 		return $result;
+	}
+
+	public function print_configure_view() {
+		include_once __DIR__ . '/views/manage-editorial-metadata.php';
 	}
 }
