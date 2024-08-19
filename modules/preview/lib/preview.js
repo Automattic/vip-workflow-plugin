@@ -12,6 +12,7 @@ import {
 	__experimentalTruncate as Truncate,
 	Flex,
 	CheckboxControl,
+	Notice,
 } from '@wordpress/components';
 import { compose, useCopyToClipboard } from '@wordpress/compose';
 import { dispatch, withSelect } from '@wordpress/data';
@@ -130,7 +131,15 @@ const PreviewModal = ( { onUrl, onCloseModal } ) => {
 	} );
 
 	return (
-		<Modal title="Generate preview link" size="medium" onRequestClose={ onCloseModal }>
+		<Modal
+			title={ __( 'Generate preview link', 'vip-workflow' ) }
+			size="medium"
+			onRequestClose={ onCloseModal }
+		>
+			<Notice status="warning" isDismissible={ false } className="vip-workflow-link-notice">
+				{ __( 'Anyone with this link will be able to preview the post', 'vip-workflow' ) }
+			</Notice>
+
 			<SelectControl
 				label={ __( 'Link expiration', 'vip-workflow' ) }
 				value={ expiration }
