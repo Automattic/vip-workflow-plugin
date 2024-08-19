@@ -100,7 +100,7 @@ To switch your post status, simply select the new status from the dropdown in th
 
 VIP Workflow adds a "Preview" section to the post sidebar, which allows sharing previews of pre-published content:
 
-![A demo of the generate preview link feature on a pre-published post](media-generate-preview-link)
+![A demo of the generate preview link feature on a pre-published post][media-generate-preview-link]
 
 Anybody with a preview link (including not logged-in users) will be able to view a post with a preview link. Preview links can expire in three ways:
 
@@ -192,7 +192,7 @@ return apply_filters( 'vw_preview_expiration_options', [ /* ... */ ]);
 Here is an example using a shorter set of expiration lengths:
 
 ```php
-add_filter( 'vw_preview_expiration_options', function() {
+add_filter( 'vw_preview_expiration_options', function () {
     return [
         [
             'label'        => '5 minutes',
@@ -216,7 +216,7 @@ add_filter( 'vw_preview_expiration_options', function() {
 
 This generates these custom expiration values in the preiew link dialog:
 
-![Preview link dialog with custom expiration times](media-generate-preview-link-custom-expiration)
+![Preview link dialog with custom expiration times][media-generate-preview-link-custom-expiration]
 
 ## Development
 
