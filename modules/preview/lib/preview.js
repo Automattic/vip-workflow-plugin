@@ -15,7 +15,7 @@ import {
 } from '@wordpress/components';
 import { compose, useCopyToClipboard } from '@wordpress/compose';
 import { dispatch, withSelect } from '@wordpress/data';
-import { store as editorStore, PluginPostStatusInfo } from '@wordpress/editor';
+import { store as editorStore, PluginPostStatusInfo } from '@wordpress/edit-post';
 import { useMemo, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { copySmall } from '@wordpress/icons';
