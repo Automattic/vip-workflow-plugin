@@ -122,6 +122,10 @@ class Preview extends Module {
 			// Call $undo_filter_function to reset the post_status to avoid possible side effects from other parts of
 			// WordPress treating the post as published.
 			add_filter( 'the_posts', $undo_filter_function, /* priority */ 5 );
+		} elseif ( 'publish' === $posts[0]->post_status ) {
+			// If this post is published, redirect to the public URL
+			wp_safe_redirect( get_post_permalink( $posts[0]->ID ) );
+			exit;
 		} elseif ( current_user_can( 'edit_post', $posts[0]->ID ) ) {
 			// If the user is already able to view this preview and the token is invalid, redirect to the preview URL.
 			// This ensures that an expired token doesn't appear to work for logged-in users due to permissions.
