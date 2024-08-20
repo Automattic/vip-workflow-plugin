@@ -2,13 +2,15 @@ import './editor.scss';
 
 import { Button, PanelBody, SelectControl, TextControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
-import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
+import { dispatch, select, subscribe, use, withDispatch, withSelect } from '@wordpress/data';
 import {
 	PluginPostStatusInfo,
 	PluginSidebar,
 	__experimentalMainDashboardButton as MainDashboardButton,
 } from '@wordpress/edit-post';
+import { useEffect, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import { store as interfaceStore } from '@wordpress/interface';
 import { registerPlugin } from '@wordpress/plugins';
 
 /**
@@ -117,46 +119,67 @@ registerPlugin( 'vip-workflow-custom-status', {
 	render: plugin,
 } );
 
+const useInterceptPluginSidebarOpen = ( pluginSidebarIdentifier, callback ) => {
+	use( registry => ( {
+		dispatch: namespace => {
+			const actions = { ...registry.dispatch( namespace ) };
+
+			if ( namespace.name === interfaceStore.name ) {
+				// Intercept enableComplementaryArea, which is used to open the sidebar for PluginSidebar
+				const original_enableComplementaryArea = actions.enableComplementaryArea;
+
+				actions.enableComplementaryArea = function ( scope, identifier ) {
+					if ( 'core' === scope && pluginSidebarIdentifier === identifier ) {
+						// If we're about to open the passed in sidebar, delegate back to the component.
+						// Pass a callback to open the sidebar if desired.
+						callback( () => original_enableComplementaryArea( scope, identifier ) );
+					} else {
+						original_enableComplementaryArea( scope, identifier );
+					}
+				};
+			}
+
+			return actions;
+		},
+	} ) );
+};
+
 // Plugin sidebar button
 
 const CustomSaveButton = () => {
 	return <div className="vip-workflow-save-button">{ __( 'Custom Save' ) }</div>;
 };
 
+const pluginSidebarName = 'vip-workflow-save-button-sidebar';
+
 // Plugin sidebar
 const PluginSidebarExample = () => {
+	const handleClick = openSidebar => {
+		console.log( 'Custom save button clicked!' );
+
+		// Optionally open a sidebar:
+		// openSidebar();
+	};
+
+	useInterceptPluginSidebarOpen( `${ sidebarPluginSlug }/${ pluginSidebarName }`, handleClick );
+
 	const extraProps = {
 		closeLabel: 'Close it!',
 	};
 
 	return (
 		<PluginSidebar
-			name="plugin-sidebar-example"
+			name={ pluginSidebarName }
 			title={ __( 'Custom save button tooltip', 'vip-workflow' ) }
 			className={ 'custom-class-name' }
 			icon={ CustomSaveButton }
 			{ ...extraProps }
 		>
-			<PanelBody>
-				<h2>{ __( 'This is a heading for the PluginSidebar example.' ) }</h2>
-				<p>{ __( 'This is some example text for the PluginSidebar example.' ) }</p>
-				<Button variant="primary">{ __( 'Primary Button' ) } </Button>
-			</PanelBody>
+			{ /* Don't actually show anything in the sidebar */ }
+			{ null }
 		</PluginSidebar>
 	);
 };
 
-registerPlugin( 'plugin-sidebar-example', { render: PluginSidebarExample } );
-
-// MainDashboardButton
-const MainDashboardButtonIconTest = () => (
-	<MainDashboardButton>
-		{ /* <FullscreenModeClose icon={ close } href="http://wordpress.org" /> */ }
-
-		<Button variant="primary">My Button</Button>
-	</MainDashboardButton>
-);
-
-// registerPlugin( 'main-dashboard-button-icon-test', {
-// 	render: MainDashboardButtonIconTest,
-// } );
+const sidebarPluginSlug = 'vip-workflow-save-button-plugin';
+registerPlugin( sidebarPluginSlug, { render: PluginSidebarExample } );
