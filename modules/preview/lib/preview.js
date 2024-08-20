@@ -81,6 +81,9 @@ const VIPWorkflowPreview = ( { status, postType, isUnsavedPost } ) => {
 	);
 };
 
+/*
+ * A Modal component that allows the user to generate a new preview link, providing lifetime and one-time use options.
+ */
 const PreviewModal = ( { onUrl, onCloseModal } ) => {
 	const [ isLoading, setIsLoading ] = useState( false );
 	const [ isOneTimeUse, setIsOneTimeUse ] = useState( false );
@@ -175,6 +178,10 @@ const PreviewModal = ( { onUrl, onCloseModal } ) => {
 	);
 };
 
+/*
+ * A Dropdown component that displays a preview link dropdown in the sidebar. Allows the user to view the
+ * current generated URL, and provides a button to generate a new link.
+ */
 const PreviewDropdown = ( { url, onNewLink } ) => {
 	const anchorRef = useRef( null );
 
