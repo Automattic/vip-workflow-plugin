@@ -164,14 +164,6 @@ class EditStatus {
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
-		// ToDo: Ensure we have a similar error shown when the name is empty when running validate_callback above
-
-		// // Check if name field was filled in
-		// if ( empty( $status_name ) ) {
-		//  $change_error = new WP_Error( 'invalid', esc_html__( 'Please enter a name for the status.', 'vip-workflow' ) );
-		//  die( esc_html( $change_error->get_error_message() ) );
-		// }
-
 		// Check that the name isn't numeric
 		if ( is_numeric( $status_name ) ) {
 			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the status.' );
@@ -190,7 +182,6 @@ class EditStatus {
 		// Check to make sure the status doesn't already exist as another term because otherwise we'd get a fatal error
 		$term_exists = term_exists( $status_slug, Custom_Status::TAXONOMY_KEY );
 
-		// term_id from term_exists is a string, while term_id is an integer so not using strict comparison
 		if ( $term_exists ) {
 			return new WP_Error( 'invalid', 'Status name conflicts with existing term. Please choose another.' );
 		}

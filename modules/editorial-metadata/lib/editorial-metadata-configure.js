@@ -8,10 +8,13 @@ import EditorialMetadataManager from './components/editorial-metadata-manager';
 domReady( () => {
 	const editorialMetadataManagerRoot = document.getElementById( 'editorial-metadata-manager' );
 
-	if (editorialMetadataManagerRoot) {
-		const root = createRoot(editorialMetadataManagerRoot);
+	if ( editorialMetadataManagerRoot ) {
+		const root = createRoot( editorialMetadataManagerRoot );
 		root.render(
-			<EditorialMetadataManager supportedMetadataTypes={ VW_EDITORIAL_METADATA_CONFIGURE.supported_metadata_types } editorialMetadataTerms={ VW_EDITORIAL_METADATA_CONFIGURE.editorial_metadata_terms } />
+			<EditorialMetadataManager
+				supportedMetadataTypes={ VW_EDITORIAL_METADATA_CONFIGURE.supported_metadata_types }
+				editorialMetadataTerms={ VW_EDITORIAL_METADATA_CONFIGURE.editorial_metadata_terms }
+			/>
 		);
 	}
 } );

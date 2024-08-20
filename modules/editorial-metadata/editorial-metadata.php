@@ -6,8 +6,11 @@
  */
 namespace VIPWorkflow\Modules;
 
+require_once __DIR__ . '/rest/editorial-metadata.php';
+
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\EditorialMetadata\REST\EditEditorialMetadata;
 
 class Editorial_Metadata extends Module {
 
@@ -38,6 +41,8 @@ class Editorial_Metadata extends Module {
 
 		// Load CSS and JS resources that we probably need in the admin page
 		add_action( 'admin_enqueue_scripts', [ $this, 'action_admin_enqueue_scripts' ] );
+
+		EditEditorialMetadata::init();
 	}
 
 	/**
@@ -117,9 +122,9 @@ class Editorial_Metadata extends Module {
 			wp_enqueue_style( 'vip-workflow-editorial-metadata-styles', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-editorial-metadata-configure', 'VW_EDITORIAL_METADATA_CONFIGURE', [
-				'supported_metadata_types' => array_values( $this->get_supported_metadata_types() ),
+				'supported_metadata_types' => $this->get_supported_metadata_types(),
 				'editorial_metadata_terms' => $this->get_editorial_metadata_terms(),
-				// ToDo: Add the rest urls here
+				'url_edit_editorial_metadata'    => EditEditorialMetadata::get_crud_url(),
 			] );
 		}
 	}
@@ -129,7 +134,7 @@ class Editorial_Metadata extends Module {
 	 *
 	 * @return array $supported_metadata_types All of the supported metadata
 	 */
-	public function get_supported_metadata_types() {
+	public static function get_supported_metadata_types() {
 		$supported_metadata_types = [
 			'checkbox'      => __( 'Checkbox', 'vip-workflow' ),
 			'date'          => __( 'Date', 'vip-workflow' ),
@@ -140,48 +145,6 @@ class Editorial_Metadata extends Module {
 			'user'          => __( 'User', 'vip-workflow' ),
 		];
 		return $supported_metadata_types;
-	}
-
-	/**
-	 * Insert a new editorial metadata term
-	 * @todo Handle conflicts with existing terms at that position (if relevant)
-	 */
-	public function insert_editorial_metadata_term( $args ) {
-		// Term is always added to the end of the list
-		$default_position = count( $this->get_editorial_metadata_terms() ) + 1;
-
-		$defaults = [
-			'position' => $default_position,
-			'name' => '',
-			'slug' => '',
-			'description' => '',
-			'type' => '',
-			'viewable' => false,
-		];
-		$args = array_merge( $defaults, $args );
-		$term_name = $args['name'];
-		unset( $args['name'] );
-
-		// We're encoding metadata that isn't supported by default in the term's description field
-		$args_to_encode = [
-			'description' => $args['description'],
-			'position' => $args['position'],
-			'type' => $args['type'],
-			'viewable' => $args['viewable'],
-		];
-		$encoded_description = $this->get_encoded_description( $args_to_encode );
-		$args['description'] = $encoded_description;
-
-		unset( $args['position'] );
-		unset( $args['type'] );
-		unset( $args['viewable'] );
-
-		$inserted_term = wp_insert_term( $term_name, self::METADATA_TAXONOMY, $args );
-
-		// Reset the internal object cache
-		$this->editorial_metadata_terms_cache = [];
-
-		return $inserted_term;
 	}
 
 	/**
@@ -211,7 +174,7 @@ class Editorial_Metadata extends Module {
 
 		// Order the terms
 		foreach ( $terms as $key => $term ) {
-			// Unencode and set all of our psuedo term meta because we need the position and viewable if it exists
+			// Unencode and set all of our psuedo term meta because we need the position if it exists
 			$unencoded_description = $this->get_unencoded_description( $term->description );
 			if ( is_array( $unencoded_description ) ) {
 				foreach ( $unencoded_description as $key => $value ) {
@@ -222,11 +185,6 @@ class Editorial_Metadata extends Module {
 			// We require the position key later on
 			if ( ! isset( $term->position ) ) {
 				$term->position = false;
-			}
-
-			// We require the viewable key later on
-			if ( ! isset( $term->viewable ) ) {
-				$term->viewable = false;
 			}
 
 			// Only add the term to the ordered array if it has a set position and doesn't conflict with another key
@@ -278,6 +236,45 @@ class Editorial_Metadata extends Module {
 	}
 
 	/**
+	 * Insert a new editorial metadata term
+	 * @todo Handle conflicts with existing terms at that position (if relevant)
+	 */
+	public function insert_editorial_metadata_term( $args ) {
+		// Term is always added to the end of the list
+		$default_position = count( $this->get_editorial_metadata_terms() ) + 1;
+
+		$defaults = [
+			'position' => $default_position,
+			'name' => '',
+			'slug' => '',
+			'description' => '',
+			'type' => '',
+		];
+		$args = array_merge( $defaults, $args );
+		$term_name = $args['name'];
+		unset( $args['name'] );
+
+		// We're encoding metadata that isn't supported by default in the term's description field
+		$args_to_encode = [
+			'description' => $args['description'],
+			'position' => $args['position'],
+			'type' => $args['type'],
+		];
+		$encoded_description = $this->get_encoded_description( $args_to_encode );
+		$args['description'] = $encoded_description;
+
+		unset( $args['position'] );
+		unset( $args['type'] );
+
+		$inserted_term = wp_insert_term( $term_name, self::METADATA_TAXONOMY, $args );
+
+		// Reset the internal object cache
+		$this->editorial_metadata_terms_cache = [];
+
+		return $inserted_term;
+	}
+
+	/**
 	 * Update an existing editorial metadata term if the term_id exists
 	 *
 	 * @param int $term_id The term's unique ID
@@ -301,7 +298,6 @@ class Editorial_Metadata extends Module {
 			'slug' => $old_term->slug,
 			'description' => $old_term->description,
 			'type' => $old_term->type,
-			'viewable' => $old_term->viewable,
 		);
 
 		$new_args = array_merge( $old_args, $args );
@@ -311,14 +307,12 @@ class Editorial_Metadata extends Module {
 			'description' => $new_args['description'],
 			'position' => $new_args['position'],
 			'type' => $new_args['type'],
-			'viewable' => $new_args['viewable'],
 		);
 		$encoded_description = $this->get_encoded_description( $args_to_encode );
 		$new_args['description'] = $encoded_description;
 
 		unset( $new_args['position'] );
 		unset( $new_args['type'] );
-		unset( $new_args['viewable'] );
 
 		$updated_term = wp_update_term( $term_id, self::METADATA_TAXONOMY, $new_args );
 
