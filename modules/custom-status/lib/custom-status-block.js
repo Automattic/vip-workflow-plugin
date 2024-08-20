@@ -150,7 +150,7 @@ const CustomSaveButton = () => {
 	return <div className="vip-workflow-save-button">{ __( 'Custom Save' ) }</div>;
 };
 
-const pluginSidebarName = 'vip-workflow-save-button-sidebar';
+const saveButtonSidebar = 'vip-workflow-save-button-sidebar';
 
 // Plugin sidebar
 const PluginSidebarExample = () => {
@@ -161,7 +161,7 @@ const PluginSidebarExample = () => {
 		// openSidebar();
 	};
 
-	useInterceptPluginSidebarOpen( `${ sidebarPluginSlug }/${ pluginSidebarName }`, handleClick );
+	useInterceptPluginSidebarOpen( `${ saveButtonPlugin }/${ saveButtonSidebar }`, handleClick );
 
 	const extraProps = {
 		closeLabel: 'Close it!',
@@ -169,7 +169,7 @@ const PluginSidebarExample = () => {
 
 	return (
 		<PluginSidebar
-			name={ pluginSidebarName }
+			name={ saveButtonSidebar }
 			title={ __( 'Custom save button tooltip', 'vip-workflow' ) }
 			className={ 'custom-class-name' }
 			icon={ CustomSaveButton }
@@ -181,5 +181,5 @@ const PluginSidebarExample = () => {
 	);
 };
 
-const sidebarPluginSlug = 'vip-workflow-save-button-plugin';
-registerPlugin( sidebarPluginSlug, { render: PluginSidebarExample } );
+const saveButtonPlugin = 'vip-workflow-save-button-plugin';
+registerPlugin( saveButtonPlugin, { render: PluginSidebarExample } );
