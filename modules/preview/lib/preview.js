@@ -48,6 +48,7 @@ const VIPWorkflowPreview = ( { status, postType, isUnsavedPost } ) => {
 	return (
 		<>
 			{ isPreviewAvailable && (
+				// Sidebar section
 				<PluginPostStatusInfo className={ `vip-workflow-preview` }>
 					<div className="vip-workflow-preview-row">
 						<div className="vip-workflow-preview-label">{ __( 'Preview', 'vip-workflow' ) }</div>
@@ -63,15 +64,15 @@ const VIPWorkflowPreview = ( { status, postType, isUnsavedPost } ) => {
 							</Button>
 						) }
 
+						{ previewUrl && (
+							<PreviewDropdown url={ previewUrl } onNewLink={ handleGenerateLink } />
+						) }
+
 						{ isModalVisible && (
 							<PreviewModal
 								onUrl={ setPreviewUrl }
 								onCloseModal={ () => setIsModalVisible( false ) }
 							/>
-						) }
-
-						{ previewUrl && (
-							<PreviewDropdown url={ previewUrl } onNewLink={ handleGenerateLink } />
 						) }
 					</div>
 				</PluginPostStatusInfo>
@@ -85,6 +86,8 @@ const PreviewModal = ( { onUrl, onCloseModal } ) => {
 	const [ isOneTimeUse, setIsOneTimeUse ] = useState( false );
 
 	const expirationOptions = VW_PREVIEW.expiration_options;
+
+	// Find first option marked with "default" or use the first option provided otherwise
 	const defaultOption =
 		expirationOptions.find( option => option.default === true )?.value ||
 		expirationOptions?.[ 0 ]?.value;
@@ -240,6 +243,10 @@ const PreviewDropdown = ( { url, onNewLink } ) => {
 	);
 };
 
+/*
+ * Get important post properties from the editor store and pass them to the VIPWorkflowPreview component.
+ * These properties will automatically update on post changes like saves.
+ */
 const getPostProperties = select => {
 	const { getEditedPostAttribute, getCurrentPostType, getCurrentPost } = select( editorStore );
 
