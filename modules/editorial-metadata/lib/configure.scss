@@ -1,0 +1,23 @@
+.emetadata-item {
+	display: flex;
+	cursor: move;
+
+	.crud-emetadata {
+		visibility: hidden;
+	}
+
+	.delete-emetadata {
+		margin-right: 0.5rem;
+	}
+
+	.add-emetadata {
+		text-align: right;
+		margin-top: 0.5rem;
+	}
+
+	&:hover {
+		.crud-emetadata {
+			visibility: visible;
+		}
+	}
+}

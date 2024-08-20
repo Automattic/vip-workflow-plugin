@@ -16,7 +16,7 @@ class Editorial_Metadata extends Module {
 
 	public $module;
 
-	private $editorial_metadata_terms_cache = array();
+	private $editorial_metadata_terms_cache = [];
 
 	public function __construct() {
 		// Register the module with VIP Workflow
@@ -94,7 +94,7 @@ class Editorial_Metadata extends Module {
 				'name' => __( 'Word Count', 'vip-workflow' ),
 				'slug' => 'word-count',
 				'type' => 'number',
-				'description' => __( 'Required post length in words..', 'vip-workflow' ),
+				'description' => __( 'Required post length in words.', 'vip-workflow' ),
 			],
 		];
 
@@ -243,6 +243,8 @@ class Editorial_Metadata extends Module {
 		foreach ( $hold_to_end as $unpositioned_term ) {
 			$ordered_terms[] = $unpositioned_term;
 		}
+
+		$ordered_terms = array_values( $ordered_terms );
 
 		// Set the internal object cache
 		$this->editorial_metadata_terms_cache = $ordered_terms;
