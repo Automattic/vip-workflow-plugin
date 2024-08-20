@@ -22,3 +22,28 @@
 		flex-basis: 100%;
 	}
 }
+
+// Use :has() to apply styles to the outer button element containing the .vip-workflow-save-button "icon"
+.interface-pinned-items button.components-button.is-compact:has(.vip-workflow-save-button) {
+	// Allow button to be larger than default icon size of 32px
+	width: initial;
+
+	// Restore regular padding for text
+	padding: 6px 12px;
+
+	// Apply primary button style to the button, rather than the default of tertiary
+	background: var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9));
+	color: var(--wp-components-color-accent-inverted, #fff);
+	outline: 1px solid #0000;
+	text-decoration: none;
+	text-shadow: none;
+	white-space: nowrap;
+
+	&:hover:not(:disabled) {
+		background: var(--wp-components-color-accent-darker-10, var(--wp-admin-theme-color-darker-10, #2145e6));
+		color: var(--wp-components-color-accent-inverted, #fff);
+	}
+
+	// Show this button first in the list of plugin sidebar itemst
+	order: -100;
+}

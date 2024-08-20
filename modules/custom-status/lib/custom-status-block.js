@@ -1,9 +1,13 @@
 import './editor.scss';
 
-import { SelectControl } from '@wordpress/components';
+import { Button, PanelBody, SelectControl, TextControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
-import { PluginPostStatusInfo } from '@wordpress/edit-post';
+import {
+	PluginPostStatusInfo,
+	PluginSidebar,
+	__experimentalMainDashboardButton as MainDashboardButton,
+} from '@wordpress/edit-post';
 import { __ } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
 
@@ -16,47 +20,49 @@ const statuses = window.VipWorkflowCustomStatuses.map( customStatus => ( {
 } ) );
 
 // This is necessary to prevent a call stack exceeded problem within Gutenberg, as our code is called several times for some reason.
-let postLocked = false;
+const postLocked = false;
 
-/**
- * Subscribe to changes so we can set a default status and issue a notice when we lock/unlock the publishing capability.
- */
-subscribe( function () {
-	const postId = select( 'core/editor' ).getCurrentPostId();
-	if ( ! postId ) {
-		// Post isn't ready yet so don't do anything.
-		return;
-	}
+// /**
+//  * Subscribe to changes so we can set a default status and issue a notice when we lock/unlock the publishing capability.
+//  */
+// subscribe( function () {
+// 	const postId = select( 'core/editor' ).getCurrentPostId();
+// 	if ( ! postId ) {
+// 		// Post isn't ready yet so don't do anything.
+// 		return;
+// 	}
 
-	// For new posts, we need to force the default custom status which is the first entry.
-	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
-	if ( isCleanNewPost ) {
-		dispatch( 'core/editor' ).editPost( {
-			status: statuses[ 0 ].value,
-		} );
-	}
+// 	// For new posts, we need to force the default custom status which is the first entry.
+// 	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
+// 	if ( isCleanNewPost ) {
+// 		dispatch( 'core/editor' ).editPost( {
+// 			status: statuses[ 0 ].value,
+// 		} );
+// 	}
 
-	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
-	// check if the post status is in the list of custom statuses, and only then issue the notices
-	if (
-		typeof vw_publish_guard_enabled !== 'undefined' &&
-		vw_publish_guard_enabled &&
-		statuses.find( status => status.value === selectedStatus )
-	) {
-		const has_publish_capability =
-			select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
-		if ( postLocked && has_publish_capability ) {
-			postLocked = false;
-			dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
-		} else if ( ! postLocked && ! has_publish_capability ) {
-			postLocked = true;
-			dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
-				id: 'publish-guard-lock',
-				type: 'snackbar',
-			} );
-		}
-	}
-} );
+// 	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
+// 	// check if the post status is in the list of custom statuses, and only then issue the notices
+// 	if (
+// 		typeof vw_publish_guard_enabled !== 'undefined' &&
+// 		vw_publish_guard_enabled &&
+// 		statuses.find( status => status.value === selectedStatus )
+// 	) {
+// 		const has_publish_capability =
+// 			select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
+
+// 		console.log( 'has_publish_capability: ', has_publish_capability, 'postLocked: ', postLocked );
+// 		if ( postLocked && has_publish_capability ) {
+// 			postLocked = false;
+// 			dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
+// 		} else if ( ! postLocked && ! has_publish_capability ) {
+// 			postLocked = true;
+// 			dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
+// 				id: 'publish-guard-lock',
+// 				type: 'snackbar',
+// 			} );
+// 		}
+// 	}
+// } );
 
 /**
  * Custom status component
@@ -110,3 +116,47 @@ registerPlugin( 'vip-workflow-custom-status', {
 	icon: 'vip-workflow',
 	render: plugin,
 } );
+
+// Plugin sidebar button
+
+const CustomSaveButton = () => {
+	return <div className="vip-workflow-save-button">{ __( 'Custom Save' ) }</div>;
+};
+
+// Plugin sidebar
+const PluginSidebarExample = () => {
+	const extraProps = {
+		closeLabel: 'Close it!',
+	};
+
+	return (
+		<PluginSidebar
+			name="plugin-sidebar-example"
+			title={ __( 'Custom save button tooltip', 'vip-workflow' ) }
+			className={ 'custom-class-name' }
+			icon={ CustomSaveButton }
+			{ ...extraProps }
+		>
+			<PanelBody>
+				<h2>{ __( 'This is a heading for the PluginSidebar example.' ) }</h2>
+				<p>{ __( 'This is some example text for the PluginSidebar example.' ) }</p>
+				<Button variant="primary">{ __( 'Primary Button' ) } </Button>
+			</PanelBody>
+		</PluginSidebar>
+	);
+};
+
+registerPlugin( 'plugin-sidebar-example', { render: PluginSidebarExample } );
+
+// MainDashboardButton
+const MainDashboardButtonIconTest = () => (
+	<MainDashboardButton>
+		{ /* <FullscreenModeClose icon={ close } href="http://wordpress.org" /> */ }
+
+		<Button variant="primary">My Button</Button>
+	</MainDashboardButton>
+);
+
+// registerPlugin( 'main-dashboard-button-icon-test', {
+// 	render: MainDashboardButtonIconTest,
+// } );
