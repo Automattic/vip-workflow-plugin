@@ -41,7 +41,7 @@ const VIPWorkflowPreview = ( { status, postType, isUnsavedPost } ) => {
 		);
 	}, [ status, postType, isUnsavedPost ] );
 
-	const openModal = () => {
+	const handleGenerateLink = () => {
 		setIsModalVisible( true );
 	};
 
@@ -57,7 +57,7 @@ const VIPWorkflowPreview = ( { status, postType, isUnsavedPost } ) => {
 								className="vip-workflow-preview-button"
 								variant="tertiary"
 								size="compact"
-								onClick={ openModal }
+								onClick={ handleGenerateLink }
 							>
 								{ __( 'Generate Link', 'vip-workflow' ) }
 							</Button>
@@ -70,7 +70,9 @@ const VIPWorkflowPreview = ( { status, postType, isUnsavedPost } ) => {
 							/>
 						) }
 
-						{ previewUrl && <PreviewDropdown url={ previewUrl } /> }
+						{ previewUrl && (
+							<PreviewDropdown url={ previewUrl } onNewLink={ handleGenerateLink } />
+						) }
 					</div>
 				</PluginPostStatusInfo>
 			) }
@@ -170,7 +172,7 @@ const PreviewModal = ( { onUrl, onCloseModal } ) => {
 	);
 };
 
-const PreviewDropdown = ( { url } ) => {
+const PreviewDropdown = ( { url, onNewLink } ) => {
 	const anchorRef = useRef( null );
 
 	const clipboardRef = useCopyToClipboard( url, () => {
@@ -208,6 +210,18 @@ const PreviewDropdown = ( { url } ) => {
 						<ExternalLink className="editor-post-url__link" href={ url } target="_blank">
 							{ url }
 						</ExternalLink>
+
+						<Button
+							size="compact"
+							variant="secondary"
+							style={ { marginTop: '1rem' } }
+							onClick={ () => {
+								onClose();
+								onNewLink();
+							} }
+						>
+							{ __( 'Generate a new link', 'vip-workflow' ) }
+						</Button>
 					</div>
 				) }
 			/>
