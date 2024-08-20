@@ -87,7 +87,7 @@ class Settings extends Module {
 		add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
 
 		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ $this, 'helper_option_custom_post_type' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-		add_settings_field( 'publish_guard', __( 'Publish Guard:', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+		add_settings_field( 'publish_guard', __( 'Publish Guard', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 
 		add_settings_field( 'always_notify_admin', __( 'Always notify blog admin', 'vip-workflow' ), [ $this, 'settings_always_notify_admin_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 		add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'vip-workflow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
