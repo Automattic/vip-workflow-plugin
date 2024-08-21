@@ -4,6 +4,7 @@
 		"module": "ES6",
 		"jsx": "preserve",
 		"checkJs": true,
+		"allowUnreachableCode": true
 	},
-	"exclude": [ "node_modules" ],
+	"exclude": [ "node_modules" ]
 }

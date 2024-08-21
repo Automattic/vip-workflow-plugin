@@ -21,13 +21,13 @@ class Notifications extends Module {
 		// Register the module with VIP Workflow
 		$this->module_url = $this->get_module_url( __FILE__ );
 		$args             = [
-			'title'                 => __( 'Notifications', 'vip-workflow' ),
-			'short_description'     => __( 'Update your team of important changes to your content.', 'vip-workflow' ),
-			'extended_description'  => __( 'You can keep everyone updated about what is happening with a given content. This is possible through webhook notifications, and emails to admins. Each status change sends out a notification to the specified webhook URL(i.e.: Slack incoming webhooks) and/or email notifications to the admin.', 'vip-workflow' ),
-			'module_url'            => $this->module_url,
-			'img_url'               => $this->module_url . 'lib/notifications_s128.png',
-			'slug'                  => 'notifications',
-			'autoload'              => true,
+			'title'                => __( 'Notifications', 'vip-workflow' ),
+			'short_description'    => __( 'Update your team of important changes to your content.', 'vip-workflow' ),
+			'extended_description' => __( 'You can keep everyone updated about what is happening with a given content. This is possible through webhook notifications, and emails to admins. Each status change sends out a notification to the specified webhook URL(i.e.: Slack incoming webhooks) and/or email notifications to the admin.', 'vip-workflow' ),
+			'module_url'           => $this->module_url,
+			'img_url'              => $this->module_url . 'lib/notifications_s128.png',
+			'slug'                 => 'notifications',
+			'autoload'             => true,
 		];
 		$this->module     = VIP_Workflow::instance()->register_module( 'notifications', $args );
 	}
@@ -60,7 +60,7 @@ class Notifications extends Module {
 	 * Set up and send post status change notification email
 	 */
 	public function notification_status_change( $new_status, $old_status, $post ) {
-		$supported_post_types = $this->get_post_types_for_module();
+		$supported_post_types = $this->get_supported_post_types();
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
 		}
