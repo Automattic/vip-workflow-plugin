@@ -3,7 +3,7 @@
 namespace VIPWorkflow;
 
 use VIPWorkflow\Common\PHP\Module;
-use VIPWorkflow\Telemetry\Telemetry;
+use VIPWorkflow\Modules\Telemetry\Telemetry;
 use stdClass;
 
 // Core class
