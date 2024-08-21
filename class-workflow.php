@@ -80,7 +80,7 @@ class VIP_Workflow {
 		$class_names = [];
 		foreach ( $module_dirs as $module_dir ) {
 			// Skip the . and .. directories, as well as the shared folder
-			if ( file_exists( VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php" ) && $module_dir !== 'shared' ) {
+			if ( file_exists( VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php" ) && 'shared' !== $module_dir ) {
 				include_once VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php";
 
 				// Prepare the class name because it should be standardized
