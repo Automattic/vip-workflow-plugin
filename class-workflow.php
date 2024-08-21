@@ -3,6 +3,7 @@
 namespace VIPWorkflow;
 
 use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Telemetry\Telemetry;
 use stdClass;
 
 // Core class
@@ -122,6 +123,10 @@ class VIP_Workflow {
 
 		add_action( 'admin_init', [ $this, 'action_admin_init' ] );
 		add_action( 'admin_menu', [ $this, 'action_admin_menu' ] );
+
+		// need to ensure all plugins are loaded first so that the Telemetry
+		// lib is available for use
+		add_action( 'plugin_loaded', [ $this, 'start_tracking' ] );
 	}
 
 	/**
@@ -384,6 +389,16 @@ class VIP_Workflow {
 	 */
 	public function register_scripts_and_styles() {
 		wp_enqueue_style( 'vw-admin-css', VIP_WORKFLOW_URL . 'common/css/vip-workflow-admin.css', false, VIP_WORKFLOW_VERSION, 'all' );
+	}
+
+	/**
+	 * Start tracking events
+	 */
+	public function start_tracking() {
+		if ( class_exists( 'Automattic\VIP\Telemetry\Tracks' ) ) {
+			$telemetry = new Telemetry();
+			$telemetry->init();
+		}
 	}
 }
 
