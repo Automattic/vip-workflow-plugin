@@ -14,6 +14,7 @@ use VIPWorkflow\Modules\EditorialMetadata\REST\EditEditorialMetadata;
 
 class Editorial_Metadata extends Module {
 
+	// ToDo: Review the default metadata types we provide OOB
 	const SUPPORTED_METADATA_TYPES = [
 		'checkbox',
 		'date',
