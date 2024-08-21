@@ -120,13 +120,11 @@ class VIP_Workflow {
 	private function setup_actions() {
 		add_action( 'init', [ $this, 'action_init' ] );
 		add_action( 'init', [ $this, 'action_init_after' ], 1000 );
+		// Load the telemetry module in init as all plugins are loaded by then
+		add_action( 'init', [ $this, 'start_tracking' ] );
 
 		add_action( 'admin_init', [ $this, 'action_admin_init' ] );
 		add_action( 'admin_menu', [ $this, 'action_admin_menu' ] );
-
-		// need to ensure all plugins are loaded first so that the Telemetry
-		// lib is available for use
-		add_action( 'plugin_loaded', [ $this, 'start_tracking' ] );
 	}
 
 	/**
