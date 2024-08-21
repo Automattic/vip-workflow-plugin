@@ -176,7 +176,7 @@ class EditEditorialMetadata {
 
 		$add_editorial_metadata_result = $editorial_metadata_module->insert_editorial_metadata_term( $args );
 
-		return rest_ensure_response($add_editorial_metadata_result);
+		return rest_ensure_response( $add_editorial_metadata_result );
 	}
 
 	/**
@@ -232,7 +232,7 @@ class EditEditorialMetadata {
 		$update_editorial_metadata_result = $editorial_metadata_module->update_editorial_metadata_term( $term_id, $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
-		return rest_ensure_response($update_editorial_metadata_result);
+		return rest_ensure_response( $update_editorial_metadata_result );
 	}
 
 	/**
@@ -254,7 +254,7 @@ class EditEditorialMetadata {
 		$delete_editorial_metadata_result = $editorial_metadata_module->delete_editorial_metadata_term( $term_id );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
-		return rest_ensure_response($delete_editorial_metadata_result);
+		return rest_ensure_response( $delete_editorial_metadata_result );
 	}
 
 	// Public API
