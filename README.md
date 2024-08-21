@@ -24,6 +24,7 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 - [Development](#development)
 	- [Building the plugin](#building-the-plugin)
 	- [Using Hot Module Replacement](#using-hot-module-replacement)
+	- [Tests](#tests)
 - [Credits](#credits)
 
 ## Try it out
@@ -200,6 +201,16 @@ React hot reloading is supported. A few configuration steps are required for the
     If you use `wp-env`, you should be able to skip specifying `HOST` manually.
 
 3. If HMR is not working and you're developing out of a new component tree, you may also need to opt-in to hot module reloading via [`module.hot.accept()`](https://github.com/Automattic/vip-workflow-plugin/blob/e058354/modules/custom-status/lib/custom-status-configure.js#L19-L21)
+
+### Tests
+
+We are currently in the process of writing unit tests to ensure thorough code coverage of the plugin. At the moment, these are just PHP tests which can be run locally using the following:
+
+```
+wp-env start
+composer install
+composer run test
+```
 
 ## Credits
 
