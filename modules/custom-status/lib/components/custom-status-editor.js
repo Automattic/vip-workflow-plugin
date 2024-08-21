@@ -13,7 +13,7 @@ import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect } from 'react';
 
-import ConfirmStatusDeleteModal from './modals/confirm-status-delete-modal';
+import ConfirmDeleteModal from './modals/confirm-delete-modal';
 
 export default function CustomStatusEditor( {
 	status,
@@ -97,8 +97,12 @@ export default function CustomStatusEditor( {
 	};
 
 	const deleteModal = (
-		<ConfirmStatusDeleteModal
-			status={ status }
+		<ConfirmDeleteModal
+			confirmationMessage={
+				'Any existing posts with this status will be reassigned to the first status.'
+			}
+			dataType={ 'status' }
+			name={ status.name }
 			onCancel={ () => setIsConfirmingDelete( false ) }
 			onConfirmDelete={ handleDelete }
 		/>

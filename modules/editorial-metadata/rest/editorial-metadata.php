@@ -45,7 +45,7 @@ class EditEditorialMetadata {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$param = trim( $param );
-						return ! empty( $param ) && in_array( $param, Editorial_Metadata::get_supported_metadata_types() );
+						return ! empty( $param ) && in_array( $param, Editorial_Metadata::SUPPORTED_METADATA_TYPES );
 					},
 					'sanitize_callback' => function ( $param ) {
 						return trim( $param );
@@ -81,7 +81,7 @@ class EditEditorialMetadata {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
-						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
+						$term    = get_term( $term_id, Editorial_Metadata::METADATA_TAXONOMY );
 						return ( $term instanceof WP_Term );
 					},
 					'sanitize_callback' => function ( $param ) {
@@ -92,7 +92,7 @@ class EditEditorialMetadata {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$param = trim( $param );
-						return ! empty( $param ) && in_array( $param, Editorial_Metadata::get_supported_metadata_types() );
+						return ! empty( $param ) && in_array( $param, Editorial_Metadata::SUPPORTED_METADATA_TYPES );
 					},
 					'sanitize_callback' => function ( $param ) {
 						return trim( $param );
@@ -176,11 +176,7 @@ class EditEditorialMetadata {
 
 		$add_editorial_metadata_result = $editorial_metadata_module->insert_editorial_metadata_term( $args );
 
-		if ( is_wp_error( $add_editorial_metadata_result ) ) {
-			return $add_editorial_metadata_result;
-		}
-
-		return $add_editorial_metadata_result;
+		return rest_ensure_response($add_editorial_metadata_result);
 	}
 
 	/**
@@ -236,7 +232,7 @@ class EditEditorialMetadata {
 		$update_editorial_metadata_result = $editorial_metadata_module->update_editorial_metadata_term( $term_id, $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
-		return $update_editorial_metadata_result;
+		return rest_ensure_response($update_editorial_metadata_result);
 	}
 
 	/**
@@ -258,7 +254,7 @@ class EditEditorialMetadata {
 		$delete_editorial_metadata_result = $editorial_metadata_module->delete_editorial_metadata_term( $term_id );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
-		return $delete_editorial_metadata_result;
+		return rest_ensure_response($delete_editorial_metadata_result);
 	}
 
 	// Public API

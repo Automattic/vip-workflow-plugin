@@ -1,5 +1,6 @@
 import { useEffect, useRef } from '@wordpress/element';
 
+// ToDo: Move this to a common components folder.
 export default function SuccessNotice( { success } ) {
 	const messageDivRef = useRef( null );
 

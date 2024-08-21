@@ -14,6 +14,12 @@ use VIPWorkflow\Modules\EditorialMetadata\REST\EditEditorialMetadata;
 
 class Editorial_Metadata extends Module {
 
+	const SUPPORTED_METADATA_TYPES = [
+		'checkbox',
+		'date',
+		'number',
+		'text',
+	];
 	const METADATA_TAXONOMY = 'vw_editorial_meta';
 	const METADATA_POSTMETA_KEY = '_vw_editorial_meta';
 
@@ -86,7 +92,7 @@ class Editorial_Metadata extends Module {
 			[
 				'name' => __( 'Assignment', 'vip-workflow' ),
 				'slug' => 'assignment',
-				'type' => 'paragraph',
+				'type' => 'text',
 				'description' => __( 'What the post needs to cover.', 'vip-workflow' ),
 			],
 			[
@@ -122,29 +128,11 @@ class Editorial_Metadata extends Module {
 			wp_enqueue_style( 'vip-workflow-editorial-metadata-styles', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-editorial-metadata-configure', 'VW_EDITORIAL_METADATA_CONFIGURE', [
-				'supported_metadata_types' => $this->get_supported_metadata_types(),
+				'supported_metadata_types' => self::SUPPORTED_METADATA_TYPES,
 				'editorial_metadata_terms' => $this->get_editorial_metadata_terms(),
 				'url_edit_editorial_metadata'    => EditEditorialMetadata::get_crud_url(),
 			] );
 		}
-	}
-
-	/**
-	 * Prepare an array of supported editorial metadata types
-	 *
-	 * @return array $supported_metadata_types All of the supported metadata
-	 */
-	public static function get_supported_metadata_types() {
-		$supported_metadata_types = [
-			'checkbox'      => __( 'Checkbox', 'vip-workflow' ),
-			'date'          => __( 'Date', 'vip-workflow' ),
-			'location'      => __( 'Location', 'vip-workflow' ),
-			'number'        => __( 'Number', 'vip-workflow' ),
-			'paragraph'     => __( 'Paragraph', 'vip-workflow' ),
-			'text'          => __( 'Text', 'vip-workflow' ),
-			'user'          => __( 'User', 'vip-workflow' ),
-		];
-		return $supported_metadata_types;
 	}
 
 	/**
@@ -271,6 +259,13 @@ class Editorial_Metadata extends Module {
 		// Reset the internal object cache
 		$this->editorial_metadata_terms_cache = [];
 
+		// Populate the inserted term with the new values, or else only the term_taxonomy_id and term_id are returned.
+		if ( is_wp_error( $inserted_term ) ) {
+			return $inserted_term;
+		} else {
+			$inserted_term = $this->get_editorial_metadata_term_by( 'id', $inserted_term['term_id'] );
+		}
+
 		return $inserted_term;
 	}
 
@@ -316,10 +311,15 @@ class Editorial_Metadata extends Module {
 
 		$updated_term = wp_update_term( $term_id, self::METADATA_TAXONOMY, $new_args );
 
-		$updated_term = $this->get_editorial_metadata_term_by( 'id', $term_id );
-
 		// Reset the internal object cache
 		$this->editorial_metadata_terms_cache = [];
+
+		// Populate the updated term with the new values, or else only the term_taxonomy_id and term_id are returned.
+		if ( is_wp_error( $updated_term ) ) {
+			return $updated_term;
+		} else {
+			$updated_term = $this->get_editorial_metadata_term_by( 'id', $term_id );
+		}
 
 		return $updated_term;
 	}
