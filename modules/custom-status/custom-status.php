@@ -465,6 +465,12 @@ class Custom_Status extends Module {
 		$slug = ( ! empty( $args['slug'] ) ) ? $args['slug'] : sanitize_title( $term );
 		unset( $args['slug'] );
 		$encoded_description = $this->get_encoded_description( $args );
+
+		/**
+		 * Fires before a custom status is added to the database.
+		 */
+		do_action( 'vw_add_custom_status', $term, $args );
+
 		$response            = wp_insert_term( $term, self::TAXONOMY_KEY, [
 			'slug'        => $slug,
 			'description' => $encoded_description,
