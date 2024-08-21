@@ -1,1 +1,1 @@
-.emetadata-item{display:flex;cursor:move}.emetadata-item .crud-emetadata{visibility:hidden}.emetadata-item .delete-emetadata{margin-left:.5rem}.emetadata-item:hover .crud-emetadata{visibility:visible}
+.emetadata-items{display:flex;flex-wrap:wrap}.emetadata-items .emetadata-item{width:25%}.emetadata-items .crud-emetadata{visibility:hidden}.emetadata-items .delete-emetadata{margin-left:.5rem;margin-bottom:.5rem}.emetadata-items:hover .crud-emetadata{visibility:visible}

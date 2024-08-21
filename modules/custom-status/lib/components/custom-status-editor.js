@@ -146,7 +146,6 @@ export default function CustomStatusEditor( {
 							style={ {
 								color: '#b32d2e',
 								boxShadow: 'inset 0 0 0 1px #b32d2e',
-								marginRight: 'auto',
 							} }
 						>
 							{ __( 'Delete this status', 'vip-workflow' ) }

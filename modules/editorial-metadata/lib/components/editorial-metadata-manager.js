@@ -4,17 +4,17 @@ import {
 	Card,
 	CardHeader,
 	Flex,
-	FlexBlock,
+	FlexItem,
 	__experimentalHeading as Heading,
 	Notice,
-	__experimentalText as Text,
+	__experimentalText as Text
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
-import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
 import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
+import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
 
 export default function EditorialMetadataManager( {
 	supportedMetadataTypes,
@@ -115,8 +115,8 @@ export default function EditorialMetadataManager( {
 					</Notice>
 				</div>
 			) }
-			<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'end' }>
-				<FlexBlock>
+			<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'start' }>
+				<FlexItem>
 					<Button
 						variant="secondary"
 						onClick={ () => {
@@ -126,16 +126,15 @@ export default function EditorialMetadataManager( {
 					>
 						{ __( 'Add New Metadata', 'vip-workflow' ) }
 					</Button>
-				</FlexBlock>
+				</FlexItem>
 				<Flex
-					className="emetadata-item"
+					className="emetadata-items"
 					direction={ [ 'column', 'row' ] }
 					justify={ 'start' }
-					align={ 'start' }
 				>
 					{ eMetadataTerms.map( eMetadataTerm => {
 						return (
-							<FlexBlock key={ eMetadataTerm.term_id }>
+							<FlexItem className="emetadata-item" key={ eMetadataTerm.term_id }>
 								<Card>
 									<CardHeader>
 										<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'start' }>
@@ -144,7 +143,7 @@ export default function EditorialMetadataManager( {
 												<i>{ eMetadataTerm.description }</i>
 											</Text>
 										</Flex>
-										<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'end' }>
+										<Flex direction={ [ 'column', 'row' ] } justify={ 'end' } align={ 'end' }>
 											<div className="crud-emetadata">
 												<Button
 													className="delete-emetadata"
@@ -158,7 +157,7 @@ export default function EditorialMetadataManager( {
 														boxShadow: 'inset 0 0 0 1px #b32d2e',
 													} }
 												>
-													{ __( 'Delete this field', 'vip-workflow' ) }
+													{ __( 'Delete', 'vip-workflow' ) }
 												</Button>
 												<Button
 													variant="primary"
@@ -173,7 +172,7 @@ export default function EditorialMetadataManager( {
 										</Flex>
 									</CardHeader>
 								</Card>
-							</FlexBlock>
+							</FlexItem>
 						);
 					} ) }
 				</Flex>

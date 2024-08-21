@@ -1,6 +1,10 @@
-.emetadata-item {
+.emetadata-items {
 	display: flex;
-	cursor: move;
+	flex-wrap: wrap;
+
+	.emetadata-item {
+		width: 25%;
+	}
 
 	.crud-emetadata {
 		visibility: hidden;
@@ -8,6 +12,7 @@
 
 	.delete-emetadata {
 		margin-right: 0.5rem;
+		margin-bottom: 0.5rem;
 	}
 
 	&:hover {
