@@ -203,7 +203,7 @@ class EditEditorialMetadata {
 			return new WP_Error( 'invalid', 'Editorial metadata name is too long. Please choose a name that is 200 characters or less.' );
 		}
 
-		// Check to make sure the status doesn't already exist
+		// Check to make sure the editorial metadata doesn't already exist
 		$editorial_metadata_by_id = $editorial_metadata_module->get_editorial_metadata_term_by( 'id', $term_id );
 
 		$editorial_metadata_by_slug = $editorial_metadata_module->get_editorial_metadata_term_by( 'slug', $editorial_metadata_slug );
@@ -220,7 +220,7 @@ class EditEditorialMetadata {
 			return new WP_Error( 'invalid', 'Editorial metadata name conflicts with existing term. Please choose another.' );
 		}
 
-		// get status_name & status_description
+		// get the necessary editorial metadata fields together
 		$args = [
 			'description' => $editorial_metadata_description,
 			'slug'        => $editorial_metadata_slug,
@@ -228,7 +228,7 @@ class EditEditorialMetadata {
 			'name'        => $editorial_metadata_name,
 		];
 
-		// ToDo: Ensure that we don't do an update when the name and description are the same as the current status
+		// ToDo: Ensure that we don't do an update when the name, description and type are the same as the current editorial metadata
 		$update_editorial_metadata_result = $editorial_metadata_module->update_editorial_metadata_term( $term_id, $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
@@ -236,7 +236,7 @@ class EditEditorialMetadata {
 	}
 
 	/**
-	 * Handle a request to delete the status
+	 * Handle a request to delete the editorial metadata
 	 *
 	 * @param WP_REST_Request $request
 	 */
@@ -245,7 +245,7 @@ class EditEditorialMetadata {
 
 		$editorial_metadata_module = VIP_Workflow::instance()->editorial_metadata;
 
-		// Check to make sure the status exists
+		// Check to make sure the editorial metadata exists
 		$editorial_metadata_by_id = $editorial_metadata_module->get_editorial_metadata_term_by( 'id', $term_id );
 		if ( ! $editorial_metadata_by_id ) {
 			return new WP_Error( 'invalid', 'Editorial Metadata does not exist.' );

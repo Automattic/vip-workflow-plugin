@@ -198,6 +198,7 @@ class EditStatus {
 			return $add_status_result;
 		}
 
+		// ToDo: Switch this to give the new status back, and have the client handle the update
 		return [
 			'updated_statuses' => $custom_status_module->get_custom_statuses(),
 		];
@@ -262,6 +263,7 @@ class EditStatus {
 			return $update_status_result;
 		}
 
+		// ToDo: Switch this to give the edited status back, and have the client handle the update
 		return [
 			'updated_statuses' => $custom_status_module->get_custom_statuses(),
 		];
@@ -285,6 +287,7 @@ class EditStatus {
 
 		$delete_status_result = $custom_status_module->delete_custom_status( $term_id );
 
+		// ToDo: Switch this to give back an error or true, and have the client handle the deletion
 		if ( is_wp_error( $delete_status_result ) ) {
 			return $delete_status_result;
 		} else {
@@ -323,6 +326,7 @@ class EditStatus {
 			}
 		}
 
+		// ToDo: Just give back the new order, without this extra field.
 		return [
 			'updated_statuses' => $custom_status_module->get_custom_statuses(),
 		];

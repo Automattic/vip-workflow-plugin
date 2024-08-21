@@ -7,14 +7,14 @@ import {
 	FlexItem,
 	__experimentalHeading as Heading,
 	Notice,
-	__experimentalText as Text
+	__experimentalText as Text,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
+import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
 import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
-import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
 
 export default function EditorialMetadataManager( {
 	supportedMetadataTypes,
@@ -127,11 +127,7 @@ export default function EditorialMetadataManager( {
 						{ __( 'Add New Metadata', 'vip-workflow' ) }
 					</Button>
 				</FlexItem>
-				<Flex
-					className="emetadata-items"
-					direction={ [ 'column', 'row' ] }
-					justify={ 'start' }
-				>
+				<Flex className="emetadata-items" direction={ [ 'column', 'row' ] } justify={ 'start' }>
 					{ eMetadataTerms.map( eMetadataTerm => {
 						return (
 							<FlexItem className="emetadata-item" key={ eMetadataTerm.term_id }>
