@@ -5,10 +5,10 @@ import { useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { plusCircle } from '@wordpress/icons';
 
-import SuccessNotice from '../../../shared/js/components/success-notice';
 import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
+import SuccessNotice from '../../../shared/js/components/success-notice';
 
 export default function WorkflowManager( { customStatuses } ) {
 	const [ success, setSuccess ] = useState( null );
