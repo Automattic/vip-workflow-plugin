@@ -2,7 +2,7 @@
 
 namespace VIPWorkflow\Modules\Telemetry\Events;
 
-use VIPWorkflow\Telemetry\Tracker;
+use VIPWorkflow\Modules\Telemetry\Tracker;
 use WP_Post;
 
 function record_custom_status_change(
