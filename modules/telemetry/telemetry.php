@@ -4,6 +4,8 @@ namespace VIPWorkflow\Modules\Telemetry;
 
 use Automattic\VIP\Telemetry\Tracks;
 
+require_once __DIR__ . '/class-vip-workflow-tracker.php';
+
 class Telemetry {
 	/**
 	 * Tracker instance
