@@ -9,11 +9,11 @@ namespace VIPWorkflow\Modules;
 require_once __DIR__ . '/rest/custom-status.php';
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\CustomStatus\REST\EditStatus;
 use WP_Error;
 use WP_Query;
-use function VIPWorkflow\Common\PHP\_vw_wp_link_page;
+use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
 
 class Custom_Status extends Module {
 

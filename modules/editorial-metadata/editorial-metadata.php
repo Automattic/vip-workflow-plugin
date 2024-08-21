@@ -9,7 +9,7 @@ namespace VIPWorkflow\Modules;
 require_once __DIR__ . '/rest/editorial-metadata.php';
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\EditorialMetadata\REST\EditEditorialMetadata;
 
 class Editorial_Metadata extends Module {

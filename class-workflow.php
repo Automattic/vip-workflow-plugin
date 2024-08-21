@@ -2,7 +2,7 @@
 
 namespace VIPWorkflow;
 
-use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\Shared\PHP\Module;
 use stdClass;
 
 // Core class
@@ -73,13 +73,14 @@ class VIP_Workflow {
 	 */
 	private function load_modules() {
 		// VIP Workflow base module
-		require_once VIP_WORKFLOW_ROOT . '/common/php/class-module.php';
+		require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/class-module.php';
 
 		// Scan the modules directory and include any modules that exist there
 		$module_dirs = scandir( VIP_WORKFLOW_ROOT . '/modules/' );
 		$class_names = [];
 		foreach ( $module_dirs as $module_dir ) {
-			if ( file_exists( VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php" ) ) {
+			// Skip the . and .. directories, as well as the shared folder
+			if ( file_exists( VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php" ) && $module_dir !== 'shared' ) {
 				include_once VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php";
 
 				// Prepare the class name because it should be standardized
@@ -100,7 +101,7 @@ class VIP_Workflow {
 		$this->helpers = new Module();
 
 		// Other utils
-		require_once VIP_WORKFLOW_ROOT . '/common/php/util.php';
+		require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/util.php';
 
 		// Instantiate all of our classes onto the VIP Workflow object
 		// but make sure they exist too
@@ -168,8 +169,6 @@ class VIP_Workflow {
 				$this->update_module_option( $mod_name, 'loaded_once', true );
 			}
 		}
-
-		$this->register_scripts_and_styles();
 	}
 
 	/**
@@ -231,7 +230,7 @@ class VIP_Workflow {
 			$display_text = sprintf( '<span class="vip-workflow-error-message vip-workflow-message">%s</span>', esc_html( $current_module->messages[ $error_slug ] ) );
 		}
 
-		include_once __DIR__ . '/common/php/views/module-header.php';
+		include_once __DIR__ . '/modules/shared/php/views/module-header.php';
 	}
 
 	/**
@@ -370,13 +369,6 @@ class VIP_Workflow {
 		$this->modules->$mod_name->options = $new_options;
 		$this->$mod_name->module           = $this->modules->$mod_name;
 		return update_option( $this->options_group . $mod_name . '_options', $this->modules->$mod_name->options );
-	}
-
-	/**
-	 * Registers commonly used scripts + styles for easy enqueueing
-	 */
-	public function register_scripts_and_styles() {
-		wp_enqueue_style( 'vw-admin-css', VIP_WORKFLOW_URL . 'common/css/vip-workflow-admin.css', false, VIP_WORKFLOW_VERSION, 'all' );
 	}
 }
 

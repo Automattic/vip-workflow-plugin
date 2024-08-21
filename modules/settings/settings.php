@@ -8,7 +8,7 @@
 namespace VIPWorkflow\Modules;
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\Shared\PHP\Module;
 
 class Settings extends Module {
 

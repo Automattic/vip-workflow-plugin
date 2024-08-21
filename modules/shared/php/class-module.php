@@ -5,7 +5,7 @@
  * @desc Base class any module should extend
  */
 
-namespace VIPWorkflow\Common\PHP;
+namespace VIPWorkflow\Modules\Shared\PHP;
 
 use VIPWorkflow\VIP_Workflow;
 

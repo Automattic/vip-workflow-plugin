@@ -13,7 +13,7 @@ import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect } from 'react';
 
-import ConfirmDeleteModal from './modals/confirm-delete-modal';
+import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 
 export default function CustomStatusEditor( {
 	status,

@@ -12,9 +12,9 @@ import {
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
+import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
+import SuccessNotice from '../../../shared/js/components/success-notice';
 import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
-import ConfirmDeleteModal from '../../../custom-status/lib/components/modals/confirm-delete-modal';
-import SuccessNotice from '../../../custom-status/lib/components/success-notice';
 
 export default function EditorialMetadataManager( {
 	supportedMetadataTypes,
