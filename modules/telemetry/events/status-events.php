@@ -1,6 +1,6 @@
 <?php
 
-namespace VIPWorkflow\Telemetry\Events;
+namespace VIPWorkflow\Modules\Telemetry\Events;
 
 use VIPWorkflow\Telemetry\Tracker;
 use WP_Post;

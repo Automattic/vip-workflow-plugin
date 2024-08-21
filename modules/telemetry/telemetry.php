@@ -1,6 +1,6 @@
 <?php
 
-namespace VIPWorkflow\Telemetry;
+namespace VIPWorkflow\Modules\Telemetry;
 
 use Automattic\VIP\Telemetry\Tracks;
 
