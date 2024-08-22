@@ -1,70 +1,69 @@
 import './editor.scss';
 
-import { Button, PanelBody, SelectControl, TextControl } from '@wordpress/components';
+import { SelectControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
-import { dispatch, select, subscribe, use, withDispatch, withSelect } from '@wordpress/data';
-import {
-	PluginPostStatusInfo,
-	PluginSidebar,
-	__experimentalMainDashboardButton as MainDashboardButton,
-} from '@wordpress/edit-post';
-import { useEffect, useRef } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
-import { store as interfaceStore } from '@wordpress/interface';
+import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
+import { PluginPostStatusInfo, PluginSidebar } from '@wordpress/edit-post';
+import { store as editorStore } from '@wordpress/editor';
+import { useMemo } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
+import clsx from 'clsx';
+
+import useInterceptPluginSidebar from './hooks/use-intercept-plugin-sidebar';
 
 /**
  * Map Custom Statuses as options for SelectControl
  */
-const statuses = window.VipWorkflowCustomStatuses.map( customStatus => ( {
+const statusOptions = VW_CUSTOM_STATUSES.status_terms.map( customStatus => ( {
 	label: customStatus.name,
 	value: customStatus.slug,
 } ) );
 
 // This is necessary to prevent a call stack exceeded problem within Gutenberg, as our code is called several times for some reason.
-const postLocked = false;
+let postLocked = false;
 
-// /**
-//  * Subscribe to changes so we can set a default status and issue a notice when we lock/unlock the publishing capability.
-//  */
-// subscribe( function () {
-// 	const postId = select( 'core/editor' ).getCurrentPostId();
-// 	if ( ! postId ) {
-// 		// Post isn't ready yet so don't do anything.
-// 		return;
-// 	}
+/**
+ * Subscribe to changes so we can set a default status.
+ */
+subscribe( function () {
+	const postId = select( 'core/editor' ).getCurrentPostId();
+	if ( ! postId ) {
+		// Post isn't ready yet so don't do anything.
+		return;
+	}
 
-// 	// For new posts, we need to force the default custom status which is the first entry.
-// 	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
-// 	if ( isCleanNewPost ) {
-// 		dispatch( 'core/editor' ).editPost( {
-// 			status: statuses[ 0 ].value,
-// 		} );
-// 	}
+	// For new posts, we need to force the default custom status which is the first entry.
+	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
+	if ( isCleanNewPost ) {
+		dispatch( 'core/editor' ).editPost( {
+			status: statusOptions[ 0 ].value,
+		} );
+	}
 
-// 	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
-// 	// check if the post status is in the list of custom statuses, and only then issue the notices
-// 	if (
-// 		typeof vw_publish_guard_enabled !== 'undefined' &&
-// 		vw_publish_guard_enabled &&
-// 		statuses.find( status => status.value === selectedStatus )
-// 	) {
-// 		const has_publish_capability =
-// 			select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
+	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
 
-// 		console.log( 'has_publish_capability: ', has_publish_capability, 'postLocked: ', postLocked );
-// 		if ( postLocked && has_publish_capability ) {
-// 			postLocked = false;
-// 			dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
-// 		} else if ( ! postLocked && ! has_publish_capability ) {
-// 			postLocked = true;
-// 			dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
-// 				id: 'publish-guard-lock',
-// 				type: 'snackbar',
-// 			} );
-// 		}
-// 	}
-// } );
+	// check if the post status is in the list of custom statuses, and only then issue the notices
+	if (
+		typeof vw_publish_guard_enabled !== 'undefined' &&
+		vw_publish_guard_enabled &&
+		statusOptions.find( status => status.value === selectedStatus )
+	) {
+		const has_publish_capability =
+			select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
+
+		if ( postLocked && has_publish_capability ) {
+			postLocked = false;
+			dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
+		} else if ( ! postLocked && ! has_publish_capability ) {
+			postLocked = true;
+			dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
+				id: 'publish-guard-lock',
+				type: 'snackbar',
+			} );
+		}
+	}
+} );
 
 /**
  * Custom status component
@@ -81,7 +80,7 @@ const VIPWorkflowCustomPostStati = ( { onUpdate, status } ) => (
 		</h4>
 
 		{ status !== 'publish' ? (
-			<SelectControl label="" value={ status } options={ statuses } onChange={ onUpdate } />
+			<SelectControl label="" value={ status } options={ statusOptions } onChange={ onUpdate } />
 		) : null }
 
 		<small className="vip-workflow-extended-post-status-note">
@@ -119,67 +118,97 @@ registerPlugin( 'vip-workflow-custom-status', {
 	render: plugin,
 } );
 
-const useInterceptPluginSidebarOpen = ( pluginSidebarIdentifier, callback ) => {
-	use( registry => ( {
-		dispatch: namespace => {
-			const actions = { ...registry.dispatch( namespace ) };
+const getNextStatusTerm = currentStatus => {
+	const currentIndex = VW_CUSTOM_STATUSES.status_terms.findIndex( t => t.slug === currentStatus );
 
-			if ( namespace.name === interfaceStore.name ) {
-				// Intercept enableComplementaryArea, which is used to open the sidebar for PluginSidebar
-				const original_enableComplementaryArea = actions.enableComplementaryArea;
+	if ( -1 === currentIndex || currentIndex === VW_CUSTOM_STATUSES.status_terms.length - 1 ) {
+		return false;
+	}
 
-				actions.enableComplementaryArea = function ( scope, identifier ) {
-					if ( 'core' === scope && pluginSidebarIdentifier === identifier ) {
-						// If we're about to open the passed in sidebar, delegate back to the component.
-						// Pass a callback to open the sidebar if desired.
-						callback( () => original_enableComplementaryArea( scope, identifier ) );
-					} else {
-						original_enableComplementaryArea( scope, identifier );
-					}
-				};
-			}
-
-			return actions;
-		},
-	} ) );
+	return VW_CUSTOM_STATUSES.status_terms[ currentIndex + 1 ];
 };
 
-// Plugin sidebar button
+const CustomSaveButton = ( { buttonText, isSavingPost } ) => {
+	const classNames = clsx( 'vip-workflow-save-button', {
+		'is-busy': isSavingPost,
+	} );
 
-const CustomSaveButton = () => {
-	return <div className="vip-workflow-save-button">{ __( 'Custom Save' ) }</div>;
+	return <div className={ classNames }>{ buttonText }</div>;
 };
 
 const saveButtonSidebar = 'vip-workflow-save-button-sidebar';
 
 // Plugin sidebar
-const PluginSidebarExample = () => {
-	const handleClick = openSidebar => {
-		console.log( 'Custom save button clicked!' );
+const CustomSaveButtonSidebar = ( { status, isUnsavedPost, isSavingPost, onStatusChange } ) => {
+	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
+	console.log( 'isCleanNewPost:', isCleanNewPost );
 
-		// Optionally open a sidebar:
-		// openSidebar();
+	const handleButtonClick = ( isSidebarActive, toggleSidebar ) => {
+		console.log( 'Custom save button clicked! isSidebarActive' );
 	};
 
-	useInterceptPluginSidebarOpen( `${ saveButtonPlugin }/${ saveButtonSidebar }`, handleClick );
+	useInterceptPluginSidebar( `${ saveButtonPlugin }/${ saveButtonSidebar }`, handleButtonClick );
 
 	const extraProps = {
 		closeLabel: 'Close it!',
 	};
 
+	const nextStatusTerm = useMemo( () => getNextStatusTerm( status ), [ status ] );
+
+	let buttonText;
+
+	if ( isUnsavedPost ) {
+		buttonText = __( 'Save', 'vip-workflow' );
+	} else if ( nextStatusTerm ) {
+		buttonText = sprintf( __( 'Move to %s', 'vip-workflow' ), nextStatusTerm.name );
+	} else {
+		buttonText = __( 'Save', 'vip-workflow' );
+	}
+
+	const SaveButton = <CustomSaveButton buttonText={ buttonText } isSavingPost={ isSavingPost } />;
+
 	return (
 		<PluginSidebar
 			name={ saveButtonSidebar }
-			title={ __( 'Custom save button tooltip', 'vip-workflow' ) }
+			title={ buttonText }
 			className={ 'custom-class-name' }
-			icon={ CustomSaveButton }
+			icon={ SaveButton }
 			{ ...extraProps }
 		>
-			{ /* Don't actually show anything in the sidebar */ }
+			{ /* Sidebar contents */ }
 			{ null }
 		</PluginSidebar>
 	);
 };
 
+const mapSelectProps = select => {
+	const { getEditedPostAttribute, isSavingPost, getCurrentPost } = select( editorStore );
+
+	const post = getCurrentPost();
+
+	// Brand-new unsaved posts have the 'auto-draft' status.
+	const isUnsavedPost = post?.status === 'auto-draft';
+
+	return {
+		status: getEditedPostAttribute( 'status' ),
+		isSavingPost: isSavingPost(),
+		isUnsavedPost,
+	};
+};
+
+const mapDispatchStatusToProps = dispatch => {
+	return {
+		onStatusChange( status ) {
+			dispatch( editorStore ).editPost( { status } );
+		},
+	};
+};
+
 const saveButtonPlugin = 'vip-workflow-save-button-plugin';
-registerPlugin( saveButtonPlugin, { render: PluginSidebarExample } );
+
+registerPlugin( saveButtonPlugin, {
+	render: compose(
+		withSelect( mapSelectProps ),
+		withDispatch( mapDispatchStatusToProps )
+	)( CustomSaveButtonSidebar ),
+} );
