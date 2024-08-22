@@ -5,6 +5,7 @@ namespace VIPWorkflow\Modules\Telemetry;
 use Automattic\VIP\Telemetry\Tracks;
 
 require_once __DIR__ . '/class-vip-workflow-tracker.php';
+require_once __DIR__ . '/events/status-events.php';
 
 class Telemetry {
 	/**
@@ -28,7 +29,7 @@ class Telemetry {
 	public function init(): void {
 		add_action(
 			'transition_post_status',
-			Tracker::track_event( 'VIPWorkflow\Telemetry\Events\record_custom_status_change', $this->tracker ),
+			Tracker::track_event( 'VIPWorkflow\Modules\Telemetry\Events\record_custom_status_change', $this->tracker ),
 			10,
 			3
 		);
