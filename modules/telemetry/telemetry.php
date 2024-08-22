@@ -58,5 +58,11 @@ class Telemetry {
 			10,
 			3
 		);
+		add_action(
+			'vw_upgrade_version',
+			Tracker::track_event( 'VIPWorkflow\Modules\Telemetry\Events\record_admin_update', $this->tracker ),
+			10,
+			3
+		);
 	}
 }

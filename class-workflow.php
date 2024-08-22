@@ -156,6 +156,15 @@ class VIP_Workflow {
 						$this->$mod_name->upgrade( $previous_version );
 				}
 			}
+
+			/**
+			 * Fires when the plugin is upgraded
+			 *
+			 * @param string $previous_version The previous version of the plugin
+			 * @param string $new_version The new version of the plugin
+			 */
+			do_action( 'vw_upgrade_version', $previous_version, VIP_WORKFLOW_VERSION );
+
 			update_option( $this->options_group . 'version', VIP_WORKFLOW_VERSION );
 		} elseif ( ! $previous_version ) {
 			update_option( $this->options_group . 'version', VIP_WORKFLOW_VERSION );
