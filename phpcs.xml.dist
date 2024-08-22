@@ -1,6 +1,34 @@
 <?xml version="1.0"?>
 <ruleset name="Custom ruleset for VIP Workflow">
 
+	<!-- What to scan -->
+	<file>.</file>
+
+	<!-- Ignoring Files and Folders:
+		https://github.com/squizlabs/PHP_CodeSniffer/wiki/Advanced-Usage#ignoring-files-and-folders -->
+
+	<!-- Other directories -->
+	<exclude-pattern>\.git/*</exclude-pattern>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/dist/*</exclude-pattern>
+
+	<!-- How to scan -->
+	<!-- Strip the file paths down to the relevant bit -->
+	<arg name="basepath" value="."/>
+	<!-- Enables parallel processing when available for faster results. -->
+	<arg name="parallel" value="8"/>
+	<!-- Limit to PHP files -->
+	<arg name="extensions" value="php"/>
+	<arg value="s"/>
+
+	<!-- Rules: Check PHP version compatibility - see
+	https://github.com/PHPCompatibility/PHPCompatibilityWP -->
+	<rule ref="PHPCompatibilityWP"/>
+	<!-- For help in understanding this testVersion:
+		https://github.com/PHPCompatibility/PHPCompatibility#sniffing-your-code-for-compatibility-with-specific-php-versions -->
+	<config name="testVersion" value="8.0-"/>
+
 	<rule ref="WordPress-Extra"/>
 	<rule ref="WordPress-VIP-Go">
 		<!-- These disallow anonymous functions as action callbacks -->
@@ -30,10 +58,4 @@
 		<exclude name="Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure" />
 	</rule>
 
-	<file>.</file>
-
-	<exclude-pattern>*/node_modules/*</exclude-pattern>
-	<exclude-pattern>*/vendor/*</exclude-pattern>
-	<exclude-pattern>*/tests/*</exclude-pattern>
-	<exclude-pattern>*/dist/*/*.asset.php</exclude-pattern>
 </ruleset>

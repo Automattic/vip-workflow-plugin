@@ -12,7 +12,7 @@ require_once __DIR__ . '/rest/preview-endpoint.php';
 
 use VIPWorkflow\Modules\Preview\PreviewEndpoint;
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\Preview\Token;
 
 class Preview extends Module {

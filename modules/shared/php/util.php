@@ -1,6 +1,6 @@
 <?php
 
-namespace VIPWorkflow\Common\PHP;
+namespace VIPWorkflow\Modules\Shared\PHP;
 
 if ( ! function_exists( 'vw_draft_or_post_title' ) ) :
 	/**
