@@ -36,3 +36,16 @@ function record_add_custom_status(
 		'args' => $args,
 	] );
 }
+
+function record_delete_custom_status(
+	int $status_id,
+	string $slug,
+	array $args,
+	Tracker $tracker
+	): void {
+	$tracker->record_event( 'delete_custom_status', [
+		'status_id' => $status_id,
+		'slug'      => $slug,
+		'args'      => $args,
+	] );
+}

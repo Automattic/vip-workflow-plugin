@@ -573,6 +573,15 @@ class Custom_Status extends Module {
 			// Reset status cache again, as reassign_post_status() will recache prior statuses
 			$this->custom_statuses_cache = [];
 
+			/**
+			 * Fires before a custom status is deleted from the database.
+			 *
+			 * @param int $status_id The ID of the status being deleted
+			 * @param string $old_status_slug The slug of the status being deleted
+			 * @param array $args The arguments passed to the delete function
+			 */
+			do_action( 'vw_delete_custom_status', $status_id, $old_status_slug, $args );
+
 			return wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
 		} else {
 			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $this->get_custom_status_by( 'id', $status_id )->name . ')' );
