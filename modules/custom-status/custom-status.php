@@ -532,6 +532,14 @@ class Custom_Status extends Module {
 		$encoded_description           = $this->get_encoded_description( $args_to_encode );
 		$args['description']           = $encoded_description;
 
+		/**
+		 * Fires before a custom status is updated in the database.
+		 *
+		 * @param int $status_id The ID of the status being updated
+		 * @param array $args The arguments passed to the update function
+		 */
+		do_action( 'vw_update_custom_status', $status_id, $args );
+
 		$updated_status_array = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
 		$updated_status       = $this->get_custom_status_by( 'id', $updated_status_array['term_id'] );
 
