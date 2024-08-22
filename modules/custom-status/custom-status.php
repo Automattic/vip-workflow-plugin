@@ -672,7 +672,7 @@ class Custom_Status extends Module {
 		$custom_status = array_shift( $custom_status );
 
 		// If $custom_status is null, return false or else return the status object
-		return $custom_status !== null ? $custom_status : false;
+		return null !== $custom_status ? $custom_status : false;
 	}
 
 	/**

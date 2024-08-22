@@ -221,7 +221,7 @@ class Editorial_Metadata extends Module {
 
 		$term = array_shift( $term );
 
-		return $term !== null ? $term : false;
+		return null !== $term ? $term : false;
 	}
 
 	/**
