@@ -3,21 +3,13 @@
 	flex-wrap: wrap;
 
 	.emetadata-item {
-		width: 50%;
-	}
-
-	.crud-emetadata {
-		visibility: hidden;
+		flex: 1 1 350px;
+		width: 120px;
+		min-height: 100px;
 	}
 
 	.delete-emetadata {
 		margin-right: 0.5rem;
 		margin-bottom: 0.5rem;
-	}
-
-	&:hover {
-		.crud-emetadata {
-			visibility: visible;
-		}
 	}
 }

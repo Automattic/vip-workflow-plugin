@@ -101,7 +101,6 @@ export default function CustomStatusEditor( {
 			confirmationMessage={
 				'Any existing posts with this status will be reassigned to the first status.'
 			}
-			dataType={ 'status' }
 			name={ status.name }
 			onCancel={ () => setIsConfirmingDelete( false ) }
 			onConfirmDelete={ handleDelete }

@@ -2,6 +2,7 @@ import apiFetch from '@wordpress/api-fetch';
 import {
 	Button,
 	Card,
+	CardFooter,
 	CardHeader,
 	Flex,
 	FlexItem,
@@ -84,7 +85,6 @@ export default function EditorialMetadataManager( {
 	const deleteModal = (
 		<ConfirmDeleteModal
 			confirmationMessage={ '' }
-			dataType={ 'metadata field' }
 			name={ eMetadataTerm?.name }
 			onCancel={ () => setIsConfirmingDelete( false ) }
 			onConfirmDelete={ handleDelete }
@@ -113,13 +113,12 @@ export default function EditorialMetadataManager( {
 				<FlexItem>
 					<Button
 						variant="secondary"
+						icon={ 'plus' }
 						onClick={ () => {
 							setEMetadataTerm( null );
 							setIsCreateEditModalVisible( true );
 						} }
-					>
-						{ __( 'Add New Metadata', 'vip-workflow' ) }
-					</Button>
+					></Button>
 				</FlexItem>
 				<Flex className="emetadata-items" direction={ [ 'column', 'row' ] } justify={ 'start' }>
 					{ eMetadataTerms.map( eMetadataTerm => {
@@ -133,12 +132,15 @@ export default function EditorialMetadataManager( {
 												<i>{ eMetadataTerm.description }</i>
 											</Text>
 										</Flex>
+									</CardHeader>
+									<CardFooter>
 										<Flex direction={ [ 'column', 'row' ] } justify={ 'end' } align={ 'end' }>
 											<div className="crud-emetadata">
 												<Button
 													size="compact"
 													className="delete-emetadata"
 													variant="secondary"
+													icon={ 'trash' }
 													onClick={ () => {
 														setEMetadataTerm( eMetadataTerm );
 														setIsConfirmingDelete( true );
@@ -147,22 +149,19 @@ export default function EditorialMetadataManager( {
 														color: '#b32d2e',
 														boxShadow: 'inset 0 0 0 1px #b32d2e',
 													} }
-												>
-													{ __( 'Delete', 'vip-workflow' ) }
-												</Button>
+												></Button>
 												<Button
 													size="compact"
 													variant="primary"
+													icon={ 'edit' }
 													onClick={ () => {
 														setEMetadataTerm( eMetadataTerm );
 														setIsCreateEditModalVisible( true );
 													} }
-												>
-													{ __( 'Edit', 'vip-workflow' ) }
-												</Button>
+												></Button>
 											</div>
 										</Flex>
-									</CardHeader>
+									</CardFooter>
 								</Card>
 							</FlexItem>
 						);

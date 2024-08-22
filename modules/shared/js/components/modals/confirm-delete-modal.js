@@ -3,7 +3,6 @@ import { __, sprintf } from '@wordpress/i18n';
 
 export default function ConfirmDeleteModal( {
 	confirmationMessage,
-	dataType,
 	name,
 	onCancel,
 	onConfirmDelete,
@@ -32,7 +31,7 @@ export default function ConfirmDeleteModal( {
 				</Button>
 
 				<Button variant="primary" onClick={ onConfirmDelete } style={ { background: '#b32d2e' } }>
-					{ sprintf( __( 'Delete this %1$s', 'vip-workflow' ), dataType ) }
+					{ __( 'Proceed with Deletion', 'vip-workflow' ) }
 				</Button>
 			</Flex>
 		</Modal>
