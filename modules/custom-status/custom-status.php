@@ -468,6 +468,9 @@ class Custom_Status extends Module {
 
 		/**
 		 * Fires before a custom status is added to the database.
+		 *
+		 * @param string $term The status to add or update
+		 * @param array|string $args Change the values of the inserted term
 		 */
 		do_action( 'vw_add_custom_status', $term, $args );
 

@@ -33,5 +33,11 @@ class Telemetry {
 			10,
 			3
 		);
+		add_action(
+			'vw_add_custom_status',
+			Tracker::track_event( 'VIPWorkflow\Modules\Telemetry\Events\record_add_custom_status', $this->tracker ),
+			10,
+			3
+		);
 	}
 }
