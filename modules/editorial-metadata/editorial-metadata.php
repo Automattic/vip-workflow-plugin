@@ -203,9 +203,10 @@ class Editorial_Metadata extends Module {
 	 * Returns a term for single metadata field
 	 *
 	 * @param int|string $field The slug or ID for the metadata field term to return
-	 * @return object $term Term's object representation
+	 * @return WP_Term|false $term Term's object representation
 	 */
 	public function get_editorial_metadata_term_by( $field, $value ) {
+		// We only support id, slug and name for lookup.
 		if ( ! in_array( $field, [ 'id', 'slug', 'name' ] ) ) {
 			return false;
 		}
@@ -214,14 +215,13 @@ class Editorial_Metadata extends Module {
 			$field = 'term_id';
 		}
 
+		// ToDo: This is inefficient as we are fetching all the terms, and then finding the one that matches.
 		$terms = $this->get_editorial_metadata_terms();
 		$term = wp_filter_object_list( $terms, [ $field => $value ] );
 
-		if ( ! empty( $term ) ) {
-			return array_shift( $term );
-		} else {
-			return false;
-		}
+		$term = array_shift( $term );
+
+		return $term !== null ? $term : false;
 	}
 
 	/**
@@ -279,7 +279,7 @@ class Editorial_Metadata extends Module {
 	*/
 	public function update_editorial_metadata_term( $term_id, $args ) {
 		$old_term = $this->get_editorial_metadata_term_by( 'id', $term_id );
-		if ( ! $old_term || is_wp_error( $old_term ) ) {
+		if ( ! $old_term ) {
 			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ) );
 		}
 
@@ -334,7 +334,7 @@ class Editorial_Metadata extends Module {
 	public function delete_editorial_metadata_term( $term_id ) {
 		$result = wp_delete_term( $term_id, self::METADATA_TAXONOMY );
 
-		if ( ! $result || is_wp_error( $result ) ) {
+		if ( ! $result ) {
 			return new WP_Error( 'invalid', __( 'Unable to delete editorial metadata term.', 'vip-workflow' ) );
 		}
 

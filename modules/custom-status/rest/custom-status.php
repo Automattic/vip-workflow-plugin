@@ -237,7 +237,7 @@ class EditStatus {
 
 		$custom_status_by_slug = $custom_status_module->get_custom_status_by( 'slug', $status_slug );
 
-		if ( $custom_status_by_slug && ( $custom_status_by_id->slug !== $status_slug ) ) {
+		if ( $custom_status_by_slug && $custom_status_by_id && $custom_status_by_id->slug !== $status_slug ) {
 			return new WP_Error( 'invalid', 'Status already exists. Please choose another name.' );
 		}
 

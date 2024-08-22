@@ -208,7 +208,7 @@ class EditEditorialMetadata {
 
 		$editorial_metadata_by_slug = $editorial_metadata_module->get_editorial_metadata_term_by( 'slug', $editorial_metadata_slug );
 
-		if ( $editorial_metadata_by_slug && ( $editorial_metadata_by_id->slug !== $editorial_metadata_slug ) ) {
+		if ( $editorial_metadata_by_slug && $editorial_metadata_by_id && $editorial_metadata_by_id->slug !== $editorial_metadata_slug ) {
 			return new WP_Error( 'invalid', 'Editorial Metadata already exists. Please choose another name.' );
 		}
 

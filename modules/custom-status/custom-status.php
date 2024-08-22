@@ -485,7 +485,7 @@ class Custom_Status extends Module {
 	 */
 	public function update_custom_status( $status_id, $args = [] ) {
 		$old_status = $this->get_custom_status_by( 'id', $status_id );
-		if ( ! $old_status || is_wp_error( $old_status ) ) {
+		if ( ! $old_status ) {
 			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
 		}
 
@@ -523,11 +523,17 @@ class Custom_Status extends Module {
 		$encoded_description           = $this->get_encoded_description( $args_to_encode );
 		$args['description']           = $encoded_description;
 
-		$updated_status_array = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
-		$updated_status       = $this->get_custom_status_by( 'id', $updated_status_array['term_id'] );
+		$updated_status = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
 
 		// Reset status cache again, as reassign_post_status() will recache prior statuses
 		$this->custom_statuses_cache = [];
+
+		// Populate the updated term with the new values, or else only the term_taxonomy_id and term_id are returned.
+		if ( is_wp_error( $updated_status ) ) {
+			return $updated_status;
+		} else {
+			$updated_status = $this->get_custom_status_by( 'id', $status_id );
+		}
 
 		return $updated_status;
 	}
@@ -541,7 +547,7 @@ class Custom_Status extends Module {
 	public function delete_custom_status( $status_id, $args = [] ) {
 		// Get slug for the old status
 		$old_status = $this->get_custom_status_by( 'id', $status_id );
-		if ( ! $old_status || is_wp_error( $old_status ) ) {
+		if ( ! $old_status ) {
 			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
 		}
 
@@ -576,7 +582,7 @@ class Custom_Status extends Module {
 
 			return $result;
 		} else {
-			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $this->get_custom_status_by( 'id', $status_id )->name . ')' );
+			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $old_status->name . ')' );
 		}
 	}
 
@@ -646,10 +652,10 @@ class Custom_Status extends Module {
 	 * Returns the a single status object based on ID, title, or slug
 	 *
 	 * @param string|int $string_or_int The status to search for, either by slug, name or ID
-	 * @return object|WP_Error $status The object for the matching status
+	 * @return WP_Term|false $status The object for the matching status
 	 */
 	public function get_custom_status_by( $field, $value ) {
-
+		// We only support id, slug and name for lookup.
 		if ( ! in_array( $field, [ 'id', 'slug', 'name' ] ) ) {
 			return false;
 		}
@@ -658,14 +664,15 @@ class Custom_Status extends Module {
 			$field = 'term_id';
 		}
 
+		// ToDo: This is inefficient as we are fetching all the terms, and then finding the one that matches.
 		$custom_statuses = $this->get_custom_statuses();
 		$custom_status   = wp_filter_object_list( $custom_statuses, [ $field => $value ] );
 
-		if ( ! empty( $custom_status ) ) {
-			return array_shift( $custom_status );
-		} else {
-			return false;
-		}
+		// array_shift will ensure to set the first one or null if the array is empty
+		$custom_status = array_shift( $custom_status );
+
+		// If $custom_status is null, return false or else return the status object
+		return $custom_status !== null ? $custom_status : false;
 	}
 
 	/**
