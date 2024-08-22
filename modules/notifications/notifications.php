@@ -192,6 +192,15 @@ class Notifications extends Module {
 
 			$body .= $this->get_notification_footer( $post );
 
+			/**
+			 * Fires before a notification is sent
+			 *
+			 * @param WP_Post $post The post object
+			 * @param string $subject The subject of the email
+			 * @param WP_User $current_user The user who is taking the action
+			 */
+			do_action( 'vw_notification_status_change', $post, $subject, $current_user );
+
 			$this->send_email( 'status-change', $post, $subject, $body );
 
 			// ToDo: See how we can optimize this, using batching as well as async processing.

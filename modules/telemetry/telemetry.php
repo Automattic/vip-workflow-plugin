@@ -6,6 +6,7 @@ use Automattic\VIP\Telemetry\Tracks;
 
 require_once __DIR__ . '/class-vip-workflow-tracker.php';
 require_once __DIR__ . '/events/status-events.php';
+require_once __DIR__ . '/events/notification-events.php';
 
 class Telemetry {
 	/**
@@ -50,6 +51,12 @@ class Telemetry {
 			Tracker::track_event( 'VIPWorkflow\Modules\Telemetry\Events\record_update_custom_status', $this->tracker ),
 			10,
 			2
+		);
+		add_action(
+			'vw_notification_status_change',
+			Tracker::track_event( 'VIPWorkflow\Modules\Telemetry\Events\record_notification_sent', $this->tracker ),
+			10,
+			3
 		);
 	}
 }
