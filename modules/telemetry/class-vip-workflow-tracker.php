@@ -24,10 +24,10 @@ class Tracker {
 	/**
 	 * Record an event
 	 *
-	 * @param String $event_name The event name
+	 * @param string $event_name The event name
 	 * @param array $event_data The event data
 	 */
-	public function record_event( String $event_name, array $event_data = [] ): void {
+	public function record_event( string $event_name, array $event_data = [] ): void {
 		$this->tracks->record_event( $event_name, $event_data );
 	}
 
@@ -38,7 +38,7 @@ class Tracker {
 	 * @param Tracker $tracker The Tracker class
 	 * @return callable|null The wrapped callback function
 	 */
-	public static function track_event( String $callback, Tracker $tracker ): callable|null {
+	public static function track_event( string $callback, Tracker $tracker ): callable|null {
 		if ( is_callable( $callback ) ) {
 			return function () use ( $callback, $tracker ) {
 				// get the arguments passed to the callback

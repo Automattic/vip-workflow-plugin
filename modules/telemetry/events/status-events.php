@@ -10,8 +10,8 @@ function record_custom_status_change(
 	string $old_status,
 	WP_Post $post,
 	Tracker $tracker
-	): void {
-	if ( $post->post_type !== 'post' ) {
+): void {
+	if ( 'post' !== $post->post_type ) {
 		return;
 	}
 
@@ -30,7 +30,7 @@ function record_add_custom_status(
 	string $term,
 	array $args,
 	Tracker $tracker
-	): void {
+): void {
 	$tracker->record_event( 'add_custom_status', [
 		'term' => $term,
 		'args' => $args,
@@ -42,7 +42,7 @@ function record_delete_custom_status(
 	string $slug,
 	array $args,
 	Tracker $tracker
-	): void {
+): void {
 	$tracker->record_event( 'delete_custom_status', [
 		'status_id' => $status_id,
 		'slug'      => $slug,
@@ -54,7 +54,7 @@ function record_update_custom_status(
 	int $status_id,
 	array $args,
 	Tracker $tracker
-	): void {
+): void {
 	$tracker->record_event( 'update_custom_status', [
 		'status_id' => $status_id,
 		'args'      => $args,
