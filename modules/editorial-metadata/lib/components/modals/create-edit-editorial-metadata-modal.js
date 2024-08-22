@@ -3,13 +3,15 @@ import { Button, Modal, SelectControl, TextControl, TextareaControl } from '@wor
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
+import ErrorNotice from '../../../../shared/js/components/error-notice';
+
 export default function CreateEditEditorialMetadataModal( {
 	availableMetadataTypes,
 	metadata,
 	onCancel,
 	onSuccess,
-	onErrorThrown,
 } ) {
+	const [ error, setError ] = useState( null );
 	const [ name, setName ] = useState( metadata?.name || '' );
 	const [ description, setDescription ] = useState( metadata?.description || '' );
 	const [ type, setType ] = useState( metadata?.type || availableMetadataTypes[ 0 ].value );
@@ -46,7 +48,7 @@ export default function CreateEditEditorialMetadataModal( {
 				result
 			);
 		} catch ( error ) {
-			onErrorThrown( error.message );
+			setError( error.message );
 		}
 
 		setIsRequesting( false );
@@ -59,12 +61,11 @@ export default function CreateEditEditorialMetadataModal( {
 			onRequestClose={ onCancel }
 			closeButtonLabel={ __( 'Cancel', 'vip-workflow' ) }
 		>
+			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<TextControl
 				help={ __( 'The name is used to identify the editorial metadata field.', 'vip-workflow' ) }
 				label={ __( 'Name', 'vip-workflow' ) }
-				onChange={ value => {
-					setName( value );
-				} }
+				onChange={ setName }
 				value={ name }
 			/>
 			<TextareaControl
@@ -73,9 +74,7 @@ export default function CreateEditEditorialMetadataModal( {
 					'vip-workflow'
 				) }
 				label={ __( 'Description', 'vip-workflow' ) }
-				onChange={ value => {
-					setDescription( value );
-				} }
+				onChange={ setDescription }
 				value={ description }
 			/>
 			<SelectControl
@@ -86,9 +85,7 @@ export default function CreateEditEditorialMetadataModal( {
 				label={ __( 'Type', 'vip-workflow' ) }
 				value={ type }
 				options={ availableMetadataTypes }
-				onChange={ value => {
-					setType( value );
-				} }
+				onChange={ setType }
 			/>
 			<Button variant="primary" onClick={ handleSave } disabled={ isRequesting }>
 				{ metadata ? __( 'Save Changes', 'vip-workflow' ) : __( 'Add Metadata', 'vip-workflow' ) }

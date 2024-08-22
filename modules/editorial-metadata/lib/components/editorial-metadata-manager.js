@@ -6,13 +6,13 @@ import {
 	Flex,
 	FlexItem,
 	__experimentalHeading as Heading,
-	Notice,
 	__experimentalText as Text,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
+import ErrorNotice from '../../../shared/js/components/error-notice';
 import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
 
@@ -26,12 +26,11 @@ export default function EditorialMetadataManager( {
 	const [ eMetadataTerms, setEMetadataTerms ] = useState( editorialMetadataTerms );
 	const [ eMetadataTerm, setEMetadataTerm ] = useState( null );
 	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
-	const [ isModalVisible, setIsModalVisible ] = useState( false );
+	const [ isCreateEditModalVisible, setIsCreateEditModalVisible ] = useState( false );
 
 	const handleErrorThrown = error => {
 		setSuccess( null );
 		setError( error );
-		setIsModalVisible( false );
 		setIsConfirmingDelete( false );
 		setEMetadataTerm( null );
 	};
@@ -39,6 +38,7 @@ export default function EditorialMetadataManager( {
 	const handleSuccess = ( message, eMetadataTermResult ) => {
 		setError( null );
 		setSuccess( message );
+
 		if ( eMetadataTerm && ! isConfirmingDelete ) {
 			setEMetadataTerms(
 				eMetadataTerms.map( eMetadataTerm => {
@@ -57,7 +57,8 @@ export default function EditorialMetadataManager( {
 		} else {
 			setEMetadataTerms( [ ...eMetadataTerms, eMetadataTermResult ] );
 		}
-		setIsModalVisible( false );
+
+		setIsCreateEditModalVisible( false );
 		setIsConfirmingDelete( false );
 	};
 
@@ -99,29 +100,22 @@ export default function EditorialMetadataManager( {
 				};
 			} ) }
 			metadata={ eMetadataTerm }
-			onCancel={ () => setIsModalVisible( false ) }
+			onCancel={ () => setIsCreateEditModalVisible( false ) }
 			onSuccess={ handleSuccess }
-			onErrorThrown={ handleErrorThrown }
 		/>
 	);
 
 	return (
 		<>
 			{ <SuccessNotice success={ success } /> }
-			{ error && (
-				<div style={ { marginBottom: '1rem' } }>
-					<Notice status="error" isDismissible={ true } onRemove={ () => setError( null ) }>
-						<p>{ error }</p>
-					</Notice>
-				</div>
-			) }
+			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'start' }>
 				<FlexItem>
 					<Button
 						variant="secondary"
 						onClick={ () => {
 							setEMetadataTerm( null );
-							setIsModalVisible( true );
+							setIsCreateEditModalVisible( true );
 						} }
 					>
 						{ __( 'Add New Metadata', 'vip-workflow' ) }
@@ -142,6 +136,7 @@ export default function EditorialMetadataManager( {
 										<Flex direction={ [ 'column', 'row' ] } justify={ 'end' } align={ 'end' }>
 											<div className="crud-emetadata">
 												<Button
+													size="compact"
 													className="delete-emetadata"
 													variant="secondary"
 													onClick={ () => {
@@ -156,10 +151,11 @@ export default function EditorialMetadataManager( {
 													{ __( 'Delete', 'vip-workflow' ) }
 												</Button>
 												<Button
+													size="compact"
 													variant="primary"
 													onClick={ () => {
 														setEMetadataTerm( eMetadataTerm );
-														setIsModalVisible( true );
+														setIsCreateEditModalVisible( true );
 													} }
 												>
 													{ __( 'Edit', 'vip-workflow' ) }
@@ -175,7 +171,7 @@ export default function EditorialMetadataManager( {
 			</Flex>
 
 			{ isConfirmingDelete && deleteModal }
-			{ isModalVisible && createEditModal }
+			{ isCreateEditModalVisible && createEditModal }
 		</>
 	);
 }
