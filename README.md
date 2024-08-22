@@ -18,9 +18,11 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 - [Usage](#usage)
 	- [Admin](#admin)
 	- [Editorial Experience](#editorial-experience)
+	- [Preview Links](#preview-links)
 - [Code Filters](#code-filters)
 	- [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
 	- [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
+	- [`vw_preview_expiration_options`](#vw_preview_expiration_options)
 - [Development](#development)
 	- [Building the plugin](#building-the-plugin)
 	- [Using Hot Module Replacement](#using-hot-module-replacement)
@@ -73,7 +75,7 @@ We recommend [activating plugins with code][wpvip-plugin-activate].
 
 ### Admin
 
-Once the plugin is activated, go to the `VIP Workflow` menu in `wp-admin` to configure your workflow. 
+Once the plugin is activated, go to the `VIP Workflow` menu in `wp-admin` to configure your workflow.
 
 By default, the following post statuses are created:
 
@@ -94,6 +96,18 @@ The plugin also sends notifications when a post's status changes. By default, em
 ### Editorial Experience
 
 To switch your post status, simply select the new status from the dropdown in the sidebar.
+
+### Preview Links
+
+VIP Workflow adds a "Preview" section to the post sidebar, which allows sharing previews of pre-published content:
+
+![A demo of the generate preview link feature on a pre-published post][media-generate-preview-link]
+
+Anybody with a preview link (including not logged-in users) will be able to view a post with a preview link. Preview links can expire in three ways:
+
+1. Via expiration. Preview links are generated with an expiration (1 hour, 8 hours, or 1 day by default). When this time has passed, the token URL will no longer be valid.
+2. Via one-time usage. If the "One-time use" checkbox is selected, the preview URL will only work a single time, and then the token will become invalid. If this box is not selected, a preview URL can be used any number of times before expiration.
+3. Via post status changes. If a post moves out of VIP Workflow's set of extended post statuses, tokens will no longer be valid. For example, a post moved to "Publish" will no longer have valid preview tokens.
 
 ## Code Filters
 
@@ -159,9 +173,55 @@ add_filter( 'vw_notification_send_to_webhook_payload', function ( $payload, $act
 }, 10, 4 );
 ```
 
+### `vw_preview_expiration_options`
+
+Change the default expiration options available in the preview URL feature.
+
+```php
+/**
+ * Filter the expiration options available in the preview modal dropdown.
+ *
+ * @param array $expiration_options Array of expiration options. Each option uses keys:
+ *     'label': The visible label for the option, e.g. "1 hour"
+ *     'value': The value to be sent to the API, e.g. "1h". This value should be unique.
+ *     'second_count': The number of seconds the this expiration should be valid for, e.g. 3600
+ *     'default': Optional. Whether this option should be selected by default.
+ */
+return apply_filters( 'vw_preview_expiration_options', [ /* ... */ ]);
+```
+
+Here is an example using a shorter set of expiration lengths:
+
+```php
+add_filter( 'vw_preview_expiration_options', function () {
+    return [
+        [
+            'label'        => '5 minutes',
+            'value'        => '5m',
+            'second_count' => 5 * 60,
+            'default'      => true,
+        ],
+        [
+            'label'        => '15 minutes',
+            'value'        => '15m',
+            'second_count' => 15 * 60,
+        ],
+        [
+            'label'        => '1 hour',
+            'value'        => '1h',
+            'second_count' => 60 * 60,
+        ],
+    ];
+} );
+```
+
+This generates these custom expiration values in the preiew link dialog:
+
+![Preview link dialog with custom expiration times][media-generate-preview-link-custom-expiration]
+
 ## Development
 
-This plugin uses `wp-env` for development, and `wp-env` to run the tests written for the plugin. `wp-env` requires Docker so please ensure you have that installed on your system first. 
+This plugin uses `wp-env` for development, and `wp-env` to run the tests written for the plugin. `wp-env` requires Docker so please ensure you have that installed on your system first.
 
 To install `wp-env`, use the following command:
 
@@ -217,7 +277,8 @@ composer run test
 This plugin has been based on the wonderful [EditFlow](https://github.com/Automattic/Edit-Flow) plugin developed by Daniel Bachhuber, Scott Bressler, Mohammad Jangda, and others.
 
 <!-- Links -->
-[media-playground]: https://github.com/Automattic/vip-workflow-plugin/blob/media/playground-workflow-landing-page.png
+[media-generate-preview-link-custom-expiration]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link-custom-expiration.gif
+[media-generate-preview-link]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link.gif
 [playground-blueprint]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/Automattic/vip-workflow-plugin/trunk/blueprint.json
 [repo-releases]: https://github.com/Automattic/vip-workflow-plugin/releases
 [wpvip-plugin-activate]: https://docs.wpvip.com/how-tos/activate-plugins-through-code/

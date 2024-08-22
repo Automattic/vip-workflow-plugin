@@ -57,7 +57,7 @@ class Editorial_Metadata extends Module {
 	 */
 	public function register_taxonomy() {
 		// We need to make sure taxonomy is registered for all of the post types that support it
-		$supported_post_types = $this->get_post_types_for_module();
+		$supported_post_types = $this->get_supported_post_types();
 
 		register_taxonomy( self::METADATA_TAXONOMY, $supported_post_types,
 			array(

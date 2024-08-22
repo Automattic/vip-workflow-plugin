@@ -214,7 +214,7 @@ class Custom_Status extends Module {
 			$post_type = $this->get_current_post_type();
 		}
 
-		if ( $post_type && ! in_array( $post_type, $this->get_post_types_for_module() ) ) {
+		if ( $post_type && ! in_array( $post_type, $this->get_supported_post_types() ) ) {
 			return true;
 		}
 
@@ -271,7 +271,7 @@ class Custom_Status extends Module {
 	public function load_styles_for_block_editor() {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 
-		wp_enqueue_style( 'edit-flow-workflow-manager-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.css', [ 'wp-components' ], $asset_file['version'] );
+		wp_enqueue_style( 'vip-workflow-manager-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.css', [ 'wp-components' ], $asset_file['version'] );
 	}
 
 	/**
@@ -282,7 +282,7 @@ class Custom_Status extends Module {
 	public function is_whitelisted_page() {
 		global $pagenow;
 
-		if ( ! in_array( $this->get_current_post_type(), $this->get_post_types_for_module() ) ) {
+		if ( ! in_array( $this->get_current_post_type(), $this->get_supported_post_types() ) ) {
 			return false;
 		}
 
@@ -404,7 +404,7 @@ class Custom_Status extends Module {
 		}
 
 		// Bail early if the post type is not supported or if its a not supported capability for this guard
-		if ( ! in_array( $post->post_type, $this->get_post_types_for_module() ) || ! isset( $supported_publish_caps_map[ $post->post_type ] ) ) {
+		if ( ! in_array( $post->post_type, $this->get_supported_post_types() ) || ! isset( $supported_publish_caps_map[ $post->post_type ] ) ) {
 			return $allcaps;
 		}
 
@@ -415,7 +415,7 @@ class Custom_Status extends Module {
 		}
 
 		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
-		$status_slugs = wp_list_pluck( $custom_statuses, 'slug' );
+		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
 
 		// Bail early if the post is not using a custom status
 		if ( ! in_array( $post->post_status, $status_slugs ) ) {
@@ -684,7 +684,7 @@ class Custom_Status extends Module {
 	 */
 	public function reassign_post_status( $old_status, $new_status ) {
 		$old_status_post_ids = ( new WP_Query( [
-			'post_type'      => $this->get_post_types_for_module( $this->module ),
+			'post_type'      => $this->get_supported_post_types(),
 			'post_status'    => $old_status,
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
@@ -734,7 +734,7 @@ class Custom_Status extends Module {
 	 * @return array $post_states
 	 */
 	public function add_status_to_post_states( $post_states, $post ) {
-		if ( ! in_array( $post->post_type, $this->get_post_types_for_module(), true ) ) {
+		if ( ! in_array( $post->post_type, $this->get_supported_post_types(), true ) ) {
 			// Return early if this post type doesn't support custom statuses.
 			return $post_states;
 		}
@@ -901,7 +901,7 @@ class Custom_Status extends Module {
 
 		// Ignore if it's not a post status and post type we support
 		if ( ! in_array( $data['post_status'], $status_slugs )
-		|| ! in_array( $data['post_type'], $this->get_post_types_for_module() ) ) {
+		|| ! in_array( $data['post_type'], $this->get_supported_post_types() ) ) {
 			return $data;
 		}
 
@@ -929,7 +929,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		if ( ! in_array( $post_status, $status_slugs )
-		|| ! in_array( $post_type, $this->get_post_types_for_module() ) ) {
+		|| ! in_array( $post_type, $this->get_supported_post_types() ) ) {
 			return null;
 		}
 
@@ -963,7 +963,7 @@ class Custom_Status extends Module {
 		|| ! is_admin()
 		|| 'post.php' != $pagenow
 		|| ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_post_types_for_module() )
+		|| ! in_array( $post->post_type, $this->get_supported_post_types() )
 		|| strpos( $preview_link, 'preview_id' ) !== false
 		|| 'sample' === $post->filter ) {
 			return $preview_link;
@@ -988,7 +988,7 @@ class Custom_Status extends Module {
 		}
 
 		//Should we be doing anything at all?
-		if ( ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
+		if ( ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
 			return $permalink;
 		}
 
@@ -1057,7 +1057,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		if ( ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
+		|| ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
 			return $permalink;
 		}
 
@@ -1099,7 +1099,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		if ( ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
+		|| ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
 			return $permalink;
 		}
 
@@ -1191,7 +1191,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 		if ( 'edit.php' != $pagenow
 		|| ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
+		|| ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
 			return $actions;
 		}
 
@@ -1238,7 +1238,7 @@ class Custom_Status extends Module {
 		$custom_statuses = $this->get_custom_statuses();
 		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
 
-		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_post_types_for_module() ) ) {
+		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
 			// Post is not using a custom status, or is not a supported post type
 			return false;
 		}
@@ -1251,6 +1251,27 @@ class Custom_Status extends Module {
 		} else {
 			return false;
 		}
+	}
+
+
+	/**
+	 * Given a post ID, return true if the post type is supported and using a custom status, false otherwise.
+	 *
+	 * @param int $post_id The post ID being queried.
+	 * @return bool True if the post is using a custom status, false otherwise.
+	 */
+	public function is_post_using_custom_status( $post_id ) {
+		$post = get_post( $post_id );
+
+		if ( null === $post ) {
+			return false;
+		}
+
+		$custom_post_types = $this->get_supported_post_types();
+		$custom_statuses   = $this->get_custom_statuses();
+		$status_slugs      = wp_list_pluck( $custom_statuses, 'slug' );
+
+		return in_array( $post->post_type, $custom_post_types ) && in_array( $post->post_status, $status_slugs );
 	}
 
 	/**

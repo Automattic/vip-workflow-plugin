@@ -2,7 +2,7 @@ const defaultScriptsConfig = require( '@wordpress/scripts/config/webpack.config'
 const glob = require( 'glob' );
 require( 'dotenv' ).config();
 
-const wpScriptsModules = [ 'custom-status', 'editorial-metadata' ];
+const wpScriptsModules = [ 'custom-status', 'editorial-metadata', 'preview' ];
 const wpScriptsModulesGlob =
 	wpScriptsModules.length === 1 ? wpScriptsModules[ 0 ] : `{${ wpScriptsModules.join( ',' ) }}`;
 
