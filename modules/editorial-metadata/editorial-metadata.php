@@ -12,6 +12,8 @@ use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\EditorialMetadata\REST\EditEditorialMetadata;
 
+use WP_Error;
+
 class Editorial_Metadata extends Module {
 
 	// ToDo: Review the default metadata types we provide OOB
