@@ -1,4 +1,6 @@
-import { PanelRow, TextControl } from '@wordpress/components';
+import { PanelBody, TextControl } from '@wordpress/components';
+import { compose } from '@wordpress/compose';
+import { withDispatch, withSelect } from '@wordpress/data';
 import { PluginDocumentSettingPanel } from '@wordpress/edit-post';
 import { registerPlugin } from '@wordpress/plugins';
 import './editor.scss';
@@ -11,24 +13,48 @@ const editorialMetadatas = window.VipWorkflowEditorialMetadatas.map( editorialMe
 	description: editorialMetadata.description,
 } ) );
 
-function CustomMetaPanel() {
-	return (
-		<PluginDocumentSettingPanel name="editorialMetadataPanel" title="Editorial Metadata">
-			<PanelRow>
-				{ editorialMetadatas.map( editorialMetadata => (
+const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
+	<PluginDocumentSettingPanel name="editorialMetadataPanel" title="Editorial Metadata">
+		<PanelBody>
+			{ editorialMetadatas
+				.filter( editorialMetadata => editorialMetadata.type === 'text' )
+				.map( editorialMetadata => (
 					<TextControl
 						key={ editorialMetadata.key }
 						label={ editorialMetadata.label }
-						value={ editorialMetadata.type }
 						className={ editorialMetadata.key }
+						onChange={ value =>
+							setMetaFields( {
+								...metaFields,
+								[ editorialMetadata.key ]: value,
+							} )
+						}
 					/>
 				) ) }
-			</PanelRow>
-		</PluginDocumentSettingPanel>
-	);
-}
+		</PanelBody>
+	</PluginDocumentSettingPanel>
+);
+
+const applyWithSelect = select => {
+	return {
+		metaFields: select( 'core/editor' ).getEditedPostAttribute( 'meta' ),
+	};
+};
+
+const applyWithDispatch = dispatch => {
+	return {
+		setMetaFields( newValue ) {
+			dispatch( 'core/editor' ).editPost( { meta: newValue } );
+		},
+	};
+};
+
+const plugin = compose(
+	withSelect( applyWithSelect ),
+	withDispatch( applyWithDispatch )
+)( CustomMetaPanel );
 
 registerPlugin( 'vip-workflow-editorial-metadata', {
-	render: CustomMetaPanel,
+	render: plugin,
 	icon: 'vip-workflow',
 } );
