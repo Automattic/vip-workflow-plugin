@@ -7,6 +7,7 @@ use Automattic\VIP\Telemetry\Tracks;
 require_once __DIR__ . '/class-vip-workflow-tracker.php';
 require_once __DIR__ . '/events/status-events.php';
 require_once __DIR__ . '/events/notification-events.php';
+require_once __DIR__ . '/events/settings-events.php';
 
 class Telemetry {
 	/**
@@ -62,7 +63,13 @@ class Telemetry {
 			'vw_upgrade_version',
 			Tracker::track_event( 'VIPWorkflow\Modules\Telemetry\Events\record_admin_update', $this->tracker ),
 			10,
-			3
+			2
+		);
+		add_action(
+			'vw_save_settings',
+			Tracker::track_event( 'VIPWorkflow\Modules\Telemetry\Events\record_settings_update', $this->tracker ),
+			10,
+			2
 		);
 	}
 }

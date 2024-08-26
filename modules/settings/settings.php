@@ -263,8 +263,18 @@ class Settings extends Module {
 			$new_options = VIP_Workflow::instance()->$module_name->settings_validate( $new_options );
 		}
 
+		$old_options = (array) VIP_Workflow::instance()->$module_name->module->options;
+
+		/**
+		 * Fires before saving the settings for all modules
+		 *
+		 * @param array $new_options The new options
+		 * @param array $old_options The old options
+		 */
+		do_action( 'vw_save_settings', $new_options, $old_options );
+
 		// Cast our object and save the data.
-		$new_options = (object) array_merge( (array) VIP_Workflow::instance()->$module_name->module->options, $new_options );
+		$new_options = (object) array_merge( (array) $old_options, $new_options );
 		VIP_Workflow::instance()->update_all_module_options( VIP_Workflow::instance()->$module_name->module->name, $new_options );
 
 		// Redirect back to the settings page that was submitted without any previous messages
