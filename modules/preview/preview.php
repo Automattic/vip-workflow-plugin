@@ -83,7 +83,7 @@ class Preview extends Module {
 		return $query_vars;
 	}
 
-	public function allow_preview_result( $posts, &$query ) {
+	public function allow_preview_result( $posts, $query ) {
 		$token = $query->query_vars['vw-token'] ?? false;
 
 		// If there's no token, go back to result processing quickly
