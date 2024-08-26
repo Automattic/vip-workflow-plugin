@@ -1,1 +1,1 @@
-<?php return array('dependencies' => array('react', 'wp-components', 'wp-compose', 'wp-data', 'wp-deprecated', 'wp-edit-post', 'wp-editor', 'wp-element', 'wp-i18n', 'wp-plugins', 'wp-preferences'), 'version' => '30096199f72dcb18c250');
+<?php return array('dependencies' => array('react', 'wp-components', 'wp-compose', 'wp-data', 'wp-deprecated', 'wp-edit-post', 'wp-editor', 'wp-element', 'wp-i18n', 'wp-plugins', 'wp-preferences'), 'version' => '2ab7c9ba6173a2f64b6d');

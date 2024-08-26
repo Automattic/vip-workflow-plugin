@@ -1,6 +1,6 @@
 import './editor.scss';
 
-import { SelectControl } from '@wordpress/components';
+import { Button, PanelBody, SelectControl, TextareaControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
 import { PluginPostStatusInfo, PluginSidebar } from '@wordpress/edit-post';
@@ -139,21 +139,18 @@ const CustomSaveButton = ( { buttonText, isSavingPost } ) => {
 const saveButtonSidebar = 'vip-workflow-save-button-sidebar';
 
 // Plugin sidebar
-const CustomSaveButtonSidebar = ( { status, isUnsavedPost, isSavingPost, onStatusChange } ) => {
-	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
-	console.log( 'isCleanNewPost:', isCleanNewPost );
-
+const CustomSaveButtonSidebar = ( { status, isUnsavedPost, isSavingPost, onUpdateStatus } ) => {
+	const nextStatusTerm = useMemo( () => getNextStatusTerm( status ), [ status ] );
 	const handleButtonClick = ( isSidebarActive, toggleSidebar ) => {
-		console.log( 'Custom save button clicked! isSidebarActive' );
+		if ( nextStatusTerm ) {
+			onUpdateStatus( nextStatusTerm.slug );
+			dispatch( editorStore ).savePost();
+		}
+
+		// toggleSidebar();
 	};
 
 	useInterceptPluginSidebar( `${ saveButtonPlugin }/${ saveButtonSidebar }`, handleButtonClick );
-
-	const extraProps = {
-		closeLabel: 'Close it!',
-	};
-
-	const nextStatusTerm = useMemo( () => getNextStatusTerm( status ), [ status ] );
 
 	let buttonText;
 
@@ -173,9 +170,20 @@ const CustomSaveButtonSidebar = ( { status, isUnsavedPost, isSavingPost, onStatu
 			title={ buttonText }
 			className={ 'custom-class-name' }
 			icon={ SaveButton }
-			{ ...extraProps }
 		>
-			{ /* Sidebar contents */ }
+			{ /* <PanelBody>
+				<h2>{ __( 'Leave a review' ) } </h2>
+				<TextareaControl label="Comments" help="Add your review comments above"></TextareaControl>
+				<Button variant="primary" style={ { display: 'block', width: '100%' } }>
+					Appove
+				</Button>
+				<Button
+					variant="primary"
+					style={ { display: 'block', width: '100%', marginTop: '0.5rem' } }
+				>
+					Reject
+				</Button>
+			</PanelBody> */ }
 			{ null }
 		</PluginSidebar>
 	);
@@ -198,7 +206,7 @@ const mapSelectProps = select => {
 
 const mapDispatchStatusToProps = dispatch => {
 	return {
-		onStatusChange( status ) {
+		onUpdateStatus( status ) {
 			dispatch( editorStore ).editPost( { status } );
 		},
 	};
