@@ -52,13 +52,13 @@ function record_send_to_webhook_toggle( bool $enabled, string $url, Tracker $tra
 	if ( $enabled ) {
 		$tracker->record_event( 'send_to_webhook_enabled', [
 			'enabled' => $enabled,
-			'url'	  => $url,
+			'url'     => $url,
 		] );
 		return;
 	}
 
 	$tracker->record_event( 'send_to_webhook_disabled', [
 		'enabled' => $enabled,
-		'url'	  => $url,
+		'url'     => $url,
 	] );
 }
