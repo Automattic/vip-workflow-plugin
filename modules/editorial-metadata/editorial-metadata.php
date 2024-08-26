@@ -423,7 +423,6 @@ class Editorial_Metadata extends Module {
 				// ToDo: Review the permissions required to edit metadata
 				return current_user_can( 'edit_posts' ) || current_user_can( 'edit_pages' );
 			},
-			'revisions' => true,
 		];
 		return $args;
 	}

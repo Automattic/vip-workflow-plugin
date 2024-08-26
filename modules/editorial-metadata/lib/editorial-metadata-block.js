@@ -18,19 +18,24 @@ const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
 		<PanelBody>
 			{ editorialMetadatas
 				.filter( editorialMetadata => editorialMetadata.type === 'text' )
-				.map( editorialMetadata => (
-					<TextControl
-						key={ editorialMetadata.key }
-						label={ editorialMetadata.label }
-						className={ editorialMetadata.key }
-						onChange={ value =>
-							setMetaFields( {
-								...metaFields,
-								[ editorialMetadata.key ]: value,
-							} )
-						}
-					/>
-				) ) }
+				.map(
+					editorialMetadata => (
+						console.log( metaFields?.[ editorialMetadata.key ] ),
+						(
+							<TextControl
+								key={ editorialMetadata.key }
+								label={ editorialMetadata.label }
+								className={ editorialMetadata.key }
+								onChange={ value =>
+									setMetaFields( {
+										...metaFields,
+										[ editorialMetadata.key ]: value,
+									} )
+								}
+							/>
+						 )
+					)
+				) }
 		</PanelBody>
 	</PluginDocumentSettingPanel>
 );
