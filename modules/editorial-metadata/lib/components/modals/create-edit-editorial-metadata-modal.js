@@ -86,6 +86,7 @@ export default function CreateEditEditorialMetadataModal( {
 				value={ type }
 				options={ availableMetadataTypes }
 				onChange={ setType }
+				disabled={ metadata !== null }
 			/>
 			<Button variant="primary" onClick={ handleSave } disabled={ isRequesting }>
 				{ metadata ? __( 'Update', 'vip-workflow' ) : __( 'Save', 'vip-workflow' ) }

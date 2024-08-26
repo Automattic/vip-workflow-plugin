@@ -150,7 +150,7 @@ export default function EditorialMetadataManager( {
 														boxShadow: 'inset 0 0 0 1px #b32d2e',
 													} }
 												></Button>
-												<Button
+												{ /* <Button
 													size="compact"
 													variant="primary"
 													icon={ 'edit' }
@@ -158,7 +158,7 @@ export default function EditorialMetadataManager( {
 														setEMetadataTerm( eMetadataTerm );
 														setIsCreateEditModalVisible( true );
 													} }
-												></Button>
+												></Button> */ }
 											</div>
 										</Flex>
 									</CardFooter>
