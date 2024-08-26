@@ -4,6 +4,7 @@ namespace VIPWorkflow;
 
 use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\Telemetry\Telemetry;
+use stdClass;
 
 // Core class
 #[\AllowDynamicProperties]
