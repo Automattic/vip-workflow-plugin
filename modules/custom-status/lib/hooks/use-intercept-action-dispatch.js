@@ -10,13 +10,14 @@ export default function useInterceptActionDispatch( storeName, actionName, callb
 			functionOverrides[ storeName ] = {};
 		}
 
+		// Registy override for this action.
 		// The purpose of `actionIntercept` is to provide a single unchanging reference to interception logic.
-		// Without this, each time useInterceptActionDispatch() is called we will create a new override and trigger
-		// rerenders of components that rely on dispatch functions as dependencies.
-		// `actionIntercept`'s value is set once on dispatch registration after we have access to the original action.
+		// Without this, each time useInterceptActionDispatch() is called we will create a new dispatch override and
+		// trigger rerenders of components that use dispatch functions as dependencies.
+		// `actionIntercept` will be set during dispatch registration after we have access to the original action.
 		//
-		// The `callback` key is used to store the latest callback function. When this changes we update it a new
-		// value with useEffect below and leave actionIntercept unchanged, making dispatch callers happy.
+		// The `callback` key is used to store the actual callback function. When this changes we update it a new
+		// value with useEffect below and leave actionIntercept unchanged, making dispatch dependencies happy.
 		// This allows action intercepts with changing callbacks to work as expected.
 		functionOverrides[ storeName ][ actionName ] = {
 			actionIntercept: null,
@@ -40,7 +41,7 @@ export default function useInterceptActionDispatch( storeName, actionName, callb
 			}
 
 			if ( ! functionOverrides[ storeName ][ actionName ].actionIntercept ) {
-				// Create new function to override actionIntercept, just one time to avoid overrides
+				// Create new function to override actionIntercept, just once, to avoid rerenders
 				const originalAction = actions[ actionName ];
 
 				functionOverrides[ storeName ][ actionName ].actionIntercept = ( ...args ) => {
