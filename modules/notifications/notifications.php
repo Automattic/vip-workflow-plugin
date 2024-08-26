@@ -6,8 +6,8 @@
 namespace VIPWorkflow\Modules;
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Common\PHP\Module;
-use function VIPWorkflow\Common\PHP\vw_draft_or_post_title;
+use VIPWorkflow\Modules\Shared\PHP\Module;
+use function VIPWorkflow\Modules\Shared\PHP\vw_draft_or_post_title;
 
 class Notifications extends Module {
 
@@ -25,9 +25,7 @@ class Notifications extends Module {
 			'short_description'     => __( 'Update your team of important changes to your content.', 'vip-workflow' ),
 			'extended_description'  => __( 'You can keep everyone updated about what is happening with a given content. This is possible through webhook notifications, and emails to admins. Each status change sends out a notification to the specified webhook URL(i.e.: Slack incoming webhooks) and/or email notifications to the admin.', 'vip-workflow' ),
 			'module_url'            => $this->module_url,
-			'img_url'               => $this->module_url . 'lib/notifications_s128.png',
 			'slug'                  => 'notifications',
-			'autoload'              => true,
 		];
 		$this->module     = VIP_Workflow::instance()->register_module( 'notifications', $args );
 	}
@@ -43,24 +41,10 @@ class Notifications extends Module {
 	}
 
 	/**
-	 * Load the capabilities onto users the first time the module is run
-	 */
-	public function install() {
-		// Nothing to do here yet
-	}
-
-	/**
-	 * Upgrade our data in case we need to
-	 */
-	public function upgrade( $previous_version ) {
-		// Nothing to do here yet
-	}
-
-	/**
 	 * Set up and send post status change notification email
 	 */
 	public function notification_status_change( $new_status, $old_status, $post ) {
-		$supported_post_types = $this->get_post_types_for_module();
+		$supported_post_types = $this->get_supported_post_types();
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
 		}

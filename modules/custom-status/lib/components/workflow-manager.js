@@ -1,14 +1,15 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import apiFetch from '@wordpress/api-fetch';
-import { Button, Flex, FlexBlock, FlexItem, Notice } from '@wordpress/components';
+import { Button, Flex, FlexBlock, FlexItem } from '@wordpress/components';
 import { useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { plusCircle } from '@wordpress/icons';
 
 import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
-import SuccessNotice from './success-notice';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
+import ErrorNotice from '../../../shared/js/components/error-notice';
+import SuccessNotice from '../../../shared/js/components/success-notice';
 
 export default function WorkflowManager( { customStatuses } ) {
 	const [ success, setSuccess ] = useState( null );
@@ -85,13 +86,7 @@ export default function WorkflowManager( { customStatuses } ) {
 	return (
 		<>
 			{ <SuccessNotice success={ success } /> }
-			{ error && (
-				<div style={ { marginBottom: '1rem' } }>
-					<Notice status="error" isDismissible={ true } onRemove={ () => setError( null ) }>
-						<p>{ error }</p>
-					</Notice>
-				</div>
-			) }
+			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<Flex direction={ [ 'column', 'row' ] } justify={ 'start' } align={ 'start' }>
 				<FlexItem>
 					<Flex align={ 'start' } justify={ 'start' }>

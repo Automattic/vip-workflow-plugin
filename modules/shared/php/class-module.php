@@ -5,7 +5,7 @@
  * @desc Base class any module should extend
  */
 
-namespace VIPWorkflow\Common\PHP;
+namespace VIPWorkflow\Modules\Shared\PHP;
 
 use VIPWorkflow\VIP_Workflow;
 
@@ -80,7 +80,7 @@ class Module {
 	 *
 	 * @return array $post_types All of the post types that are 'on'
 	 */
-	public function get_post_types_for_module() {
+	public function get_supported_post_types() {
 		$post_types = array();
 		$post_types_options = VIP_Workflow::instance()->settings->module->options->post_types;
 		foreach ( $post_types_options as $post_type => $value ) {

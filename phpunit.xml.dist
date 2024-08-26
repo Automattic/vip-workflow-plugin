@@ -10,7 +10,7 @@
 	cacheResult="false"
 	>
 	<testsuites>
-		<testsuite name="WP_Tests">
+		<testsuite name="unit">
 			<directory prefix="test-" suffix=".php">./tests/</directory>
 		</testsuite>
 	</testsuites>
