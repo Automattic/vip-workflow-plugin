@@ -1,4 +1,10 @@
-import { PanelBody, TextControl } from '@wordpress/components';
+import {
+	DateTimePicker,
+	PanelBody,
+	__experimentalText as Text,
+	TextControl,
+	ToggleControl,
+} from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { withDispatch, withSelect } from '@wordpress/data';
 import { PluginDocumentSettingPanel } from '@wordpress/edit-post';
@@ -13,32 +19,71 @@ const editorialMetadatas = window.VipWorkflowEditorialMetadatas.map( editorialMe
 	description: editorialMetadata.description,
 } ) );
 
+const noEditorialMetadatasToShow = editorialMetadatas.length === 0;
+
 const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
 	<PluginDocumentSettingPanel name="editorialMetadataPanel" title="Editorial Metadata">
-		<PanelBody>
-			{ editorialMetadatas
-				.filter( editorialMetadata => editorialMetadata.type === 'text' )
-				.map(
-					editorialMetadata => (
-						console.log( metaFields?.[ editorialMetadata.key ] ),
-						(
-							<TextControl
-								key={ editorialMetadata.key }
-								label={ editorialMetadata.label }
-								className={ editorialMetadata.key }
-								onChange={ value =>
-									setMetaFields( {
-										...metaFields,
-										[ editorialMetadata.key ]: value,
-									} )
-								}
-							/>
-						 )
-					)
+		{ noEditorialMetadatasToShow && (
+			<Text>Configure your editorial metadata, within the VIP Workflow Plugin Settings.</Text>
+		) }
+		{ ! noEditorialMetadatasToShow && (
+			<PanelBody>
+				{ editorialMetadatas.map( editorialMetadata =>
+					getComponentByType( editorialMetadata, metaFields, setMetaFields )
 				) }
-		</PanelBody>
+			</PanelBody>
+		) }
 	</PluginDocumentSettingPanel>
 );
+
+function getComponentByType( editorialMetadata, metaFields, setMetaFields ) {
+	if ( editorialMetadata.type === 'checkbox' ) {
+		return (
+			<ToggleControl
+				key={ editorialMetadata.key }
+				help={ editorialMetadata.description }
+				label={ editorialMetadata.label }
+				checked={ metaFields?.[ editorialMetadata.key ] }
+				onChange={ value =>
+					setMetaFields( {
+						...metaFields,
+						[ editorialMetadata.key ]: value,
+					} )
+				}
+			/>
+		);
+	} else if ( editorialMetadata.type === 'text' ) {
+		return (
+			<TextControl
+				key={ editorialMetadata.key }
+				help={ editorialMetadata.description }
+				label={ editorialMetadata.label }
+				value={ metaFields?.[ editorialMetadata.key ] }
+				className={ editorialMetadata.key }
+				onChange={ value =>
+					setMetaFields( {
+						...metaFields,
+						[ editorialMetadata.key ]: value,
+					} )
+				}
+			/>
+		);
+	}
+	return (
+		<DateTimePicker
+			key={ editorialMetadata.key }
+			help={ editorialMetadata.description }
+			label={ editorialMetadata.label }
+			currentDate={ metaFields?.[ editorialMetadata.key ] }
+			onChange={ value =>
+				setMetaFields( {
+					...metaFields,
+					[ editorialMetadata.key ]: value,
+				} )
+			}
+		/>
+	);
+}
 
 const applyWithSelect = select => {
 	return {

@@ -20,7 +20,6 @@ class Editorial_Metadata extends Module {
 	const SUPPORTED_METADATA_TYPES = [
 		'checkbox',
 		'date',
-		'number',
 		'text',
 	];
 	const METADATA_TAXONOMY = 'vw_editorial_meta';
@@ -59,21 +58,23 @@ class Editorial_Metadata extends Module {
 		// Load block editor CSS
 		add_action( 'enqueue_block_editor_assets', [ $this, 'load_styles_for_block_editor' ] );
 
-		// ToDo: Ensure this is the best way to do this.
-		// Register post meta for each term
-		add_action( 'the_post', function( $post_object ) {
-			$editorial_metadata_terms = $this->get_editorial_metadata_terms();
-			foreach ( $editorial_metadata_terms as $term ) {
-				$post_meta_key = $this->get_postmeta_key( $term->slug, $term->type );
-				$post_meta_args = $this->get_postmeta_args( $term->type, $term->description );
+		add_action( 'init', [ $this, 'register_editorial_metadata_terms_as_post_meta' ] );
+	}
 
-				foreach ( $this->get_supported_post_types() as $post_type ) {
-					if ( ! metadata_exists( 'post', $post_object->ID, $post_meta_key ) ) {
-						register_post_meta( $post_type, $post_meta_key, $post_meta_args );
-					}
-				}
+	/**
+	 * Register the post meta for each editorial metadata term
+	 */
+	public function register_editorial_metadata_terms_as_post_meta( ) {
+		$editorial_metadata_terms = $this->get_editorial_metadata_terms();
+
+		foreach ( $editorial_metadata_terms as $term ) {
+			$post_meta_key = $this->get_postmeta_key( $term->slug, $term->type );
+			$post_meta_args = $this->get_postmeta_args( $term->type, $term->description );
+
+			foreach ( $this->get_supported_post_types() as $post_type ) {
+				register_post_meta( $post_type, $post_meta_key, $post_meta_args );
 			}
-		} );
+		}
 	}
 
 	/**
@@ -125,12 +126,6 @@ class Editorial_Metadata extends Module {
 				'slug' => 'needs-photo',
 				'type' => 'checkbox',
 				'description' => __( 'Checked if this post needs a photo.', 'vip-workflow' ),
-			],
-			[
-				'name' => __( 'Word Count', 'vip-workflow' ),
-				'slug' => 'word-count',
-				'type' => 'number',
-				'description' => __( 'Required post length in words.', 'vip-workflow' ),
 			],
 		];
 
@@ -412,9 +407,6 @@ class Editorial_Metadata extends Module {
 			case 'checkbox':
 				$arg_type = 'boolean';
 				break;
-			case 'number':
-				$arg_type = 'number';
-				break;
 			case 'date':
 			case 'text':
 				$arg_type = 'string';
@@ -429,8 +421,6 @@ class Editorial_Metadata extends Module {
 				switch ( $arg_type ) {
 					case 'boolean':
 						return boolval( $value );
-					case 'number':
-						return absint( $value );
 					case 'string':
 						return stripslashes( wp_filter_nohtml_kses( trim( $value ) ) );
 				}
