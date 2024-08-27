@@ -149,7 +149,12 @@ registerPlugin( 'vip-workflow-custom-status', {
 	render: plugin,
 } );
 
-const isCustomSaveButtonEnabled = ( postType, statusSlug ) => {
+const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
+	if ( isUnsavedPost ) {
+		// Show native "Save" for new posts
+		return false;
+	}
+
 	const isSupportedPostType = VW_CUSTOM_STATUSES.supported_post_types.includes( postType );
 
 	// Exclude the last custom status. Show the regular editor button on the last step.
@@ -188,8 +193,8 @@ const CustomSaveButtonSidebar = ( {
 	onUpdateStatus,
 } ) => {
 	const isShowingCustomSaveButton = useMemo(
-		() => isCustomSaveButtonEnabled( postType, status ),
-		[ postType, status ]
+		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, status ),
+		[ isUnsavedPost, postType, status ]
 	);
 
 	useEffect( () => {
