@@ -29,7 +29,7 @@
 }
 
 // Use :has() to apply styles to the outer button element containing the .vip-workflow-save-button "icon"
-.interface-pinned-items button.components-button.is-compact:has(.vip-workflow-save-button) {
+.interface-pinned-items button.components-button.is-compact[aria-controls="vip-workflow-custom-status:vip-workflow-sidebar"] {
 	// Allow button to be larger than default icon size of 32px
 	width: initial;
 
@@ -62,8 +62,11 @@
 	}
 }
 
+// When the ".disable-native-save-button" class is set on #editor, remove the default "Publish"/"Save" button
 #editor.disable-native-save-button {
-	.editor-post-publish-button, .editor-post-publish-button__button {
+	.editor-post-publish-button, /* Regular publish button */
+	.editor-post-publish-button__button /* Publish button in mobile view */
+	{
 		display: none;
 	}
 }
