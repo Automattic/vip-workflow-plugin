@@ -1,10 +1,4 @@
-import {
-	DateTimePicker,
-	PanelBody,
-	__experimentalText as Text,
-	TextControl,
-	ToggleControl,
-} from '@wordpress/components';
+import { __experimentalText as Text, TextControl, ToggleControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { withDispatch, withSelect } from '@wordpress/data';
 import { PluginDocumentSettingPanel } from '@wordpress/edit-post';
@@ -26,12 +20,8 @@ const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
 		{ noEditorialMetadatasToShow && (
 			<Text>Configure your editorial metadata, within the VIP Workflow Plugin Settings.</Text>
 		) }
-		{ ! noEditorialMetadatasToShow && (
-			<PanelBody>
-				{ editorialMetadatas.map( editorialMetadata =>
-					getComponentByType( editorialMetadata, metaFields, setMetaFields )
-				) }
-			</PanelBody>
+		{ editorialMetadatas.map( editorialMetadata =>
+			getComponentByType( editorialMetadata, metaFields, setMetaFields )
 		) }
 	</PluginDocumentSettingPanel>
 );
@@ -52,29 +42,14 @@ function getComponentByType( editorialMetadata, metaFields, setMetaFields ) {
 				}
 			/>
 		);
-	} else if ( editorialMetadata.type === 'text' ) {
-		return (
-			<TextControl
-				key={ editorialMetadata.key }
-				help={ editorialMetadata.description }
-				label={ editorialMetadata.label }
-				value={ metaFields?.[ editorialMetadata.key ] }
-				className={ editorialMetadata.key }
-				onChange={ value =>
-					setMetaFields( {
-						...metaFields,
-						[ editorialMetadata.key ]: value,
-					} )
-				}
-			/>
-		);
 	}
 	return (
-		<DateTimePicker
+		<TextControl
 			key={ editorialMetadata.key }
 			help={ editorialMetadata.description }
 			label={ editorialMetadata.label }
-			currentDate={ metaFields?.[ editorialMetadata.key ] }
+			value={ metaFields?.[ editorialMetadata.key ] }
+			className={ editorialMetadata.key }
 			onChange={ value =>
 				setMetaFields( {
 					...metaFields,

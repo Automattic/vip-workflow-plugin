@@ -150,15 +150,17 @@ export default function EditorialMetadataManager( {
 														boxShadow: 'inset 0 0 0 1px #b32d2e',
 													} }
 												></Button>
-												{ /* <Button
-													size="compact"
-													variant="primary"
-													icon={ 'edit' }
-													onClick={ () => {
-														setEMetadataTerm( eMetadataTerm );
-														setIsCreateEditModalVisible( true );
-													} }
-												></Button> */ }
+												{
+													<Button
+														size="compact"
+														variant="primary"
+														icon={ 'edit' }
+														onClick={ () => {
+															setEMetadataTerm( eMetadataTerm );
+															setIsCreateEditModalVisible( true );
+														} }
+													></Button>
+												}
 											</div>
 										</Flex>
 									</CardFooter>
