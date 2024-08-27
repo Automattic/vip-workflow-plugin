@@ -62,6 +62,8 @@
 	}
 }
 
-#editor.disable-native-save-button .editor-post-publish-button {
-	display: none;
+#editor.disable-native-save-button {
+	.editor-post-publish-button, .editor-post-publish-button__button {
+		display: none;
+	}
 }

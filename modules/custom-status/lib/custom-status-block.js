@@ -1,153 +1,20 @@
 import './editor.scss';
 
-import { Button, SelectControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
-import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
-import { PluginPostStatusInfo, PluginSidebar } from '@wordpress/edit-post';
+import { dispatch, withDispatch, withSelect } from '@wordpress/data';
+import { PluginSidebar } from '@wordpress/edit-post';
 import { store as editorStore } from '@wordpress/editor';
-import { useMemo, useState } from '@wordpress/element';
+import { useMemo } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
 import clsx from 'clsx';
 import { useEffect } from 'react';
 
+import VIPWorkflowCustomStatusSidebar from './components/custom-status-sidebar';
 import useInterceptPluginSidebar from './hooks/use-intercept-plugin-sidebar';
 
-/**
- * Map Custom Statuses as options for SelectControl
- */
-const statusOptions = VW_CUSTOM_STATUSES.status_terms.map( customStatus => ( {
-	label: customStatus.name,
-	value: customStatus.slug,
-} ) );
-
-const isUsingWorkflowStatus = ( postType, statusSlug ) => {
-	const isSupportedPostType = VW_CUSTOM_STATUSES.supported_post_types.includes( postType );
-	const isSupportedStatusTerm = VW_CUSTOM_STATUSES.status_terms
-		.map( t => t.slug )
-		.includes( statusSlug );
-
-	return isSupportedPostType && isSupportedStatusTerm;
-};
-
-/**
- * Subscribe to changes so we can set a default status.
- */
-subscribe( function () {
-	const postId = select( editorStore ).getCurrentPostId();
-	if ( ! postId ) {
-		// Post isn't ready yet so don't do anything.
-		return;
-	}
-
-	// For new posts, we need to force the default custom status which is the first entry.
-	const isCleanNewPost = select( editorStore ).isCleanNewPost();
-	if ( isCleanNewPost ) {
-		dispatch( editorStore ).editPost( {
-			status: statusOptions[ 0 ].value,
-		} );
-	}
-
-	// const selectedStatus = select( editorStore ).getEditedPostAttribute( 'status' );
-
-	// // check if the post status is in the list of custom statuses, and only then issue the notices
-	// if (
-	// 	typeof vw_publish_guard_enabled !== 'undefined' &&
-	// 	vw_publish_guard_enabled &&
-	// 	statusOptions.find( status => status.value === selectedStatus )
-	// ) {
-	// 	const has_publish_capability =
-	// 		select( editorStore ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
-
-	// 	if ( postLocked && has_publish_capability ) {
-	// 		postLocked = false;
-	// 		dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
-	// 	} else if ( ! postLocked && ! has_publish_capability ) {
-	// 		postLocked = true;
-	// 		dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
-	// 			id: 'publish-guard-lock',
-	// 			type: 'snackbar',
-	// 		} );
-	// 	}
-	// }
-} );
-
-/**
- * Custom status component
- * @param object props
- */
-const VIPWorkflowCustomPostStati = ( { onUpdate, postType, status } ) => {
-	const [ isEditingStatus, setIsEditingStatus ] = useState( false );
-
-	const customStatusName = VW_CUSTOM_STATUSES.status_terms.find( t => t.slug === status )?.name;
-
-	const handleChangeStatus = statusSlug => {
-		onUpdate( statusSlug );
-		setIsEditingStatus( false );
-	};
-
-	if ( ! isUsingWorkflowStatus( postType, status ) ) {
-		return null;
-	}
-
-	return (
-		<PluginPostStatusInfo
-			className={ `vip-workflow-extended-post-status vip-workflow-extended-post-status-${ status }` }
-		>
-			<h4>{ __( 'Extended Post Status', 'vip-workflow' ) }</h4>
-
-			<div className="vip-workflow-extended-post-status-edit">
-				{ ! isEditingStatus && (
-					<>
-						{ customStatusName }
-						<Button size="compact" variant="link" onClick={ () => setIsEditingStatus( true ) }>
-							{ __( 'Edit', 'vip-workflow' ) }
-						</Button>
-					</>
-				) }
-
-				{ isEditingStatus && (
-					<SelectControl
-						label=""
-						value={ status }
-						options={ statusOptions }
-						onChange={ handleChangeStatus }
-					/>
-				) }
-			</div>
-		</PluginPostStatusInfo>
-	);
-};
-
-const mapSelectToProps = select => {
-	const { getEditedPostAttribute, getCurrentPostType } = select( editorStore );
-
-	return {
-		status: getEditedPostAttribute( 'status' ),
-		postType: getCurrentPostType(),
-	};
-};
-
-const mapDispatchToProps = dispatch => {
-	return {
-		onUpdate( status ) {
-			dispatch( editorStore ).editPost( { status } );
-		},
-	};
-};
-
-const plugin = compose(
-	withSelect( mapSelectToProps ),
-	withDispatch( mapDispatchToProps )
-)( VIPWorkflowCustomPostStati );
-
-/**
- * Kick it off
- */
-registerPlugin( 'vip-workflow-custom-status', {
-	icon: 'vip-workflow',
-	render: plugin,
-} );
+const vipWorkflowPluginName = 'vip-workflow-custom-status';
+const vipWorkflowSidebarName = 'vip-workflow-sidebar';
 
 const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
 	if ( isUnsavedPost ) {
@@ -174,15 +41,13 @@ const getNextStatusTerm = currentStatus => {
 	return VW_CUSTOM_STATUSES.status_terms[ currentIndex + 1 ];
 };
 
-const CustomSaveButton = ( { buttonText, isSavingPost } ) => {
+const CustomInnerSaveButton = ( { buttonText, isSavingPost } ) => {
 	const classNames = clsx( 'vip-workflow-save-button', {
 		'is-busy': isSavingPost,
 	} );
 
 	return <div className={ classNames }>{ buttonText }</div>;
 };
-
-const saveButtonSidebar = 'vip-workflow-save-button-sidebar';
 
 // Plugin sidebar
 const CustomSaveButtonSidebar = ( {
@@ -214,11 +79,12 @@ const CustomSaveButtonSidebar = ( {
 			onUpdateStatus( nextStatusTerm.slug );
 			dispatch( editorStore ).savePost();
 		}
-
-		// toggleSidebar();
 	};
 
-	useInterceptPluginSidebar( `${ saveButtonPlugin }/${ saveButtonSidebar }`, handleButtonClick );
+	useInterceptPluginSidebar(
+		`${ vipWorkflowPluginName }/${ vipWorkflowSidebarName }`,
+		handleButtonClick
+	);
 
 	let buttonText;
 
@@ -234,18 +100,28 @@ const CustomSaveButtonSidebar = ( {
 		return null;
 	}
 
-	const SaveButton = <CustomSaveButton buttonText={ buttonText } isSavingPost={ isSavingPost } />;
+	const SaveButton = (
+		<CustomInnerSaveButton buttonText={ buttonText } isSavingPost={ isSavingPost } />
+	);
 
 	return (
-		<PluginSidebar
-			name={ saveButtonSidebar }
-			title={ buttonText }
-			className={ 'custom-class-name' }
-			icon={ SaveButton }
-		>
-			{ /* Use this space to show approve/reject UI or other sidebar controls */ }
-			{ null }
-		</PluginSidebar>
+		<>
+			<VIPWorkflowCustomStatusSidebar
+				postType={ postType }
+				status={ status }
+				onUpdateStatus={ onUpdateStatus }
+			/>
+
+			<PluginSidebar
+				name={ vipWorkflowSidebarName }
+				title={ buttonText }
+				className={ 'custom-class-name' }
+				icon={ SaveButton }
+			>
+				{ /* Use this space to show approve/reject UI or other sidebar controls */ }
+				{ null }
+			</PluginSidebar>
+		</>
 	);
 };
 
@@ -274,9 +150,7 @@ const mapDispatchStatusToProps = dispatch => {
 	};
 };
 
-const saveButtonPlugin = 'vip-workflow-save-button-plugin';
-
-registerPlugin( saveButtonPlugin, {
+registerPlugin( vipWorkflowPluginName, {
 	render: compose(
 		withSelect( mapSelectProps ),
 		withDispatch( mapDispatchStatusToProps )
