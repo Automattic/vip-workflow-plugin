@@ -120,6 +120,12 @@ class Editorial_Metadata extends Module {
 				'type' => 'checkbox',
 				'description' => __( 'Checked if this post needs a photo.', 'vip-workflow' ),
 			],
+			[
+				'name' => __( 'Word Count', 'vip-workflow' ),
+				'slug' => 'word-count',
+				'type' => 'text',
+				'description' => __( 'Required post length in words.', 'vip-workflow' ),
+			],
 		];
 
 		// Load the metadata fields if the slugs don't conflict
@@ -202,7 +208,7 @@ class Editorial_Metadata extends Module {
 				$term->position = false;
 			}
 
-			// Set the post meta key for the term, this is transient.
+			// Set the post meta key for the term, this is not set when the term is first created due to a lack of term_id.
 			if ( ! isset( $term->meta_key ) ) {
 				$term->meta_key = $this->get_postmeta_key( $term );
 			}
@@ -296,6 +302,8 @@ class Editorial_Metadata extends Module {
 		if ( is_wp_error( $inserted_term ) ) {
 			return $inserted_term;
 		} else {
+			// Update the term with the meta_key, as we use the term_id to generate it
+			$this->update_editorial_metadata_term( $inserted_term['term_id'] );
 			$inserted_term = $this->get_editorial_metadata_term_by( 'id', $inserted_term['term_id'] );
 		}
 
@@ -309,7 +317,7 @@ class Editorial_Metadata extends Module {
 	 * @param array $args Any values that need to be updated for the term
 	 * @return object|WP_Error $updated_term The updated term or a WP_Error object if something disastrous happened
 	*/
-	public function update_editorial_metadata_term( $term_id, $args ) {
+	public function update_editorial_metadata_term( $term_id, $args = [] ) {
 		$old_term = $this->get_editorial_metadata_term_by( 'id', $term_id );
 		if ( ! $old_term ) {
 			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ) );

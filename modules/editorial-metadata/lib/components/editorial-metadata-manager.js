@@ -131,6 +131,10 @@ export default function EditorialMetadataManager( {
 											<Text>
 												<i>{ eMetadataTerm.description }</i>
 											</Text>
+											<Text>
+												{ eMetadataTerm.type.charAt( 0 ).toUpperCase() +
+													eMetadataTerm.type.slice( 1 ) }
+											</Text>
 										</Flex>
 									</CardHeader>
 									<CardFooter>
