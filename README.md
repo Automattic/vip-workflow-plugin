@@ -18,7 +18,8 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 - [Usage](#usage)
 	- [Admin](#admin)
 	- [Editorial Experience](#editorial-experience)
-	- [Preview Links](#preview-links)
+		- [Preview Links](#preview-links)
+		- [Editorial Metadata](#editorial-metadata)
 - [Code Filters](#code-filters)
 	- [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
 	- [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
@@ -97,7 +98,7 @@ The plugin also sends notifications when a post's status changes. By default, em
 
 To switch your post status, simply select the new status from the dropdown in the sidebar.
 
-### Preview Links
+#### Preview Links
 
 VIP Workflow adds a "Preview" section to the post sidebar, which allows sharing previews of pre-published content:
 
@@ -108,6 +109,10 @@ Anybody with a preview link (including not logged-in users) will be able to view
 1. Via expiration. Preview links are generated with an expiration (1 hour, 8 hours, or 1 day by default). When this time has passed, the token URL will no longer be valid.
 2. Via one-time usage. If the "One-time use" checkbox is selected, the preview URL will only work a single time, and then the token will become invalid. If this box is not selected, a preview URL can be used any number of times before expiration.
 3. Via post status changes. If a post moves out of VIP Workflow's set of extended post statuses, tokens will no longer be valid. For example, a post moved to "Publish" will no longer have valid preview tokens.
+
+#### Editorial Metadata
+
+VIP Workflow adds a "Editorial Metadata" section to the post sidebar, which allows for additional data to be included with the post such as "Needs Legal Review". This can be managed under the plugin's settings, to get a visual for all of the configured editorial metadata fields.
 
 ## Code Filters
 
