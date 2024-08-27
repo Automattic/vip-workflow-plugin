@@ -28,9 +28,14 @@ export default function useInterceptPluginSidebar( sidebarName, onButtonClick ) 
 		'disableComplementaryArea',
 		( originalAction, args ) => {
 			const isSidebarActive = isPluginSidebarActive();
-			const toggleSidebar = () => originalAction( ...args );
 
-			onButtonClick( isSidebarActive, toggleSidebar );
+			if ( isSidebarActive ) {
+				const toggleSidebar = () => originalAction( ...args );
+				onButtonClick( isSidebarActive, toggleSidebar );
+			} else {
+				// A different area is active, delegate to the original action
+				originalAction( ...args );
+			}
 		}
 	);
 }
