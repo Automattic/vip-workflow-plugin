@@ -23,6 +23,11 @@
 	}
 }
 
+.vip-workflow-extended-post-status-edit {
+	display: flex;
+	flex-direction: column;
+}
+
 // Use :has() to apply styles to the outer button element containing the .vip-workflow-save-button "icon"
 .interface-pinned-items button.components-button.is-compact:has(.vip-workflow-save-button) {
 	// Allow button to be larger than default icon size of 32px
@@ -46,4 +51,17 @@
 
 	// Show this button first in the list of plugin sidebar itemst
 	order: -100;
+
+	&:has(.vip-workflow-save-button.is-busy) {
+		background-image: linear-gradient(-45deg, var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9)) 33%, var(--wp-components-color-accent-darker-20, var(--wp-admin-theme-color-darker-20, #183ad6)) 33%, var(--wp-components-color-accent-darker-20, var(--wp-admin-theme-color-darker-20, #183ad6)) 70%, var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9)) 70%);
+		border-color: var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9));
+		color: var(--wp-components-color-accent-inverted, #fff);
+		animation: components-button__busy-animation 2.5s linear infinite;
+		background-size: 100px 100%;
+		opacity: 1;
+	}
+}
+
+#editor.disable-native-save-button .editor-post-publish-button {
+	display: none;
 }

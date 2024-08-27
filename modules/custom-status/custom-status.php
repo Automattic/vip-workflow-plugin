@@ -273,9 +273,9 @@ class Custom_Status extends Module {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 		wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-		$custom_statuses = $this->get_custom_statuses();
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
-			'status_terms' => $custom_statuses
+			'status_terms'         => $this->get_custom_statuses(),
+			'supported_post_types' => $this->get_supported_post_types(),
 		] );
 	}
 

@@ -1,14 +1,15 @@
 import './editor.scss';
 
-import { Button, PanelBody, SelectControl, TextareaControl } from '@wordpress/components';
+import { Button, SelectControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
 import { PluginPostStatusInfo, PluginSidebar } from '@wordpress/edit-post';
 import { store as editorStore } from '@wordpress/editor';
-import { useMemo } from '@wordpress/element';
+import { useMemo, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
 import clsx from 'clsx';
+import { useEffect } from 'react';
 
 import useInterceptPluginSidebar from './hooks/use-intercept-plugin-sidebar';
 
@@ -20,87 +21,117 @@ const statusOptions = VW_CUSTOM_STATUSES.status_terms.map( customStatus => ( {
 	value: customStatus.slug,
 } ) );
 
-// This is necessary to prevent a call stack exceeded problem within Gutenberg, as our code is called several times for some reason.
-let postLocked = false;
+const isUsingWorkflowStatus = ( postType, statusSlug ) => {
+	const isSupportedPostType = VW_CUSTOM_STATUSES.supported_post_types.includes( postType );
+	const isSupportedStatusTerm = VW_CUSTOM_STATUSES.status_terms
+		.map( t => t.slug )
+		.includes( statusSlug );
+
+	return isSupportedPostType && isSupportedStatusTerm;
+};
 
 /**
  * Subscribe to changes so we can set a default status.
  */
 subscribe( function () {
-	const postId = select( 'core/editor' ).getCurrentPostId();
+	const postId = select( editorStore ).getCurrentPostId();
 	if ( ! postId ) {
 		// Post isn't ready yet so don't do anything.
 		return;
 	}
 
 	// For new posts, we need to force the default custom status which is the first entry.
-	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
+	const isCleanNewPost = select( editorStore ).isCleanNewPost();
 	if ( isCleanNewPost ) {
-		dispatch( 'core/editor' ).editPost( {
+		dispatch( editorStore ).editPost( {
 			status: statusOptions[ 0 ].value,
 		} );
 	}
 
-	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
+	// const selectedStatus = select( editorStore ).getEditedPostAttribute( 'status' );
 
-	// check if the post status is in the list of custom statuses, and only then issue the notices
-	if (
-		typeof vw_publish_guard_enabled !== 'undefined' &&
-		vw_publish_guard_enabled &&
-		statusOptions.find( status => status.value === selectedStatus )
-	) {
-		const has_publish_capability =
-			select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
+	// // check if the post status is in the list of custom statuses, and only then issue the notices
+	// if (
+	// 	typeof vw_publish_guard_enabled !== 'undefined' &&
+	// 	vw_publish_guard_enabled &&
+	// 	statusOptions.find( status => status.value === selectedStatus )
+	// ) {
+	// 	const has_publish_capability =
+	// 		select( editorStore ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
 
-		if ( postLocked && has_publish_capability ) {
-			postLocked = false;
-			dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
-		} else if ( ! postLocked && ! has_publish_capability ) {
-			postLocked = true;
-			dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
-				id: 'publish-guard-lock',
-				type: 'snackbar',
-			} );
-		}
-	}
+	// 	if ( postLocked && has_publish_capability ) {
+	// 		postLocked = false;
+	// 		dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
+	// 	} else if ( ! postLocked && ! has_publish_capability ) {
+	// 		postLocked = true;
+	// 		dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
+	// 			id: 'publish-guard-lock',
+	// 			type: 'snackbar',
+	// 		} );
+	// 	}
+	// }
 } );
 
 /**
  * Custom status component
  * @param object props
  */
-const VIPWorkflowCustomPostStati = ( { onUpdate, status } ) => (
-	<PluginPostStatusInfo
-		className={ `vip-workflow-extended-post-status vip-workflow-extended-post-status-${ status }` }
-	>
-		<h4>
-			{ status !== 'publish'
-				? __( 'Extended Post Status', 'vip-workflow' )
-				: __( 'Extended Post Status Disabled.', 'vip-workflow' ) }
-		</h4>
+const VIPWorkflowCustomPostStati = ( { onUpdate, postType, status } ) => {
+	const [ isEditingStatus, setIsEditingStatus ] = useState( false );
 
-		{ status !== 'publish' ? (
-			<SelectControl label="" value={ status } options={ statusOptions } onChange={ onUpdate } />
-		) : null }
+	const customStatusName = VW_CUSTOM_STATUSES.status_terms.find( t => t.slug === status )?.name;
 
-		<small className="vip-workflow-extended-post-status-note">
-			{ status !== 'publish'
-				? __( 'Note: this will override all status settings above.', 'vip-workflow' )
-				: __( 'To select a custom status, please unpublish the content first.', 'vip-workflow' ) }
-		</small>
-	</PluginPostStatusInfo>
-);
+	const handleChangeStatus = statusSlug => {
+		onUpdate( statusSlug );
+		setIsEditingStatus( false );
+	};
+
+	if ( ! isUsingWorkflowStatus( postType, status ) ) {
+		return null;
+	}
+
+	return (
+		<PluginPostStatusInfo
+			className={ `vip-workflow-extended-post-status vip-workflow-extended-post-status-${ status }` }
+		>
+			<h4>{ __( 'Extended Post Status', 'vip-workflow' ) }</h4>
+
+			<div className="vip-workflow-extended-post-status-edit">
+				{ ! isEditingStatus && (
+					<>
+						{ customStatusName }
+						<Button size="compact" variant="link" onClick={ () => setIsEditingStatus( true ) }>
+							{ __( 'Edit', 'vip-workflow' ) }
+						</Button>
+					</>
+				) }
+
+				{ isEditingStatus && (
+					<SelectControl
+						label=""
+						value={ status }
+						options={ statusOptions }
+						onChange={ handleChangeStatus }
+					/>
+				) }
+			</div>
+		</PluginPostStatusInfo>
+	);
+};
 
 const mapSelectToProps = select => {
+	const { getEditedPostAttribute, getCurrentPostType } = select( editorStore );
+
 	return {
-		status: select( 'core/editor' ).getEditedPostAttribute( 'status' ),
+		status: getEditedPostAttribute( 'status' ),
+		postType: getCurrentPostType(),
 	};
 };
 
 const mapDispatchToProps = dispatch => {
 	return {
 		onUpdate( status ) {
-			dispatch( 'core/editor' ).editPost( { status } );
+			dispatch( editorStore ).editPost( { status } );
 		},
 	};
 };
@@ -117,6 +148,16 @@ registerPlugin( 'vip-workflow-custom-status', {
 	icon: 'vip-workflow',
 	render: plugin,
 } );
+
+const isCustomSaveButtonEnabled = ( postType, statusSlug ) => {
+	const isSupportedPostType = VW_CUSTOM_STATUSES.supported_post_types.includes( postType );
+
+	// Exclude the last custom status. Show the regular editor button on the last step.
+	const allButLastStatusTerm = VW_CUSTOM_STATUSES.status_terms.slice( 0, -1 );
+	const isSupportedStatusTerm = allButLastStatusTerm.map( t => t.slug ).includes( statusSlug );
+
+	return isSupportedPostType && isSupportedStatusTerm;
+};
 
 const getNextStatusTerm = currentStatus => {
 	const currentIndex = VW_CUSTOM_STATUSES.status_terms.findIndex( t => t.slug === currentStatus );
@@ -139,7 +180,29 @@ const CustomSaveButton = ( { buttonText, isSavingPost } ) => {
 const saveButtonSidebar = 'vip-workflow-save-button-sidebar';
 
 // Plugin sidebar
-const CustomSaveButtonSidebar = ( { status, isUnsavedPost, isSavingPost, onUpdateStatus } ) => {
+const CustomSaveButtonSidebar = ( {
+	postType,
+	status,
+	isUnsavedPost,
+	isSavingPost,
+	onUpdateStatus,
+} ) => {
+	const isShowingCustomSaveButton = useMemo(
+		() => isCustomSaveButtonEnabled( postType, status ),
+		[ postType, status ]
+	);
+
+	useEffect( () => {
+		// Selectively disable the native save button when workflow statuses are being used
+		const editor = document.querySelector( '#editor' );
+
+		if ( isShowingCustomSaveButton ) {
+			editor.classList.add( 'disable-native-save-button' );
+		} else {
+			editor.classList.remove( 'disable-native-save-button' );
+		}
+	}, [ isShowingCustomSaveButton ] );
+
 	const nextStatusTerm = useMemo( () => getNextStatusTerm( status ), [ status ] );
 	const handleButtonClick = ( isSidebarActive, toggleSidebar ) => {
 		if ( nextStatusTerm ) {
@@ -159,7 +222,11 @@ const CustomSaveButtonSidebar = ( { status, isUnsavedPost, isSavingPost, onUpdat
 	} else if ( nextStatusTerm ) {
 		buttonText = sprintf( __( 'Move to %s', 'vip-workflow' ), nextStatusTerm.name );
 	} else {
-		buttonText = __( 'Save', 'vip-workflow' );
+		buttonText = __( 'Publish 123 123', 'vip-workflow' );
+	}
+
+	if ( ! isShowingCustomSaveButton ) {
+		return null;
 	}
 
 	const SaveButton = <CustomSaveButton buttonText={ buttonText } isSavingPost={ isSavingPost } />;
@@ -171,26 +238,15 @@ const CustomSaveButtonSidebar = ( { status, isUnsavedPost, isSavingPost, onUpdat
 			className={ 'custom-class-name' }
 			icon={ SaveButton }
 		>
-			{ /* <PanelBody>
-				<h2>{ __( 'Leave a review' ) } </h2>
-				<TextareaControl label="Comments" help="Add your review comments above"></TextareaControl>
-				<Button variant="primary" style={ { display: 'block', width: '100%' } }>
-					Appove
-				</Button>
-				<Button
-					variant="primary"
-					style={ { display: 'block', width: '100%', marginTop: '0.5rem' } }
-				>
-					Reject
-				</Button>
-			</PanelBody> */ }
+			{ /* Use this space to show approve/reject UI or other sidebar controls */ }
 			{ null }
 		</PluginSidebar>
 	);
 };
 
 const mapSelectProps = select => {
-	const { getEditedPostAttribute, isSavingPost, getCurrentPost } = select( editorStore );
+	const { getEditedPostAttribute, isSavingPost, getCurrentPost, getCurrentPostType } =
+		select( editorStore );
 
 	const post = getCurrentPost();
 
@@ -198,6 +254,7 @@ const mapSelectProps = select => {
 	const isUnsavedPost = post?.status === 'auto-draft';
 
 	return {
+		postType: getCurrentPostType(),
 		status: getEditedPostAttribute( 'status' ),
 		isSavingPost: isSavingPost(),
 		isUnsavedPost,
