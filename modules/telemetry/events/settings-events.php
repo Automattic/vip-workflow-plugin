@@ -31,7 +31,7 @@ function record_settings_update( array $new_options, array $old_options, Tracker
 	}
 
 	if ( $new_options['send_to_webhook'] !== $old_options['send_to_webhook'] ) {
-		record_send_to_webhook_toggle( $new_options['send_to_webhook'], $new_options['webhook_url'], $tracker );
+		record_send_to_webhook_toggle( $new_options['send_to_webhook'], $tracker );
 	}
 }
 
@@ -48,7 +48,7 @@ function record_publish_guard_toggle( bool $enabled, Tracker $tracker ): void {
 	] );
 }
 
-function record_send_to_webhook_toggle( bool $enabled, string $url, Tracker $tracker ): void {
+function record_send_to_webhook_toggle( bool $enabled, Tracker $tracker ): void {
 	if ( $enabled ) {
 		$tracker->record_event( 'send_to_webhook_enabled', [
 			'enabled' => $enabled,
