@@ -10,44 +10,11 @@ import { registerPlugin } from '@wordpress/plugins';
 import clsx from 'clsx';
 import { useEffect } from 'react';
 
-import VIPWorkflowCustomStatusSidebar from './components/custom-status-sidebar';
+import CustomStatusSidebar from './components/custom-status-sidebar';
 import useInterceptPluginSidebar from './hooks/use-intercept-plugin-sidebar';
 
-const vipWorkflowPluginName = 'vip-workflow-custom-status';
-const vipWorkflowSidebarName = 'vip-workflow-sidebar';
-
-const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
-	if ( isUnsavedPost ) {
-		// Show native "Save" for new posts
-		return false;
-	}
-
-	const isSupportedPostType = VW_CUSTOM_STATUSES.supported_post_types.includes( postType );
-
-	// Exclude the last custom status. Show the regular editor button on the last step.
-	const allButLastStatusTerm = VW_CUSTOM_STATUSES.status_terms.slice( 0, -1 );
-	const isSupportedStatusTerm = allButLastStatusTerm.map( t => t.slug ).includes( statusSlug );
-
-	return isSupportedPostType && isSupportedStatusTerm;
-};
-
-const getNextStatusTerm = currentStatus => {
-	const currentIndex = VW_CUSTOM_STATUSES.status_terms.findIndex( t => t.slug === currentStatus );
-
-	if ( -1 === currentIndex || currentIndex === VW_CUSTOM_STATUSES.status_terms.length - 1 ) {
-		return false;
-	}
-
-	return VW_CUSTOM_STATUSES.status_terms[ currentIndex + 1 ];
-};
-
-const CustomInnerSaveButton = ( { buttonText, isSavingPost } ) => {
-	const classNames = clsx( 'vip-workflow-save-button', {
-		'is-busy': isSavingPost,
-	} );
-
-	return <div className={ classNames }>{ buttonText }</div>;
-};
+const pluginName = 'vip-workflow-custom-status';
+const sidebarName = 'vip-workflow-sidebar';
 
 // Plugin sidebar
 const CustomSaveButtonSidebar = ( {
@@ -57,23 +24,24 @@ const CustomSaveButtonSidebar = ( {
 	isSavingPost,
 	onUpdateStatus,
 } ) => {
-	const isShowingCustomSaveButton = useMemo(
+	const isCustomSaveButtonVisible = useMemo(
 		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, status ),
 		[ isUnsavedPost, postType, status ]
 	);
 
+	// Selectively disable the native save button when workflow statuses are in effect
 	useEffect( () => {
-		// Selectively disable the native save button when workflow statuses are being used
 		const editor = document.querySelector( '#editor' );
 
-		if ( isShowingCustomSaveButton ) {
+		if ( isCustomSaveButtonVisible ) {
 			editor.classList.add( 'disable-native-save-button' );
 		} else {
 			editor.classList.remove( 'disable-native-save-button' );
 		}
-	}, [ isShowingCustomSaveButton ] );
+	}, [ isCustomSaveButtonVisible ] );
 
 	const nextStatusTerm = useMemo( () => getNextStatusTerm( status ), [ status ] );
+
 	const handleButtonClick = ( isSidebarActive, toggleSidebar ) => {
 		if ( nextStatusTerm ) {
 			onUpdateStatus( nextStatusTerm.slug );
@@ -81,10 +49,7 @@ const CustomSaveButtonSidebar = ( {
 		}
 	};
 
-	useInterceptPluginSidebar(
-		`${ vipWorkflowPluginName }/${ vipWorkflowSidebarName }`,
-		handleButtonClick
-	);
+	useInterceptPluginSidebar( `${ pluginName }/${ sidebarName }`, handleButtonClick );
 
 	let buttonText;
 
@@ -96,31 +61,26 @@ const CustomSaveButtonSidebar = ( {
 		buttonText = __( 'Publish 123 123', 'vip-workflow' );
 	}
 
-	if ( ! isShowingCustomSaveButton ) {
-		return null;
-	}
-
-	const SaveButton = (
+	const InnerSaveButton = (
 		<CustomInnerSaveButton buttonText={ buttonText } isSavingPost={ isSavingPost } />
 	);
 
 	return (
 		<>
-			<VIPWorkflowCustomStatusSidebar
+			{ /* "Extended Post Status" in the sidebar */ }
+			<CustomStatusSidebar
 				postType={ postType }
 				status={ status }
 				onUpdateStatus={ onUpdateStatus }
 			/>
 
-			<PluginSidebar
-				name={ vipWorkflowSidebarName }
-				title={ buttonText }
-				className={ 'custom-class-name' }
-				icon={ SaveButton }
-			>
-				{ /* Use this space to show approve/reject UI or other sidebar controls */ }
-				{ null }
-			</PluginSidebar>
+			{ /* Custom save button in the toolbar */ }
+			{ isCustomSaveButtonVisible && (
+				<PluginSidebar name={ sidebarName } title={ buttonText } icon={ InnerSaveButton }>
+					{ /* Use this space to show approve/reject UI or other sidebar controls */ }
+					{ null }
+				</PluginSidebar>
+			) }
 		</>
 	);
 };
@@ -150,9 +110,46 @@ const mapDispatchStatusToProps = dispatch => {
 	};
 };
 
-registerPlugin( vipWorkflowPluginName, {
+registerPlugin( pluginName, {
 	render: compose(
 		withSelect( mapSelectProps ),
 		withDispatch( mapDispatchStatusToProps )
 	)( CustomSaveButtonSidebar ),
 } );
+
+// Components
+
+const CustomInnerSaveButton = ( { buttonText, isSavingPost } ) => {
+	const classNames = clsx( 'vip-workflow-save-button', {
+		'is-busy': isSavingPost,
+	} );
+
+	return <div className={ classNames }>{ buttonText }</div>;
+};
+
+// Utility methods
+
+const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
+	if ( isUnsavedPost ) {
+		// Show native "Save" for new posts
+		return false;
+	}
+
+	const isSupportedPostType = VW_CUSTOM_STATUSES.supported_post_types.includes( postType );
+
+	// Exclude the last custom status. Show the regular editor button on the last step.
+	const allButLastStatusTerm = VW_CUSTOM_STATUSES.status_terms.slice( 0, -1 );
+	const isSupportedStatusTerm = allButLastStatusTerm.map( t => t.slug ).includes( statusSlug );
+
+	return isSupportedPostType && isSupportedStatusTerm;
+};
+
+const getNextStatusTerm = currentStatus => {
+	const currentIndex = VW_CUSTOM_STATUSES.status_terms.findIndex( t => t.slug === currentStatus );
+
+	if ( -1 === currentIndex || currentIndex === VW_CUSTOM_STATUSES.status_terms.length - 1 ) {
+		return false;
+	}
+
+	return VW_CUSTOM_STATUSES.status_terms[ currentIndex + 1 ];
+};

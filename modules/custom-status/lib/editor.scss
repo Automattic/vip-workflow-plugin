@@ -33,7 +33,7 @@
 	// Allow button to be larger than default icon size of 32px
 	width: initial;
 
-	// Restore regular padding for text
+	// Restore regular button padding for text
 	padding: 6px 12px;
 
 	// Apply primary button style to the button, rather than the default of tertiary
@@ -44,6 +44,7 @@
 	text-shadow: none;
 	white-space: nowrap;
 
+	// Darker color on hover
 	&:hover:not(:disabled) {
 		background: var(--wp-components-color-accent-darker-10, var(--wp-admin-theme-color-darker-10, #2145e6));
 		color: var(--wp-components-color-accent-inverted, #fff);
@@ -52,6 +53,7 @@
 	// Show this button first in the list of plugin sidebar itemst
 	order: -100;
 
+	// When the inner button has `.is-busy`, show an animated busy state on this button
 	&:has(.vip-workflow-save-button.is-busy) {
 		background-image: linear-gradient(-45deg, var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9)) 33%, var(--wp-components-color-accent-darker-20, var(--wp-admin-theme-color-darker-20, #183ad6)) 33%, var(--wp-components-color-accent-darker-20, var(--wp-admin-theme-color-darker-20, #183ad6)) 70%, var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9)) 70%);
 		border-color: var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9));
@@ -62,11 +64,22 @@
 	}
 }
 
-// When the ".disable-native-save-button" class is set on #editor, remove the default "Publish"/"Save" button
+/* When the ".disable-native-save-button" class is set on #editor, remove the default "Publish"/"Save" button */
 #editor.disable-native-save-button {
-	.editor-post-publish-button, /* Regular publish button */
-	.editor-post-publish-button__button /* Publish button in mobile view */
-	{
+	/* Hide the native "Save" button */
+	.editor-post-publish-button__button {
 		display: none;
 	}
+}
+
+/* Show the custom status button in mobile mode, when sidebar buttons are typically hidden */
+.interface-pinned-items .components-button[aria-controls="vip-workflow-custom-status:vip-workflow-sidebar"] {
+	display: flex;
+}
+
+// Hide the 2nd "Move to ..." button in the sidebar dropdown menu.
+// This is the button that's used to style the custom "Save" button, but it dosen't make sense in the sidebar.
+// The original action is still avilable.
+.components-dropdown-menu__menu button[aria-controls="vip-workflow-custom-status:vip-workflow-sidebar"] .vip-workflow-save-button {
+	display: none;
 }

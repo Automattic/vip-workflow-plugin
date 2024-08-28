@@ -39,7 +39,7 @@ subscribe( function () {
  * Custom status component
  * @param object props
  */
-export default function VIPWorkflowCustomStatusSidebar( { onUpdateStatus, postType, status } ) {
+export default function CustomStatusSidebar( { onUpdateStatus, postType, status } ) {
 	const [ isEditingStatus, setIsEditingStatus ] = useState( false );
 
 	const handleChangeStatus = statusSlug => {
