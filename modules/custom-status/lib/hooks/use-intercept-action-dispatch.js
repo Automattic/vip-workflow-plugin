@@ -3,6 +3,9 @@ import { useEffect } from '@wordpress/element';
 
 const functionOverrides = {};
 
+/* eslint-disable security/detect-object-injection */
+// This code is called from a Gutenberg plugin context, where provided store and action names are fixed strings.
+
 export default function useInterceptActionDispatch( storeName, actionName, callback ) {
 	// Create a new entry to track this function override if it doesn't exist
 	if ( ! functionOverrides?.[ storeName ]?.[ actionName ] ) {

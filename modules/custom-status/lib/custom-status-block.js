@@ -50,7 +50,7 @@ const CustomSaveButtonSidebar = ( {
 
 	useInterceptPluginSidebar(
 		`${ pluginName }/${ sidebarName }`,
-		( isSidebarActive, toggleSidebar ) => {
+		( _isSidebarActive, _toggleSidebar ) => {
 			if ( isCustomSaveButtonDisabled ) {
 				return;
 			}
