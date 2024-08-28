@@ -62,6 +62,13 @@
 		background-size: 100px 100%;
 		opacity: 1;
 	}
+
+	// When the inner button has `.is-disabled`, make the outer button appear disabled
+	&:has(.vip-workflow-save-button.is-disabled) {
+		cursor: none;
+		color: rgba(255, 255, 255, 0.4);
+		outline: none;
+	}
 }
 
 /* When the ".disable-native-save-button" class is set on #editor, remove the default "Publish"/"Save" button */

@@ -19,15 +19,18 @@ const sidebarName = 'vip-workflow-sidebar';
 // Plugin sidebar
 const CustomSaveButtonSidebar = ( {
 	postType,
-	status,
+	savedStatus,
+	editedStatus,
 	isUnsavedPost,
 	isSavingPost,
 	onUpdateStatus,
 } ) => {
 	const isCustomSaveButtonVisible = useMemo(
-		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, status ),
-		[ isUnsavedPost, postType, status ]
+		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, savedStatus ),
+		[ isUnsavedPost, postType, savedStatus ]
 	);
+
+	const isCustomSaveButtonDisabled = isSavingPost;
 
 	// Selectively disable the native save button when workflow statuses are in effect
 	useEffect( () => {
@@ -40,29 +43,29 @@ const CustomSaveButtonSidebar = ( {
 		}
 	}, [ isCustomSaveButtonVisible ] );
 
-	const nextStatusTerm = useMemo( () => getNextStatusTerm( status ), [ status ] );
+	const nextStatusTerm = useMemo( () => getNextStatusTerm( savedStatus ), [ savedStatus ] );
 
-	const handleButtonClick = ( isSidebarActive, toggleSidebar ) => {
-		if ( nextStatusTerm ) {
-			onUpdateStatus( nextStatusTerm.slug );
-			dispatch( editorStore ).savePost();
+	useInterceptPluginSidebar(
+		`${ pluginName }/${ sidebarName }`,
+		( isSidebarActive, toggleSidebar ) => {
+			if ( isCustomSaveButtonDisabled ) {
+				return;
+			}
+
+			if ( nextStatusTerm ) {
+				onUpdateStatus( nextStatusTerm.slug );
+				dispatch( editorStore ).savePost();
+			}
 		}
-	};
+	);
 
-	useInterceptPluginSidebar( `${ pluginName }/${ sidebarName }`, handleButtonClick );
-
-	let buttonText;
-
-	if ( isUnsavedPost ) {
-		buttonText = __( 'Save', 'vip-workflow' );
-	} else if ( nextStatusTerm ) {
-		buttonText = sprintf( __( 'Move to %s', 'vip-workflow' ), nextStatusTerm.name );
-	} else {
-		buttonText = __( 'Publish 123 123', 'vip-workflow' );
-	}
-
+	const buttonText = getCustomSaveButtonText( nextStatusTerm );
 	const InnerSaveButton = (
-		<CustomInnerSaveButton buttonText={ buttonText } isSavingPost={ isSavingPost } />
+		<CustomInnerSaveButton
+			buttonText={ buttonText }
+			isSavingPost={ isSavingPost }
+			isDisabled={ isCustomSaveButtonDisabled }
+		/>
 	);
 
 	return (
@@ -70,7 +73,7 @@ const CustomSaveButtonSidebar = ( {
 			{ /* "Extended Post Status" in the sidebar */ }
 			<CustomStatusSidebar
 				postType={ postType }
-				status={ status }
+				status={ editedStatus }
 				onUpdateStatus={ onUpdateStatus }
 			/>
 
@@ -86,8 +89,13 @@ const CustomSaveButtonSidebar = ( {
 };
 
 const mapSelectProps = select => {
-	const { getEditedPostAttribute, isSavingPost, getCurrentPost, getCurrentPostType } =
-		select( editorStore );
+	const {
+		getEditedPostAttribute,
+		getCurrentPostAttribute,
+		isSavingPost,
+		getCurrentPost,
+		getCurrentPostType,
+	} = select( editorStore );
 
 	const post = getCurrentPost();
 
@@ -95,8 +103,14 @@ const mapSelectProps = select => {
 	const isUnsavedPost = post?.status === 'auto-draft';
 
 	return {
+		// The status from the last saved post. Updates when a post has been successfully saved in the backend.
+		savedStatus: getCurrentPostAttribute( 'status' ),
+
+		// The status from the current post in the editor. Changes immediately when editPost() is dispatched in the UI,
+		// before the post is updated in the backend.
+		editedStatus: getEditedPostAttribute( 'status' ),
+
 		postType: getCurrentPostType(),
-		status: getEditedPostAttribute( 'status' ),
 		isSavingPost: isSavingPost(),
 		isUnsavedPost,
 	};
@@ -105,7 +119,13 @@ const mapSelectProps = select => {
 const mapDispatchStatusToProps = dispatch => {
 	return {
 		onUpdateStatus( status ) {
-			dispatch( editorStore ).editPost( { status } );
+			const editPostOptions = {
+				// When we change post status, don't add this change to the undo stack.
+				// We don't want ctrl-z or the undo button in toolbar to rollback a post status change.
+				undoIgnore: true,
+			};
+
+			dispatch( editorStore ).editPost( { status }, editPostOptions );
 		},
 	};
 };
@@ -119,9 +139,10 @@ registerPlugin( pluginName, {
 
 // Components
 
-const CustomInnerSaveButton = ( { buttonText, isSavingPost } ) => {
+const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled } ) => {
 	const classNames = clsx( 'vip-workflow-save-button', {
 		'is-busy': isSavingPost,
+		'is-disabled': isDisabled,
 	} );
 
 	return <div className={ classNames }>{ buttonText }</div>;
@@ -144,6 +165,15 @@ const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
 	const isSupportedStatusTerm = allButLastStatusTerm.map( t => t.slug ).includes( statusSlug );
 
 	return isSupportedPostType && isSupportedStatusTerm;
+};
+
+const getCustomSaveButtonText = nextStatusTerm => {
+	if ( nextStatusTerm ) {
+		// translators: %s: Next custom status name, e.g. "Draft"
+		return sprintf( __( 'Move to %s', 'vip-workflow' ), nextStatusTerm.name );
+	}
+
+	return __( 'Save', 'vip-workflow' );
 };
 
 const getNextStatusTerm = currentStatus => {
