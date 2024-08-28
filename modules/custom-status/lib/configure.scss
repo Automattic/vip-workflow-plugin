@@ -28,27 +28,24 @@
 	}
 
 	.edit {
-		margin: 0 1rem;
+		margin-left: 1rem;
+		visibility: hidden;
+	}
+
+	.delete {
 		visibility: hidden;
 	}
 
 	.drag-handle {
-		visibility: hidden;
 		fill: #777;
 	}
 
-	&.dragging {
-		.drag-handle {
-			visibility: visible;
-		}
-	}
-
 	&:hover {
-		.drag-handle {
+		.edit {
 			visibility: visible;
 		}
 
-		.edit {
+		.delete {
 			visibility: visible;
 		}
 	}

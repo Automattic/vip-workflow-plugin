@@ -3,12 +3,12 @@ import apiFetch from '@wordpress/api-fetch';
 import { Button, Flex, FlexBlock, FlexItem } from '@wordpress/components';
 import { useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { plusCircle } from '@wordpress/icons';
 
-import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
+import CreateEditCustomStatusModal from './modals/create-edit-custom-status-modal';
 import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 import ErrorNotice from '../../../shared/js/components/error-notice';
+import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
 
 export default function WorkflowManager( { customStatuses } ) {
@@ -16,41 +16,80 @@ export default function WorkflowManager( { customStatuses } ) {
 	const [ error, setError ] = useState( null );
 
 	const [ statuses, setStatuses ] = useState( customStatuses );
+	const [ status, setStatus ] = useState( null );
 
-	const [ editStatus, setEditStatus ] = useState( null );
-	const [ isNewStatus, setIsNewStatus ] = useState( false );
+	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
+	const [ isCreateEditModalVisible, setIsCreateEditModalVisible ] = useState( false );
 
 	const statusContainerRef = useRef( null );
 	const [ statusContanerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
 
-	const handleNewStatus = () => {
-		setIsNewStatus( true );
-		setEditStatus( {} );
-	};
-
-	const handleEditStatus = customStatus => {
-		setIsNewStatus( false );
-		setEditStatus( customStatus );
-	};
-
-	const handleCancelEditStatus = () => {
-		setEditStatus( null );
-	};
-
 	const handleErrorThrown = error => {
 		setSuccess( null );
 		setError( error );
+		setIsConfirmingDelete( false );
+		setStatus( null );
 	};
 
-	const handleSuccess = message => {
+	const handleSuccess = ( message, statusResult ) => {
 		setError( null );
 		setSuccess( message );
+
+		if ( Array.isArray( statusResult ) ) {
+			setStatuses( statusResult );
+		} else if ( status && ! isConfirmingDelete ) {
+			setStatuses(
+				statuses.map( status => {
+					if ( status.term_id === statusResult.term_id ) {
+						return statusResult;
+					}
+					return status;
+				} )
+			);
+		} else if ( isConfirmingDelete ) {
+			setStatuses( statuses.filter( status => status.term_id !== statusResult.term_id ) );
+		} else {
+			setStatuses( [ ...statuses, statusResult ] );
+		}
+
+		setIsCreateEditModalVisible( false );
+		setIsConfirmingDelete( false );
 	};
 
-	const handleStatusesUpdated = newStatuses => {
-		setStatuses( newStatuses );
-		setEditStatus( null );
+	const handleDelete = async () => {
+		try {
+			await apiFetch( {
+				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + status.term_id,
+				method: 'DELETE',
+			} );
+
+			handleSuccess(
+				sprintf( __( 'Status "%s" deleted successfully.', 'vip-workflow' ), status.name ),
+				status
+			);
+		} catch ( error ) {
+			handleErrorThrown( error.message );
+		}
 	};
+
+	const deleteModal = (
+		<ConfirmDeleteModal
+			confirmationMessage={
+				'Any existing posts with this status will be reassigned to the first status.'
+			}
+			name={ status?.name }
+			onCancel={ () => setIsConfirmingDelete( false ) }
+			onConfirmDelete={ handleDelete }
+		/>
+	);
+
+	const createEditModal = (
+		<CreateEditCustomStatusModal
+			customStatus={ status }
+			onCancel={ () => setIsCreateEditModalVisible( false ) }
+			onSuccess={ handleSuccess }
+		/>
+	);
 
 	const handleDragEnd = async result => {
 		// Dropped outside the list
@@ -75,8 +114,7 @@ export default function WorkflowManager( { customStatuses } ) {
 				data,
 			} );
 
-			handleSuccess( __( 'Statuses reordered successfully.', 'vip-workflow' ) );
-			setStatuses( result.updated_statuses );
+			handleSuccess( __( 'Statuses reordered successfully.', 'vip-workflow' ), result );
 		} catch ( error ) {
 			handleErrorThrown( error.message );
 			setStatuses( originalOrder );
@@ -121,7 +159,14 @@ export default function WorkflowManager( { customStatuses } ) {
 															index={ index }
 															provided={ provided }
 															snapshot={ snapshot }
-															handleEditStatus={ handleEditStatus }
+															handleEditStatus={ () => {
+																setStatus( item );
+																setIsCreateEditModalVisible( true );
+															} }
+															handleDeleteStatus={ () => {
+																setStatus( item );
+																setIsConfirmingDelete( true );
+															} }
 														/>
 													) }
 												</Draggable>
@@ -131,28 +176,24 @@ export default function WorkflowManager( { customStatuses } ) {
 									) }
 								</Droppable>
 							</DragDropContext>
-
 							<div className="add-status">
-								<Button variant="secondary" icon={ plusCircle } onClick={ handleNewStatus }>
-									{ __( 'Add new', 'vip-workflow' ) }
-								</Button>
+								<Button
+									variant="secondary"
+									icon={ 'plus' }
+									onClick={ () => {
+										setStatus( null );
+										setIsCreateEditModalVisible( true );
+									} }
+								></Button>
 							</div>
 						</div>
 					</Flex>
 				</FlexItem>
-				<FlexBlock>
-					{ editStatus && (
-						<CustomStatusEditor
-							status={ editStatus }
-							isNew={ isNewStatus }
-							onCancel={ handleCancelEditStatus }
-							onStatusesUpdated={ handleStatusesUpdated }
-							onErrorThrown={ handleErrorThrown }
-							onSuccess={ handleSuccess }
-						/>
-					) }
-				</FlexBlock>
+				<FlexBlock></FlexBlock>
 			</Flex>
+
+			{ isConfirmingDelete && deleteModal }
+			{ isCreateEditModalVisible && createEditModal }
 		</>
 	);
 }

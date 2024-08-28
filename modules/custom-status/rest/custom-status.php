@@ -194,6 +194,7 @@ class EditStatus {
 
 		$add_status_result = $custom_status_module->add_custom_status( $status_name, $args );
 
+		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $add_status_result );
 	}
 

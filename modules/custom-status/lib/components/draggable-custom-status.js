@@ -1,5 +1,4 @@
 import { Button } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
 import { Icon, dragHandle } from '@wordpress/icons';
 import clsx from 'clsx';
 
@@ -9,6 +8,7 @@ export default function DraggableCustomStatus( {
 	provided,
 	snapshot,
 	handleEditStatus,
+	handleDeleteStatus,
 } ) {
 	const className = clsx(
 		{
@@ -16,10 +16,6 @@ export default function DraggableCustomStatus( {
 		},
 		'custom-status-item'
 	);
-
-	const handleEditClick = () => {
-		handleEditStatus( customStatus );
-	};
 
 	return (
 		<>
@@ -32,10 +28,27 @@ export default function DraggableCustomStatus( {
 			>
 				<div className="name">{ customStatus.name }</div>
 
+				<div className="delete">
+					<Button
+						size="compact"
+						className="delete-emetadata"
+						variant="secondary"
+						icon={ 'trash' }
+						onClick={ handleDeleteStatus }
+						style={ {
+							color: '#b32d2e',
+							boxShadow: 'inset 0 0 0 1px #b32d2e',
+						} }
+					></Button>
+				</div>
+
 				<div className="edit">
-					<Button variant="primary" size="small" onClick={ handleEditClick }>
-						{ __( 'Edit', 'vip-workflow' ) }
-					</Button>
+					<Button
+						size="compact"
+						variant="primary"
+						icon={ 'edit' }
+						onClick={ handleEditStatus }
+					></Button>
 				</div>
 
 				<div className="drag-handle">
