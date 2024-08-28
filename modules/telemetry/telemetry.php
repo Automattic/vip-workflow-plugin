@@ -39,7 +39,7 @@ class Telemetry {
 			'vw_add_custom_status',
 			Tracker::track_event( 'VIPWorkflow\Modules\Telemetry\Events\record_add_custom_status', $this->tracker ),
 			10,
-			2
+			3
 		);
 		add_action(
 			'vw_delete_custom_status',

@@ -14,7 +14,6 @@ function record_notification_sent(
 ) {
 	$tracker->record_event( 'notification_sent', [
 		'subject' => $subject,
-		'post' => (array) $post,
-		'user' => (array) $user,
+		'post_id' => $post->ID,
 	] );
 }

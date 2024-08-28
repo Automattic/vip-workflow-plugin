@@ -28,12 +28,13 @@ function record_custom_status_change(
 
 function record_add_custom_status(
 	string $term,
+	string $slug,
 	array $args,
 	Tracker $tracker
 ): void {
 	$tracker->record_event( 'custom_status_created', [
 		'term' => $term,
-		'args' => $args,
+		'slug' => $slug,
 	] );
 }
 
@@ -46,7 +47,6 @@ function record_delete_custom_status(
 	$tracker->record_event( 'custom_status_deleted', [
 		'status_id' => $status_id,
 		'slug'      => $slug,
-		'args'      => $args,
 	] );
 }
 
@@ -57,6 +57,6 @@ function record_update_custom_status(
 ): void {
 	$tracker->record_event( 'custom_status_changed', [
 		'status_id' => $status_id,
-		'args'      => $args,
+		'slug'      => $args['slug'],
 	] );
 }
