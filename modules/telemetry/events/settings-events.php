@@ -8,13 +8,19 @@ use VIPWorkflow\VIP_Workflow;
 function record_admin_update( string $previous_version, string $new_version, Tracker $tracker ): void {
 	// Get all custom statuses
 	$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
+	// Get supported post types
+	$supported_post_types = VIP_Workflow::instance()->custom_status->get_supported_post_types();
 
-	// Get all posts count
-	$posts_count = wp_count_posts();
-	// Only care about published and posts with custom status
-	$total_posts = (int) $posts_count->publish;
-	foreach ( $custom_statuses as $status ) {
-		$total_posts += (int) $posts_count->{ $status->slug };
+	$total_posts = 0;
+	foreach ( $supported_post_types as $post_type ) {
+		// Get all posts count for each post type
+		$posts_count = wp_count_posts( $post_type );
+
+		// Only care about published and posts with custom status
+		$total_posts += (int) $posts_count->publish;
+		foreach ( $custom_statuses as $status ) {
+			$total_posts += (int) $posts_count->{ $status->slug };
+		}
 	}
 
 	$tracker->record_event( 'administration_update', [
