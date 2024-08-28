@@ -19,6 +19,13 @@
       "options": {
         "activate": true
       }
+    },
+    {
+      "step": "importWxr",
+      "file": {
+        "resource": "url",
+        "url": "https://raw.githubusercontent.com/Automattic/vip-workflow-plugin/trunk/vip-workflow-content.xml"
+      }
     }
   ]
 }
