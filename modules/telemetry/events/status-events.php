@@ -3,6 +3,7 @@
 namespace VIPWorkflow\Modules\Telemetry\Events;
 
 use VIPWorkflow\Modules\Telemetry\Tracker;
+use VIPWorkflow\VIP_Workflow;
 use WP_Post;
 
 function record_custom_status_change(
@@ -11,7 +12,7 @@ function record_custom_status_change(
 	WP_Post $post,
 	Tracker $tracker
 ): void {
-	if ( 'post' !== $post->post_type ) {
+	if ( ! in_array( $post->post_type, VIP_Workflow::instance()->custom_status->get_supported_post_types() ) ) {
 		return;
 	}
 
