@@ -8,7 +8,7 @@
 namespace VIPWorkflow\Modules;
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\Shared\PHP\Module;
 
 class Settings extends Module {
 
@@ -36,7 +36,6 @@ class Settings extends Module {
 				'webhook_url'         => '',
 			),
 			'configure_page_cb' => 'print_default_settings',
-			'autoload'          => true,
 		);
 		$this->module     = VIP_Workflow::instance()->register_module( 'settings', $args );
 	}

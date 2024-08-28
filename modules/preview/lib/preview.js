@@ -4,15 +4,15 @@ import apiFetch from '@wordpress/api-fetch';
 import { __experimentalInspectorPopoverHeader as InspectorPopoverHeader } from '@wordpress/block-editor';
 import {
 	Button,
+	CheckboxControl,
 	Dropdown,
 	ExternalLink,
+	Flex,
 	Modal,
+	Notice,
 	SelectControl,
 	Spinner,
 	__experimentalTruncate as Truncate,
-	Flex,
-	CheckboxControl,
-	Notice,
 } from '@wordpress/components';
 import { compose, useCopyToClipboard } from '@wordpress/compose';
 import { dispatch, withSelect } from '@wordpress/data';

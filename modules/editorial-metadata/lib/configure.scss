@@ -1,0 +1,15 @@
+.emetadata-items {
+	display: flex;
+	flex-wrap: wrap;
+
+	.emetadata-item {
+		flex: 1 1 350px;
+		width: 120px;
+		min-height: 100px;
+	}
+
+	.delete-emetadata {
+		margin-right: 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+}

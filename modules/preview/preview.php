@@ -12,7 +12,7 @@ require_once __DIR__ . '/rest/preview-endpoint.php';
 
 use VIPWorkflow\Modules\Preview\PreviewEndpoint;
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Common\PHP\Module;
+use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\Preview\Token;
 
 class Preview extends Module {
@@ -83,7 +83,7 @@ class Preview extends Module {
 		return $query_vars;
 	}
 
-	public function allow_preview_result( $posts, &$query ) {
+	public function allow_preview_result( $posts, $query ) {
 		$token = $query->query_vars['vw-token'] ?? false;
 
 		// If there's no token, go back to result processing quickly
