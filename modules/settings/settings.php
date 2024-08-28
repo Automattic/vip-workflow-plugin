@@ -129,6 +129,8 @@ class Settings extends Module {
 			echo '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select>';
+
+		printf( '<p class="description">%s</p>', esc_html__( 'Require posts to travel through custom statuses before publishing.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -146,6 +148,8 @@ class Settings extends Module {
 			echo '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select>';
+
+		printf( '<p class="description">%s</p>', esc_html__( 'Always email the blog administator address when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -163,6 +167,8 @@ class Settings extends Module {
 			echo '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select>';
+
+		printf( '<p class="description">%s</p>', esc_html__( 'Notify a webhook URL when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -196,6 +202,8 @@ class Settings extends Module {
 			echo ' type="checkbox" />&nbsp;&nbsp;&nbsp;' . esc_html( $title ) . '</label>';
 			echo '<br />';
 		}
+
+		printf( '<p class="description" style="margin-top: 0.5rem">%s</p>', esc_html__( 'Enable workflow custom statuses on the above post types.', 'vip-workflow' ) );
 	}
 
 	/**
