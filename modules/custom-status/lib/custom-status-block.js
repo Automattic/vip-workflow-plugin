@@ -133,6 +133,8 @@ const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
 	if ( isUnsavedPost ) {
 		// Show native "Save" for new posts
 		return false;
+	} else if ( ! VW_CUSTOM_STATUSES.is_publish_guard_enabled ) {
+		return false;
 	}
 
 	const isSupportedPostType = VW_CUSTOM_STATUSES.supported_post_types.includes( postType );
