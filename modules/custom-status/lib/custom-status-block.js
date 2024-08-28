@@ -1,6 +1,6 @@
 import './editor.scss';
 
-import { compose } from '@wordpress/compose';
+import { compose, useViewportMatch } from '@wordpress/compose';
 import { dispatch, withDispatch, withSelect } from '@wordpress/data';
 import { PluginSidebar } from '@wordpress/edit-post';
 import { store as editorStore } from '@wordpress/editor';
@@ -25,6 +25,9 @@ const CustomSaveButtonSidebar = ( {
 	isSavingPost,
 	onUpdateStatus,
 } ) => {
+	const isTinyViewport = useViewportMatch( 'small', '<' );
+	const isWideViewport = useViewportMatch( 'wide', '>=' );
+
 	const isCustomSaveButtonVisible = useMemo(
 		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, savedStatus ),
 		[ isUnsavedPost, postType, savedStatus ]
@@ -59,12 +62,14 @@ const CustomSaveButtonSidebar = ( {
 		}
 	);
 
-	const buttonText = getCustomSaveButtonText( nextStatusTerm );
+	const buttonText = getCustomSaveButtonText( nextStatusTerm, isWideViewport );
+
 	const InnerSaveButton = (
 		<CustomInnerSaveButton
 			buttonText={ buttonText }
 			isSavingPost={ isSavingPost }
 			isDisabled={ isCustomSaveButtonDisabled }
+			isTinyViewport={ isTinyViewport }
 		/>
 	);
 
@@ -139,10 +144,11 @@ registerPlugin( pluginName, {
 
 // Components
 
-const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled } ) => {
+const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled, isTinyViewport } ) => {
 	const classNames = clsx( 'vip-workflow-save-button', {
 		'is-busy': isSavingPost,
 		'is-disabled': isDisabled,
+		'is-tiny': isTinyViewport,
 	} );
 
 	return <div className={ classNames }>{ buttonText }</div>;
@@ -167,13 +173,24 @@ const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
 	return isSupportedPostType && isSupportedStatusTerm;
 };
 
-const getCustomSaveButtonText = nextStatusTerm => {
+const getCustomSaveButtonText = ( nextStatusTerm, isWideViewport ) => {
+	let buttonText = __( 'Save', 'vip-workflow' );
+
 	if ( nextStatusTerm ) {
-		// translators: %s: Next custom status name, e.g. "Draft"
-		return sprintf( __( 'Move to %s', 'vip-workflow' ), nextStatusTerm.name );
+		const nextStatusName = nextStatusTerm.name;
+
+		if ( isWideViewport ) {
+			// translators: %s: Next custom status name, e.g. "Draft"
+			buttonText = sprintf( __( 'Move to %s', 'vip-workflow' ), nextStatusName );
+		} else {
+			const truncatedStatus = truncateText( nextStatusName, 7 );
+
+			// translators: %s: Next custom status name, possibly truncated with an ellipsis. e.g. "Draft" or "Pendi…"
+			buttonText = sprintf( __( 'Move to %s', 'vip-workflow' ), truncatedStatus );
+		}
 	}
 
-	return __( 'Save', 'vip-workflow' );
+	return buttonText;
 };
 
 const getNextStatusTerm = currentStatus => {
@@ -184,4 +201,11 @@ const getNextStatusTerm = currentStatus => {
 	}
 
 	return VW_CUSTOM_STATUSES.status_terms[ currentIndex + 1 ];
+};
+
+const truncateText = ( text, length ) => {
+	if ( text.length > length ) {
+		return text.slice( 0, length ) + '…';
+	}
+	return text;
 };

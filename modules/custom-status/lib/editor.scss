@@ -69,6 +69,14 @@
 		color: rgba(255, 255, 255, 0.4);
 		outline: none;
 	}
+
+	// When the inner button has `.is-tiny`, allow "Move to" text to take two lines of height
+	&:has(.vip-workflow-save-button.is-tiny) {
+		height: 3rem;
+		overflow: hidden;
+		white-space: wrap;
+		width: 6rem;
+	}
 }
 
 /* When the ".disable-native-save-button" class is set on #editor, remove the default "Publish"/"Save" button */
