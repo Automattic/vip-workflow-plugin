@@ -44,6 +44,7 @@ export default function CustomStatusSidebar( { onUpdateStatus, postType, status 
 
 	const handleChangeStatus = statusSlug => {
 		onUpdateStatus( statusSlug );
+		dispatch( editorStore ).savePost();
 		setIsEditingStatus( false );
 	};
 
