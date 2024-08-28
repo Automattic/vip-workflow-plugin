@@ -20,6 +20,8 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 	- [Editorial Experience](#editorial-experience)
 		- [Preview Links](#preview-links)
 		- [Editorial Metadata](#editorial-metadata)
+- [Limitations](#limitations)
+	- [Editorial Metadata](#editorial-metadata-1)
 - [Code Filters](#code-filters)
 	- [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
 	- [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
@@ -113,6 +115,12 @@ Anybody with a preview link (including not logged-in users) will be able to view
 #### Editorial Metadata
 
 VIP Workflow adds a "Editorial Metadata" section to the post sidebar, which allows for additional data to be included with the post such as "Needs Legal Review". This can be managed under the plugin's settings, to get a visual for all of the configured editorial metadata fields.
+
+## Limitations
+
+### Editorial Metadata
+
+A post type that's supported at first, and then unsupported is used to make posts, then those posts will still show editorial metadata fields.
 
 ## Code Filters
 

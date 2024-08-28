@@ -57,6 +57,7 @@ class Editorial_Metadata extends Module {
 		// Load block editor CSS
 		add_action( 'enqueue_block_editor_assets', [ $this, 'load_styles_for_block_editor' ] );
 
+		// Register the post meta for each editorial metadata term
 		add_action( 'init', [ $this, 'register_editorial_metadata_terms_as_post_meta' ] );
 	}
 
@@ -70,6 +71,7 @@ class Editorial_Metadata extends Module {
 			$post_meta_key = $this->get_postmeta_key( $term );
 			$post_meta_args = $this->get_postmeta_args( $term );
 
+			// ToDo: Fix the bug where if a post type is later unsupported, the editorial metadata fields still show up for that post type
 			foreach ( $this->get_supported_post_types() as $post_type ) {
 				register_post_meta( $post_type, $post_meta_key, $post_meta_args );
 			}
