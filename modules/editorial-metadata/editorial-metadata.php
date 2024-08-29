@@ -166,7 +166,7 @@ class Editorial_Metadata extends Module {
 		wp_enqueue_script( 'vip-workflow-block-editorial-metadata-script', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-block.js', $dependencies, $asset_file['version'], true );
 
 		wp_localize_script( 'vip-workflow-block-editorial-metadata-script', 'VW_EDITORIAL_METADATA', [
-		    'editorial_metadata_terms' => $this->get_editorial_metadata_terms()
+			'editorial_metadata_terms' => $this->get_editorial_metadata_terms(),
 		] );
 	}
 
