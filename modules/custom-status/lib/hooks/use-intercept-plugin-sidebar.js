@@ -11,7 +11,7 @@ export default function useInterceptPluginSidebar( sidebarName, onButtonClick ) 
 		interfaceStore.name,
 		'enableComplementaryArea',
 		( originalAction, args ) => {
-			if ( args[ 0 ] === 'core' && args[ 1 ] === sidebarName ) {
+			if ( args?.[ 0 ] === 'core' && args?.[ 1 ] === sidebarName ) {
 				const isSidebarActive = isPluginSidebarActive();
 				const toggleSidebar = () => originalAction( ...args );
 
