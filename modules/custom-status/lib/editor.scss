@@ -1,31 +1,30 @@
 .vip-workflow-extended-post-status {
-	flex-flow: row wrap;
+	flex-direction: column;
 
 	/* Ensure layout in sidebar is ordered after "Preview" section, as layout order is not guaranteed */
 	order: 11;
-
-	> * {
-		flex-basis: 45%;
-	}
-
-	.vip-workflow-extended-post-status-note {
-		flex-basis: 100%;
-	}
 }
 
-.vip-workflow-extended-post-status-switch-to-draft {
-	flex-basis: 100%;
-}
+.vip-workflow-extended-post-status-section {
+	display: flex;
+	width: 100%;
+	gap: 8px;
 
-.vip-workflow-extended-post-status-publish {
-	> * {
-		flex-basis: 100%;
+	h4 {
+		margin: 0;
+		padding: 6px 0;
+		width: 38%;
 	}
 }
 
 .vip-workflow-extended-post-status-edit {
 	display: flex;
 	flex-direction: column;
+	padding: 6px 12px;
+}
+
+.vip-workflow-edit-help-text {
+
 }
 
 // Use :has() to apply styles to the outer button element containing the .vip-workflow-save-button "icon"

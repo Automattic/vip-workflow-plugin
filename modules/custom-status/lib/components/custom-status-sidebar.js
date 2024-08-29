@@ -1,4 +1,4 @@
-import { Button, SelectControl } from '@wordpress/components';
+import { BaseControl, Button, SelectControl } from '@wordpress/components';
 import { dispatch, select, subscribe } from '@wordpress/data';
 import { PluginPostStatusInfo } from '@wordpress/edit-post';
 import { store as editorStore } from '@wordpress/editor';
@@ -58,16 +58,16 @@ export default function CustomStatusSidebar( { onUpdateStatus, postType, status 
 		<PluginPostStatusInfo
 			className={ `vip-workflow-extended-post-status vip-workflow-extended-post-status-${ status }` }
 		>
-			<h4>{ __( 'Extended Post Status', 'vip-workflow' ) }</h4>
+			<div className="vip-workflow-extended-post-status-section">
+				<h4>{ __( 'Extended Post Status', 'vip-workflow' ) }</h4>
 
-			<div className="vip-workflow-extended-post-status-edit">
 				{ ! isEditingStatus && (
-					<>
+					<div className="vip-workflow-extended-post-status-edit">
 						{ customStatusName }
 						<Button size="compact" variant="link" onClick={ () => setIsEditingStatus( true ) }>
 							{ __( 'Edit', 'vip-workflow' ) }
 						</Button>
-					</>
+					</div>
 				) }
 
 				{ isEditingStatus && (
@@ -78,6 +78,15 @@ export default function CustomStatusSidebar( { onUpdateStatus, postType, status 
 						onChange={ handleChangeStatus }
 					/>
 				) }
+			</div>
+
+			<div className="vip-workflow-edit-help-text">
+				<BaseControl
+					help={ __(
+						'Click "Edit" to skip a custom status, or rollback to a previous state.',
+						'vip-workflow'
+					) }
+				></BaseControl>
 			</div>
 		</PluginPostStatusInfo>
 	);
