@@ -118,7 +118,7 @@ class VIP_Workflow {
 	 * @uses add_action() To add various actions
 	 */
 	private function setup_actions() {
-		add_action( 'init', [ $this, 'action_init' ] );
+		add_action( 'init', [ $this, 'action_init' ], 8 );
 		add_action( 'init', [ $this, 'action_init_after' ], 1000 );
 
 		add_action( 'admin_init', [ $this, 'action_admin_init' ] );
