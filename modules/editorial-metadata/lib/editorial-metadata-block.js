@@ -2,23 +2,31 @@ import { __experimentalText as Text, TextControl, ToggleControl } from '@wordpre
 import { compose } from '@wordpress/compose';
 import { withDispatch, withSelect } from '@wordpress/data';
 import { PluginDocumentSettingPanel } from '@wordpress/edit-post';
+import { __ } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
 import './editor.scss';
 
-const editorialMetadatas = window.VipWorkflowEditorialMetadatas.map( editorialMetadata => ( {
-	key: editorialMetadata.meta_key,
-	label: editorialMetadata.name,
-	type: editorialMetadata.type,
-	term_id: editorialMetadata.term_id,
-	description: editorialMetadata.description,
-} ) );
+const editorialMetadatas = window.VW_EDITORIAL_METADATA.editorial_metadata_terms.map(
+	editorialMetadata => ( {
+		key: editorialMetadata.meta_key,
+		label: editorialMetadata.name,
+		type: editorialMetadata.type,
+		term_id: editorialMetadata.term_id,
+		description: editorialMetadata.description,
+	} )
+);
 
 const noEditorialMetadatasToShow = editorialMetadatas.length === 0;
 
 const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
 	<PluginDocumentSettingPanel name="editorialMetadataPanel" title="Editorial Metadata">
 		{ noEditorialMetadatasToShow && (
-			<Text>Configure your editorial metadata, within the VIP Workflow Plugin Settings.</Text>
+			<Text>
+				{ __(
+					'Configure your editorial metadata, within the VIP Workflow Plugin Settings.',
+					'vip-workflow'
+				) }
+			</Text>
 		) }
 		{ editorialMetadatas.map( editorialMetadata =>
 			getComponentByType( editorialMetadata, metaFields, setMetaFields )

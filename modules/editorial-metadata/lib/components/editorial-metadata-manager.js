@@ -82,6 +82,11 @@ export default function EditorialMetadataManager( {
 		}
 	};
 
+	// Convert metadata type to a label, that's in sentence case
+	const convertMetadataTypeToLabel = metadataType => {
+		return metadataType.charAt( 0 ).toUpperCase() + metadataType.slice( 1 );
+	};
+
 	const deleteModal = (
 		<ConfirmDeleteModal
 			confirmationMessage={ '' }
@@ -96,7 +101,7 @@ export default function EditorialMetadataManager( {
 			availableMetadataTypes={ availableMetadataTypes.map( availableMetadataType => {
 				return {
 					value: availableMetadataType,
-					label: availableMetadataType,
+					label: convertMetadataTypeToLabel( availableMetadataType ),
 				};
 			} ) }
 			metadata={ eMetadataTerm }
@@ -131,10 +136,7 @@ export default function EditorialMetadataManager( {
 											<Text>
 												<i>{ eMetadataTerm.description }</i>
 											</Text>
-											<Text>
-												{ eMetadataTerm.type.charAt( 0 ).toUpperCase() +
-													eMetadataTerm.type.slice( 1 ) }
-											</Text>
+											<Text>{ convertMetadataTypeToLabel( eMetadataTerm.type ) }</Text>
 										</Flex>
 									</CardHeader>
 									<CardFooter>
@@ -154,17 +156,15 @@ export default function EditorialMetadataManager( {
 														boxShadow: 'inset 0 0 0 1px #b32d2e',
 													} }
 												></Button>
-												{
-													<Button
-														size="compact"
-														variant="primary"
-														icon={ 'edit' }
-														onClick={ () => {
-															setEMetadataTerm( eMetadataTerm );
-															setIsCreateEditModalVisible( true );
-														} }
-													></Button>
-												}
+												<Button
+													size="compact"
+													variant="primary"
+													icon={ 'edit' }
+													onClick={ () => {
+														setEMetadataTerm( eMetadataTerm );
+														setIsCreateEditModalVisible( true );
+													} }
+												></Button>
 											</div>
 										</Flex>
 									</CardFooter>

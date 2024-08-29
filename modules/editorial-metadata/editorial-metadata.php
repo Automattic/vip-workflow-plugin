@@ -16,7 +16,7 @@ use WP_Error;
 
 class Editorial_Metadata extends Module {
 
-	// ToDo: Review the default metadata types we provide OOB
+	// ToDo: Add date, and user as supported metadata types
 	const SUPPORTED_METADATA_TYPES = [
 		'checkbox',
 		'text',
@@ -52,7 +52,7 @@ class Editorial_Metadata extends Module {
 		add_action( 'admin_enqueue_scripts', [ $this, 'action_admin_enqueue_scripts' ] );
 
 		// Load block editor JS
-		add_action( 'enqueue_block_editor_assets', [ $this, 'load_scripts_for_block_editor' ], 9 /* Load before custom status module */ );
+		add_action( 'enqueue_block_editor_assets', [ $this, 'load_scripts_for_block_editor' ] );
 
 		// Load block editor CSS
 		add_action( 'enqueue_block_editor_assets', [ $this, 'load_styles_for_block_editor' ] );
@@ -71,7 +71,10 @@ class Editorial_Metadata extends Module {
 			$post_meta_key = $this->get_postmeta_key( $term );
 			$post_meta_args = $this->get_postmeta_args( $term );
 
-			// ToDo: Fix the bug where if a post type is later unsupported, the editorial metadata fields still show up for that post type
+			// ToDo: If a post type was supported, a post was opened and saved, and then the post type was removed from the supported list,
+			// the post meta will still exist for new posts of that post type for a short duration.
+			// It works fine otherwise. This is a limitation of the current implementation.
+			// Working around this is quite expensive, and is fine for now.
 			foreach ( $this->get_supported_post_types() as $post_type ) {
 				register_post_meta( $post_type, $post_meta_key, $post_meta_args );
 			}
@@ -158,10 +161,13 @@ class Editorial_Metadata extends Module {
 
 	public function load_scripts_for_block_editor() {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/editorial-metadata/editorial-metadata-block.asset.php';
-		wp_enqueue_script( 'vip-workflow-block-editorial-metadata-script', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-block.js', $asset_file['dependencies'], $asset_file['version'], true );
+		$dependencies = array_merge( $asset_file['dependencies'], [ 'vip-workflow-block-custom-status-script' ] );
 
-		$editorial_metadata_terms = $this->get_editorial_metadata_terms();
-		wp_localize_script( 'vip-workflow-block-editorial-metadata-script', 'VipWorkflowEditorialMetadatas', $editorial_metadata_terms );
+		wp_enqueue_script( 'vip-workflow-block-editorial-metadata-script', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-block.js', $dependencies, $asset_file['version'], true );
+
+		wp_localize_script( 'vip-workflow-block-editorial-metadata-script', 'VW_EDITORIAL_METADATA', [
+		    'editorial_metadata_terms' => $this->get_editorial_metadata_terms()
+		] );
 	}
 
 	public function load_styles_for_block_editor() {
@@ -421,10 +427,6 @@ class Editorial_Metadata extends Module {
 						return stripslashes( wp_filter_nohtml_kses( trim( $value ) ) );
 				}
 			},
-			'auth_callback' => function () {
-				// ToDo: Review the permissions required to edit metadata
-				return current_user_can( 'edit_posts' ) || current_user_can( 'edit_pages' );
-			},
 		];
 		return $args;
 	}
@@ -432,7 +434,7 @@ class Editorial_Metadata extends Module {
 	/**
 	 * Generate a unique key based on the term id and type
 	 *
-	 * Key is in the form of _vw_editorial_meta_{type}_{term_id}
+	 * Key is in the form of vw_editorial_meta_{type}_{term_id}
 	 *
 	 * @param WP_Term $term The term object
 	 * @return string $postmeta_key Unique key
