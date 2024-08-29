@@ -35,14 +35,18 @@ const CustomSaveButtonSidebar = ( {
 
 	const isCustomSaveButtonDisabled = isSavingPost;
 
-	// Selectively disable the native save button when workflow statuses are in effect
+	// Selectively remove the native save button when publish guard and workflow statuses are in use
 	useEffect( () => {
-		const editor = document.querySelector( '#editor' );
+		if ( VW_CUSTOM_STATUSES.is_publish_guard_enabled ) {
+			const editor = document.querySelector( '#editor' );
 
-		if ( isCustomSaveButtonVisible ) {
-			editor.classList.add( 'disable-native-save-button' );
+			if ( isCustomSaveButtonVisible ) {
+				editor.classList.add( 'disable-native-save-button' );
+			} else {
+				editor.classList.remove( 'disable-native-save-button' );
+			}
 		} else {
-			editor.classList.remove( 'disable-native-save-button' );
+			// Allow both buttons to coexist when publish guard is disabled
 		}
 	}, [ isCustomSaveButtonVisible ] );
 
@@ -159,8 +163,6 @@ const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled, isTinyVi
 const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
 	if ( isUnsavedPost ) {
 		// Show native "Save" for new posts
-		return false;
-	} else if ( ! VW_CUSTOM_STATUSES.is_publish_guard_enabled ) {
 		return false;
 	}
 
