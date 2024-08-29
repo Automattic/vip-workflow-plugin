@@ -4,7 +4,6 @@ import clsx from 'clsx';
 
 export default function DraggableCustomStatus( {
 	customStatus,
-	index,
 	provided,
 	snapshot,
 	handleEditStatus,
@@ -24,7 +23,7 @@ export default function DraggableCustomStatus( {
 				ref={ provided.innerRef }
 				{ ...provided.draggableProps }
 				{ ...provided.dragHandleProps }
-				style={ getItemStyle( index, snapshot.isDragging, provided.draggableProps.style ) }
+				style={ getItemStyle( provided.draggableProps.style ) }
 			>
 				<div className="name">{ customStatus.name }</div>
 
@@ -59,11 +58,9 @@ export default function DraggableCustomStatus( {
 	);
 }
 
-const getItemStyle = ( index, isDragging, draggableStyle ) => {
-	const defaultBackgroundColor = index % 2 ? 'white' : '#f6f7f7';
-
+const getItemStyle = draggableStyle => {
 	return {
-		background: isDragging ? 'lightgreen' : defaultBackgroundColor,
+		background: '#ECECEC',
 		...draggableStyle,
 	};
 };

@@ -137,7 +137,7 @@ export default function WorkflowManager( { customStatuses } ) {
 						<div className="status-section">
 							<DragDropContext onDragEnd={ handleDragEnd }>
 								<Droppable droppableId="droppable">
-									{ ( provided, snapshot ) => (
+									{ provided => (
 										<div
 											className="status-container"
 											{ ...provided.droppableProps }
@@ -145,7 +145,9 @@ export default function WorkflowManager( { customStatuses } ) {
 												statusContainerRef.current = el;
 												provided.innerRef( el );
 											} }
-											style={ getListStyle( snapshot.isDraggingOver ) }
+											style={ {
+												background: '#DEDEDE',
+											} }
 										>
 											{ statuses.map( ( item, index ) => (
 												<Draggable
@@ -156,7 +158,6 @@ export default function WorkflowManager( { customStatuses } ) {
 													{ ( provided, snapshot ) => (
 														<DraggableCustomStatus
 															customStatus={ item }
-															index={ index }
 															provided={ provided }
 															snapshot={ snapshot }
 															handleEditStatus={ () => {
@@ -205,7 +206,3 @@ const reorder = ( list, startIndex, endIndex ) => {
 
 	return result;
 };
-
-const getListStyle = isDraggingOver => ( {
-	background: isDraggingOver ? 'lightblue' : 'white',
-} );
