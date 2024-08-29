@@ -264,8 +264,13 @@ class Custom_Status extends Module {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 		wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-		$custom_statuses = $this->get_custom_statuses();
-		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', $custom_statuses );
+		$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? true : false;
+
+		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
+			'is_publish_guard_enabled' => $publish_guard_enabled,
+			'status_terms'             => $this->get_custom_statuses(),
+			'supported_post_types'     => $this->get_supported_post_types(),
+		] );
 	}
 
 	public function load_styles_for_block_editor() {
@@ -365,8 +370,6 @@ class Custom_Status extends Module {
 				];
 			}
 
-			$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? 1 : 0;
-
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
 
 			// Now, let's print the JS vars
@@ -375,7 +378,6 @@ class Custom_Status extends Module {
 					var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
 					var current_status = '<?php echo esc_js( $selected ); ?>';
 					var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
-					var vw_publish_guard_enabled = '<?php echo esc_js( $publish_guard_enabled ); ?>';
 					var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
 				</script>
 			<?php
