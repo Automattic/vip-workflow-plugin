@@ -85,7 +85,7 @@ const CustomSaveButtonSidebar = ( {
 			{ /* Custom save button in the toolbar */ }
 			{ isCustomSaveButtonVisible && (
 				<PluginSidebar name={ sidebarName } title={ buttonText } icon={ InnerSaveButton }>
-					{ /* Use this space to show approve/reject UI or other sidebar controls */ }
+					{ /* ToDo: Use this space to show approve/reject UI or other sidebar controls */ }
 					{ null }
 				</PluginSidebar>
 			) }
@@ -194,7 +194,9 @@ const getCustomSaveButtonText = ( nextStatusTerm, isWideViewport ) => {
 };
 
 const getNextStatusTerm = currentStatus => {
-	const currentIndex = VW_CUSTOM_STATUSES.status_terms.findIndex( t => t.slug === currentStatus );
+	const currentIndex = VW_CUSTOM_STATUSES.status_terms.findIndex(
+		term => term.slug === currentStatus
+	);
 
 	if ( -1 === currentIndex || currentIndex === VW_CUSTOM_STATUSES.status_terms.length - 1 ) {
 		return false;
