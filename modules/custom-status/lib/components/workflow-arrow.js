@@ -1,6 +1,6 @@
-import { useRef, useLayoutEffect, useState } from '@wordpress/element';
+import { useLayoutEffect, useRef, useState } from '@wordpress/element';
 
-export default function WorkflowArrow( { start, end, referenceDimensions } ) {
+export default function WorkflowArrow( { referenceDimensions } ) {
 	const canvasRef = useRef( null );
 
 	useLayoutEffect( () => {
@@ -11,14 +11,16 @@ export default function WorkflowArrow( { start, end, referenceDimensions } ) {
 			return;
 		}
 
-		const width = 40;
+		const width = 2;
 
-		let height = 100;
+		let height = 5;
 		if ( referenceDimensions?.height ) {
-			height = referenceDimensions.height + 70;
+			height = referenceDimensions.height + 3;
 		}
 
-		const ratio = window.devicePixelRatio;
+		console.log( 'og width', width, 'og height', height );
+
+		const ratio = 0.25;
 		canvas.width = width * ratio;
 		canvas.height = height * ratio;
 		canvas.style.width = `${ width }px`;
@@ -27,6 +29,8 @@ export default function WorkflowArrow( { start, end, referenceDimensions } ) {
 
 		context.fillStyle = 'rgba(0, 0, 0, 0)';
 		context.fillRect( 0, 0, canvas.width, canvas.height );
+
+		console.log( 'width', width, 'height', height );
 
 		drawArrow( context, width, height );
 	}, [ referenceDimensions ] );
@@ -40,9 +44,7 @@ export default function WorkflowArrow( { start, end, referenceDimensions } ) {
 				width: 'fit-content',
 			} }
 		>
-			<h3>{ start }</h3>
 			<canvas ref={ canvasRef }></canvas>
-			<h3>{ end }</h3>
 		</div>
 	);
 }
@@ -83,16 +85,14 @@ export function useRefDimensions( ref ) {
 function drawArrow( context, width, height ) {
 	// Arrow properties
 	const arrowWidthPx = 4;
-	const headLengthPx = 10;
-	const headAngle = Math.PI / 6; // 30 degrees
 
 	// Set (x0, y0) to 20px below the top center of the canvas
 	const x0 = width / 2;
-	const y0 = 20;
+	const y0 = 5;
 
 	// Set (x1, y1) to 20px above the bottom center of the canvas
 	let x1 = width / 2;
-	let y1 = height - 20;
+	let y1 = height - 5;
 
 	// Adjust point upward to account for the arrow width
 	const angle = Math.atan2( y1 - y0, x1 - x0 );
@@ -102,23 +102,10 @@ function drawArrow( context, width, height ) {
 	// Draw line part of arrow
 	context.beginPath();
 	context.moveTo( x0, y0 );
+
+	console.log( x0, y0, x1, y1 );
+
 	context.lineTo( x1, y1 );
 	context.lineWidth = arrowWidthPx;
 	context.stroke();
-
-	// Draw arrow head
-	context.beginPath();
-	context.lineTo( x1, y1 );
-	context.lineTo(
-		x1 - headLengthPx * Math.cos( angle - headAngle ),
-		y1 - headLengthPx * Math.sin( angle - headAngle )
-	);
-	context.lineTo(
-		x1 - headLengthPx * Math.cos( angle + headAngle ),
-		y1 - headLengthPx * Math.sin( angle + headAngle )
-	);
-	context.closePath();
-	context.fillStyle = 'black';
-	context.stroke();
-	context.fill();
 }

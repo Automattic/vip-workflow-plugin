@@ -1,8 +1,8 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import apiFetch from '@wordpress/api-fetch';
-import { Button, Flex, FlexBlock, FlexItem } from '@wordpress/components';
+import { Button, Flex, __experimentalHeading as Heading } from '@wordpress/components';
 import { useRef, useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import DraggableCustomStatus from './draggable-custom-status';
 import CreateEditCustomStatusModal from './modals/create-edit-custom-status-modal';
@@ -22,7 +22,7 @@ export default function WorkflowManager( { customStatuses } ) {
 	const [ isCreateEditModalVisible, setIsCreateEditModalVisible ] = useState( false );
 
 	const statusContainerRef = useRef( null );
-	const [ statusContanerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
+	const [ statusContainerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
 
 	const handleErrorThrown = error => {
 		setSuccess( null );
@@ -97,6 +97,11 @@ export default function WorkflowManager( { customStatuses } ) {
 			return;
 		}
 
+		// Dropped in the same position
+		if ( result.destination.index === result.source.index ) {
+			return;
+		}
+
 		const originalOrder = statuses;
 		const reorderedItems = reorder( statuses, result.source.index, result.destination.index );
 
@@ -125,73 +130,79 @@ export default function WorkflowManager( { customStatuses } ) {
 		<>
 			{ <SuccessNotice success={ success } /> }
 			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
-			<Flex direction={ [ 'column', 'row' ] } justify={ 'start' } align={ 'start' }>
-				<FlexItem>
-					<Flex align={ 'start' } justify={ 'start' }>
-						<WorkflowArrow
-							start={ __( 'Create', 'vip-workflow' ) }
-							end={ __( 'Publish', 'vip-workflow' ) }
-							referenceDimensions={ { width: statusContanerWidth, height: statusContainerHeight } }
-						/>
-
-						<div className="status-section">
-							<DragDropContext onDragEnd={ handleDragEnd }>
-								<Droppable droppableId="droppable">
-									{ provided => (
-										<div
-											className="status-container"
-											{ ...provided.droppableProps }
-											ref={ el => {
-												statusContainerRef.current = el;
-												provided.innerRef( el );
-											} }
-											style={ {
-												background: '#DEDEDE',
-											} }
-										>
-											{ statuses.map( ( item, index ) => (
-												<Draggable
-													key={ item.term_id }
-													draggableId={ `${ item.term_id }` }
-													index={ index }
-												>
-													{ ( provided, snapshot ) => (
-														<DraggableCustomStatus
-															customStatus={ item }
-															provided={ provided }
-															snapshot={ snapshot }
-															handleEditStatus={ () => {
-																setStatus( item );
-																setIsCreateEditModalVisible( true );
-															} }
-															handleDeleteStatus={ () => {
-																setStatus( item );
-																setIsConfirmingDelete( true );
-															} }
-														/>
-													) }
-												</Draggable>
-											) ) }
-											{ provided.placeholder }
-										</div>
-									) }
-								</Droppable>
-							</DragDropContext>
-							<div className="add-status">
-								<Button
-									variant="secondary"
-									icon={ 'plus' }
-									onClick={ () => {
-										setStatus( null );
-										setIsCreateEditModalVisible( true );
-									} }
-								></Button>
+			<div className="status-section">
+				<Flex
+					className="add-status"
+					direction={ [ 'column' ] }
+					align="center"
+					justify="space-between"
+				>
+					<Heading level={ 4 }>{ __( 'Starting Point', 'vip-workflow' ) }</Heading>
+					<WorkflowArrow
+						referenceDimensions={ { width: statusContainerWidth, height: statusContainerHeight } }
+					/>
+				</Flex>
+				<DragDropContext onDragEnd={ handleDragEnd }>
+					<Droppable droppableId="droppable">
+						{ provided => (
+							<div
+								className="status-container"
+								{ ...provided.droppableProps }
+								ref={ el => {
+									statusContainerRef.current = el;
+									provided.innerRef( el );
+								} }
+								style={ {
+									background: 'transparent',
+								} }
+							>
+								{ statuses.map( ( item, index ) => (
+									<Draggable
+										key={ item.term_id }
+										draggableId={ `${ item.term_id }` }
+										index={ index }
+									>
+										{ ( provided, snapshot ) => (
+											<DraggableCustomStatus
+												customStatus={ item }
+												provided={ provided }
+												snapshot={ snapshot }
+												handleEditStatus={ () => {
+													setStatus( item );
+													setIsCreateEditModalVisible( true );
+												} }
+												handleDeleteStatus={ () => {
+													setStatus( item );
+													setIsConfirmingDelete( true );
+												} }
+											/>
+										) }
+									</Draggable>
+								) ) }
+								{ provided.placeholder }
 							</div>
-						</div>
-					</Flex>
-				</FlexItem>
-				<FlexBlock></FlexBlock>
-			</Flex>
+						) }
+					</Droppable>
+				</DragDropContext>
+				<Flex
+					className="add-status"
+					direction={ [ 'column' ] }
+					align="center"
+					justify="space-between"
+				>
+					<WorkflowArrow
+						referenceDimensions={ { width: statusContanerWidth, height: statusContainerHeight } }
+					/>
+					<Button
+						variant="secondary"
+						icon={ 'plus' }
+						onClick={ () => {
+							setStatus( null );
+							setIsCreateEditModalVisible( true );
+						} }
+					></Button>
+				</Flex>
+			</div>
 
 			{ isConfirmingDelete && deleteModal }
 			{ isCreateEditModalVisible && createEditModal }

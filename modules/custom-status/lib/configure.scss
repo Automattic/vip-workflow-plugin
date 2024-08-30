@@ -2,28 +2,23 @@
 	display: flex;
 }
 
-.status-section {
-	margin: 4.5rem 2rem 0 1rem;
-}
-
 .status-container {
 	padding: 8px;
 	min-width: 16rem;
 	height: fit-content;
-	border: 1px solid #c3c4c7;
-	box-shadow: 0 1px 1px rgba(0,0,0,.04);
 }
 
 .custom-status-item {
 	display: flex;
 	cursor: move;
 	padding: 16px 4px 16px 16px;
-	margin: 0 0 8px 0;
+	margin: 8px;
 	border: 1px solid #c3c4c7;
 	user-select: none;
 	align-items: center;
 
-	.name {
+	.status-info {
+		margin-left: 1rem;
 		flex-grow: 1;
 	}
 
@@ -52,6 +47,6 @@
 }
 
 .add-status {
-	text-align: right;
+	text-align: center;
 	margin-top: 0.5rem;
 }
