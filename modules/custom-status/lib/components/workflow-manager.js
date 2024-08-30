@@ -1,6 +1,6 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import apiFetch from '@wordpress/api-fetch';
-import { Button, Flex, __experimentalHeading as Heading } from '@wordpress/components';
+import { Button, Flex, __experimentalHeading as Heading, Tooltip } from '@wordpress/components';
 import { useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -128,7 +128,7 @@ export default function WorkflowManager( { customStatuses } ) {
 
 	return (
 		<>
-			{ <SuccessNotice success={ success } /> }
+			{ success && <SuccessNotice successMessage={ success } setSuccess={ setSuccess } /> }
 			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<div className="status-section">
 				<Flex
@@ -137,7 +137,11 @@ export default function WorkflowManager( { customStatuses } ) {
 					align="center"
 					justify="space-between"
 				>
-					<Heading level={ 4 }>{ __( 'Starting Point', 'vip-workflow' ) }</Heading>
+					<Tooltip
+						text={ __( 'This is the starting point for your publishing workflow', 'vip-workflow' ) }
+					>
+						<Heading level={ 4 }>{ __( 'Starting Point', 'vip-workflow' ) }</Heading>
+					</Tooltip>
 					<WorkflowArrow
 						referenceDimensions={ { width: statusContainerWidth, height: statusContainerHeight } }
 					/>
@@ -193,14 +197,18 @@ export default function WorkflowManager( { customStatuses } ) {
 					<WorkflowArrow
 						referenceDimensions={ { width: statusContainerWidth, height: statusContainerHeight } }
 					/>
-					<Button
-						variant="secondary"
-						icon={ 'plus' }
-						onClick={ () => {
-							setStatus( null );
-							setIsCreateEditModalVisible( true );
-						} }
-					></Button>
+					<Tooltip
+						text={ __( 'Add a new status at the end of your publishing workflow', 'vip-workflow' ) }
+					>
+						<Button
+							variant="secondary"
+							icon={ 'plus' }
+							onClick={ () => {
+								setStatus( null );
+								setIsCreateEditModalVisible( true );
+							} }
+						></Button>
+					</Tooltip>
 				</Flex>
 			</div>
 

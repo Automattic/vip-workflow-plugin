@@ -33,8 +33,8 @@ class Editorial_Metadata extends Module {
 		$this->module_url = $this->get_module_url( __FILE__ );
 		$args             = [
 			'title'                 => __( 'Editorial Metadata', 'vip-workflow' ),
-			'short_description'     => __( 'Track details about your posts in progress.', 'vip-workflow' ),
-			'extended_description'  => __( 'Log details on every assignment using configurable editorial metadata. It is completely customizable; create fields for everything from due date to location to contact information to role assignments.', 'vip-workflow' ),
+			'short_description'     => __( 'Configure your editorial metadata for each post.', 'vip-workflow' ),
+			'extended_description'  => __( 'Editorial metadata can be used to enhance the details logged with each post. It is completely customizable for your workflow, using text and checkbox fields as supported field types.', 'vip-workflow' ),
 			'module_url'            => $this->module_url,
 			'slug'                  => 'editorial-metadata',
 			'configure_page_cb'    => 'print_configure_view',

@@ -1,5 +1,5 @@
 import apiFetch from '@wordpress/api-fetch';
-import { Button, Modal, TextControl, TextareaControl } from '@wordpress/components';
+import { Button, Modal, TextControl, TextareaControl, Tooltip } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -69,9 +69,17 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 				onChange={ setDescription }
 				value={ description }
 			/>
-			<Button variant="primary" onClick={ handleSave } disabled={ isRequesting }>
-				{ customStatus ? __( 'Update', 'vip-workflow' ) : __( 'Save', 'vip-workflow' ) }
-			</Button>
+			<Tooltip
+				text={
+					customStatus
+						? __( 'Update the custom status', 'vip-workflow' )
+						: __( 'Save the new custom status', 'vip-workflow' )
+				}
+			>
+				<Button variant="primary" onClick={ handleSave } disabled={ isRequesting }>
+					{ customStatus ? __( 'Update', 'vip-workflow' ) : __( 'Save', 'vip-workflow' ) }
+				</Button>
+			</Tooltip>
 		</Modal>
 	);
 }

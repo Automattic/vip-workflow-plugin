@@ -3,7 +3,9 @@ import {
 	Flex,
 	__experimentalHeading as Heading,
 	__experimentalText as Text,
+	Tooltip,
 } from '@wordpress/components';
+import { __ } from '@wordpress/i18n';
 import { Icon, dragHandle } from '@wordpress/icons';
 import clsx from 'clsx';
 
@@ -45,24 +47,28 @@ export default function DraggableCustomStatus( {
 					</Text>
 				</Flex>
 				<Flex direction={ [ 'column', 'row' ] } justify={ 'end' } align={ 'end' }>
-					<Button
-						size="compact"
-						className="delete"
-						variant="secondary"
-						icon={ 'trash' }
-						onClick={ handleDeleteStatus }
-						style={ {
-							color: '#b32d2e',
-							boxShadow: 'inset 0 0 0 1px #b32d2e',
-						} }
-					></Button>
-					<Button
-						size="compact"
-						className="edit"
-						variant="primary"
-						icon={ 'edit' }
-						onClick={ handleEditStatus }
-					></Button>
+					<Tooltip text={ __( 'Delete the status', 'vip-workflow' ) }>
+						<Button
+							size="compact"
+							className="delete"
+							variant="secondary"
+							icon={ 'trash' }
+							onClick={ handleDeleteStatus }
+							style={ {
+								color: '#b32d2e',
+								boxShadow: 'inset 0 0 0 1px #b32d2e',
+							} }
+						></Button>
+					</Tooltip>
+					<Tooltip text={ __( 'Edit the status', 'vip-workflow' ) }>
+						<Button
+							size="compact"
+							className="edit"
+							variant="primary"
+							icon={ 'edit' }
+							onClick={ handleEditStatus }
+						></Button>
+					</Tooltip>
 				</Flex>
 			</div>
 		</>

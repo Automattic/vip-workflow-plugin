@@ -112,7 +112,7 @@ export default function EditorialMetadataManager( {
 
 	return (
 		<>
-			{ <SuccessNotice success={ success } /> }
+			{ success && <SuccessNotice successMessage={ success } setSuccess={ setSuccess } /> }
 			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'start' }>
 				<FlexItem>

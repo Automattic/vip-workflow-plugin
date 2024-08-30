@@ -34,7 +34,7 @@ class Custom_Status extends Module {
 		$args         = [
 			'title'                => __( 'Workflow Config', 'vip-workflow' ),
 			'short_description'    => __( 'Configure your editorial workflow.', 'vip-workflow' ),
-			'extended_description' => __( 'Using the power of your own post statuses, configure the different stages of your workflow. You can change existing or add new ones anytime, and drag and drop to change their order.', 'vip-workflow' ),
+			'extended_description' => __( 'Starting from the top, each post status represents the publishing worklow to be followed. This workflow can be configured by re-ordering statuses as well as editing/deleting and creating new ones.', 'vip-workflow' ),
 			'module_url'           => $this->module_url,
 			'slug'                 => 'custom-status',
 			'configure_page_cb'    => 'print_configure_view',
