@@ -17,7 +17,9 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 	- [Plugin activation](#plugin-activation)
 - [Usage](#usage)
 	- [Admin](#admin)
+	- [Publish Guard](#admin)
 	- [Editorial Experience](#editorial-experience)
+		- [Guided Status Movements](#guided-status-movements)
 		- [Preview Links](#preview-links)
 		- [Editorial Metadata](#editorial-metadata)
 - [Limitations](#limitations)
@@ -92,19 +94,29 @@ Note that, these statuses are also available in the quick edit experience on the
 
 The plugin doesn't expect any specific configuration, so your first step is to set up statuses that reflect your workflow. You may notice that the steps are listed in a linear order. The plugin assumes a linear workflow where content is moving from creation to publish.
 
-By default, the plugin prevents publishing a post or page (the supported post types are configurable within settings) unless it has reached the last status on your list. This feature can be turned off under settings under the `Publish Guard` option.
-
 The plugin also sends notifications when a post's status changes. By default, email notifications are turned on for the blog admin. Additional email recipients can be configured. You can also set up webhook notifications under settings.
+
+### Publish Guard
+
+By default, VIP Workflow prevents publishing a post or page (the supported post types are configurable within settings) unless it has reached the last status on your list. This feature can be turned off under settings under the `Publish Guard` option in Admin -> VIP Workflow -> Settings.
 
 ### Editorial Experience
 
-To switch your post status, simply select the new status from the dropdown in the sidebar.
+#### Guided Status Movements
+
+VIP Workflow adds an editor button to move posts between custom post statuses:
+
+![Moving between custom statuses using a custom save process][media-guided-status-movements]
+
+While editing a post with a custom status, click the "Move to ..." button to advance to the next state. When [Publish Guard](#publish-guard) is enabled, the regular "Publish" button will be hidden until a post reaches the final custom status state.
+
+Custom statuses can also be modified by using the "Extended Post Status" row "Edit" button in the post sidebar.
 
 #### Preview Links
 
 VIP Workflow adds a "Preview" section to the post sidebar, which allows sharing previews of pre-published content:
 
-![A demo of the generate preview link feature on a pre-published post][media-generate-preview-link]
+![Generating a preview link on a pre-published post][media-generate-preview-link]
 
 Anybody with a preview link (including not logged-in users) will be able to view a post with a preview link. Preview links can expire in three ways:
 
@@ -292,6 +304,7 @@ This plugin has been based on the wonderful [EditFlow](https://github.com/Automa
 <!-- Links -->
 [media-generate-preview-link-custom-expiration]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link-custom-expiration.gif
 [media-generate-preview-link]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link.gif
+[media-guided-status-movements]: https://github.com/Automattic/vip-workflow-plugin/blob/media/guided-status-movements.gif
 [playground-blueprint]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/Automattic/vip-workflow-plugin/trunk/blueprint.json
 [repo-releases]: https://github.com/Automattic/vip-workflow-plugin/releases
 [wpvip-plugin-activate]: https://docs.wpvip.com/how-tos/activate-plugins-through-code/

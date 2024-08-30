@@ -2,67 +2,63 @@
 	display: flex;
 }
 
-.status-section {
-	margin: 4.5rem 2rem 0 1rem;
+// Draw background line connecting statuses, add overlay background to areas where the line should be hidden
+.status-container {
+	background: linear-gradient(#c8c8d2, #d6d6e1) no-repeat center/2px 100%;
+	margin: 0 8px 8px 8px;
+
+	.add-status {
+		background: #f0f0f1;
+	}
+}
+
+.status-start, .add-status {
+	text-align: center;
+	margin-top: 0.5rem;
+}
+
+.status-start {
+	margin-bottom: 1.5rem;
+}
+
+.status-end {
+	margin-top: 1rem;
 }
 
 .status-container {
-	padding: 8px;
 	min-width: 16rem;
 	height: fit-content;
-	border: 1px solid #c3c4c7;
-	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 .custom-status-item {
 	display: flex;
 	cursor: move;
 	padding: 16px 4px 16px 16px;
-	margin: 0 0 8px 0;
+	margin-bottom: 16px;
 	border: 1px solid #c3c4c7;
 	user-select: none;
 	align-items: center;
+	width: 30rem;
+	gap: 8px;
 
-	.name {
+	.status-info {
 		flex-grow: 1;
 	}
 
 	.edit {
-		margin: 0 1rem;
-		visibility: hidden;
+		margin-right: 1rem;
 	}
 
 	.drag-handle {
-		visibility: hidden;
 		fill: #777;
 	}
 
-	&.dragging {
-		.drag-handle {
-			visibility: visible;
-		}
-	}
-
-	&:hover {
-		.drag-handle {
-			visibility: visible;
-		}
-
-		.edit {
-			visibility: visible;
-		}
+	.custom-status-buttons {
+		width: initial;
 	}
 }
 
-.add-status {
-	text-align: right;
-	margin-top: 0.5rem;
-}
-
-.custom-status-editor {
-	max-width: 40rem;
-
-	.components-base-control:not(:last-child) {
-		margin-bottom: 1rem;
-	}
-}
