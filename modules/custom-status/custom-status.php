@@ -593,6 +593,19 @@ class Custom_Status extends Module {
 		// Reset status cache again, as reassign_post_status() will recache prior statuses
 		$this->custom_statuses_cache = [];
 
+		// Re-order the positions after deletion
+		$custom_statuses = $this->get_custom_statuses();
+
+		// ToDo: Optimize this to only work on the next or previous item.
+		$current_postition = 1;
+
+		// save each status with the new position
+		foreach ( $custom_statuses as $status ) {
+			$this->update_custom_status( $status->term_id, [ 'position' => $current_postition ] );
+
+			$current_postition++;
+		}
+
 		return $result;
 	}
 
