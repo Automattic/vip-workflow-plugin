@@ -191,7 +191,7 @@ export default function WorkflowManager( { customStatuses } ) {
 					justify="space-between"
 				>
 					<WorkflowArrow
-						referenceDimensions={ { width: statusContanerWidth, height: statusContainerHeight } }
+						referenceDimensions={ { width: statusContainerWidth, height: statusContainerHeight } }
 					/>
 					<Button
 						variant="secondary"

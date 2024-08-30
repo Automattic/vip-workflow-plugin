@@ -11,16 +11,14 @@ export default function WorkflowArrow( { referenceDimensions } ) {
 			return;
 		}
 
-		const width = 2;
+		const width = 40;
 
-		let height = 5;
+		let height = 100;
 		if ( referenceDimensions?.height ) {
-			height = referenceDimensions.height + 3;
+			height = referenceDimensions.height + 70;
 		}
 
-		console.log( 'og width', width, 'og height', height );
-
-		const ratio = 0.25;
+		const ratio = window.devicePixelRatio;
 		canvas.width = width * ratio;
 		canvas.height = height * ratio;
 		canvas.style.width = `${ width }px`;
@@ -29,8 +27,6 @@ export default function WorkflowArrow( { referenceDimensions } ) {
 
 		context.fillStyle = 'rgba(0, 0, 0, 0)';
 		context.fillRect( 0, 0, canvas.width, canvas.height );
-
-		console.log( 'width', width, 'height', height );
 
 		drawArrow( context, width, height );
 	}, [ referenceDimensions ] );
@@ -78,7 +74,7 @@ export function useRefDimensions( ref ) {
 		};
 	}, [ ref ] );
 
-	return [ width, height ];
+	return [ width, height / 20 ];
 }
 
 // Given a canvas context, draw an arrow from the top to the bottom of the canvas, pointing down
@@ -88,11 +84,11 @@ function drawArrow( context, width, height ) {
 
 	// Set (x0, y0) to 20px below the top center of the canvas
 	const x0 = width / 2;
-	const y0 = 5;
+	const y0 = 20;
 
 	// Set (x1, y1) to 20px above the bottom center of the canvas
 	let x1 = width / 2;
-	let y1 = height - 5;
+	let y1 = height - 20;
 
 	// Adjust point upward to account for the arrow width
 	const angle = Math.atan2( y1 - y0, x1 - x0 );
@@ -102,9 +98,6 @@ function drawArrow( context, width, height ) {
 	// Draw line part of arrow
 	context.beginPath();
 	context.moveTo( x0, y0 );
-
-	console.log( x0, y0, x1, y1 );
-
 	context.lineTo( x1, y1 );
 	context.lineWidth = arrowWidthPx;
 	context.stroke();
