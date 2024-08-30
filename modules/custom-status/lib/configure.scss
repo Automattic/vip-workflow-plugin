@@ -2,8 +2,30 @@
 	display: flex;
 }
 
+// Draw background line connecting statuses, add overlay background to areas where the line should be hidden
 .status-container {
-	padding: 8px;
+	background: linear-gradient(#c8c8d2, #d6d6e1) no-repeat center/2px 100%;
+	margin: 0 8px 8px 8px;
+
+	.add-status {
+		background: #f0f0f1;
+	}
+}
+
+.status-start, .add-status {
+	text-align: center;
+	margin-top: 0.5rem;
+}
+
+.status-start {
+	margin-bottom: 1.5rem;
+}
+
+.status-end {
+	margin-top: 1rem;
+}
+
+.status-container {
 	min-width: 16rem;
 	height: fit-content;
 
@@ -16,7 +38,7 @@
 	display: flex;
 	cursor: move;
 	padding: 16px 4px 16px 16px;
-	margin: 8px;
+	margin-bottom: 16px;
 	border: 1px solid #c3c4c7;
 	user-select: none;
 	align-items: center;
@@ -40,7 +62,3 @@
 	}
 }
 
-.add-status {
-	text-align: center;
-	margin-top: 0.5rem;
-}

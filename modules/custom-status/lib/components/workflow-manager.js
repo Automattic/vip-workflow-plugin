@@ -1,12 +1,11 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import apiFetch from '@wordpress/api-fetch';
 import { Button, Flex, __experimentalHeading as Heading, Tooltip } from '@wordpress/components';
-import { useRef, useState } from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import DraggableCustomStatus from './draggable-custom-status';
 import CreateEditCustomStatusModal from './modals/create-edit-custom-status-modal';
-import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
 import ErrorNotice from '../../../shared/js/components/error-notice';
 import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
@@ -20,9 +19,6 @@ export default function WorkflowManager( { customStatuses } ) {
 
 	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
 	const [ isCreateEditModalVisible, setIsCreateEditModalVisible ] = useState( false );
-
-	const statusContainerRef = useRef( null );
-	const [ statusContainerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
 
 	const handleErrorThrown = error => {
 		setSuccess( null );
@@ -132,20 +128,16 @@ export default function WorkflowManager( { customStatuses } ) {
 			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<div className="status-section">
 				<Flex
-					className="add-status"
+					className="status-start"
 					direction={ [ 'column' ] }
 					align="center"
 					justify="space-between"
 				>
 					<Tooltip
-						text={ __( 'This is the starting point for your publishing workflow', 'vip-workflow' ) }
+						text={ __( 'This is the start point for your publishing workflow', 'vip-workflow' ) }
 					>
 						<Heading level={ 4 }>{ __( 'Starting Point', 'vip-workflow' ) }</Heading>
 					</Tooltip>
-
-					<WorkflowArrow
-						referenceDimensions={ { width: statusContainerWidth, height: statusContainerHeight } }
-					/>
 				</Flex>
 
 				<DragDropContext onDragEnd={ handleDragEnd }>
@@ -155,11 +147,7 @@ export default function WorkflowManager( { customStatuses } ) {
 								className="status-container"
 								{ ...provided.droppableProps }
 								ref={ el => {
-									statusContainerRef.current = el;
 									provided.innerRef( el );
-								} }
-								style={ {
-									background: 'transparent',
 								} }
 							>
 								{ statuses.map( ( item, index ) => (
@@ -186,31 +174,38 @@ export default function WorkflowManager( { customStatuses } ) {
 									</Draggable>
 								) ) }
 								{ provided.placeholder }
+
+								<Tooltip
+									text={ __(
+										'Add a new status at the end of your publishing workflow',
+										'vip-workflow'
+									) }
+								>
+									<Button
+										className="add-status"
+										variant="secondary"
+										icon={ 'plus' }
+										onClick={ () => {
+											setStatus( null );
+											setIsCreateEditModalVisible( true );
+										} }
+									></Button>
+								</Tooltip>
 							</div>
 						) }
 					</Droppable>
 				</DragDropContext>
 
 				<Flex
-					className="add-status"
 					direction={ [ 'column' ] }
 					align="center"
 					justify="space-between"
+					className="status-end"
 				>
-					<WorkflowArrow
-						referenceDimensions={ { width: statusContainerWidth, height: statusContainerHeight } }
-					/>
 					<Tooltip
-						text={ __( 'Add a new status at the end of your publishing workflow', 'vip-workflow' ) }
+						text={ __( 'This is the end point for your publishing workflow', 'vip-workflow' ) }
 					>
-						<Button
-							variant="secondary"
-							icon={ 'plus' }
-							onClick={ () => {
-								setStatus( null );
-								setIsCreateEditModalVisible( true );
-							} }
-						></Button>
+						<Heading level={ 4 }>{ __( 'Publish', 'vip-workflow' ) }</Heading>
 					</Tooltip>
 				</Flex>
 			</div>
