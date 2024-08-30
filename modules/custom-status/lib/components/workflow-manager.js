@@ -142,10 +142,12 @@ export default function WorkflowManager( { customStatuses } ) {
 					>
 						<Heading level={ 4 }>{ __( 'Starting Point', 'vip-workflow' ) }</Heading>
 					</Tooltip>
+
 					<WorkflowArrow
 						referenceDimensions={ { width: statusContainerWidth, height: statusContainerHeight } }
 					/>
 				</Flex>
+
 				<DragDropContext onDragEnd={ handleDragEnd }>
 					<Droppable droppableId="droppable">
 						{ provided => (
@@ -188,6 +190,7 @@ export default function WorkflowManager( { customStatuses } ) {
 						) }
 					</Droppable>
 				</DragDropContext>
+
 				<Flex
 					className="add-status"
 					direction={ [ 'column' ] }

@@ -6,6 +6,10 @@
 	padding: 8px;
 	min-width: 16rem;
 	height: fit-content;
+
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 .custom-status-item {
@@ -16,9 +20,10 @@
 	border: 1px solid #c3c4c7;
 	user-select: none;
 	align-items: center;
+	width: 30rem;
+	gap: 8px;
 
 	.status-info {
-		margin-left: 1rem;
 		flex-grow: 1;
 	}
 
@@ -28,6 +33,10 @@
 
 	.drag-handle {
 		fill: #777;
+	}
+
+	.custom-status-buttons {
+		width: initial;
 	}
 }
 

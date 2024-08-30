@@ -46,7 +46,13 @@ export default function DraggableCustomStatus( {
 						<i>{ customStatus?.description }</i>
 					</Text>
 				</Flex>
-				<Flex direction={ [ 'column', 'row' ] } justify={ 'end' } align={ 'end' }>
+
+				<Flex
+					direction={ [ 'column', 'row' ] }
+					justify={ 'end' }
+					align={ 'end' }
+					className={ 'custom-status-buttons' }
+				>
 					<Tooltip text={ __( 'Delete the status', 'vip-workflow' ) }>
 						<Button
 							size="compact"
