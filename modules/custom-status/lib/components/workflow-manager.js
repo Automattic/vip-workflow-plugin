@@ -113,13 +113,13 @@ export default function WorkflowManager( { customStatuses } ) {
 				status_positions: reorderedItems.map( item => item.term_id ),
 			};
 
-			const result = await apiFetch( {
+			await apiFetch( {
 				url: VW_CUSTOM_STATUS_CONFIGURE.url_reorder_status,
 				method: 'POST',
 				data,
 			} );
 
-			handleSuccess( __( 'Statuses reordered successfully.', 'vip-workflow' ), result );
+			// Do not show a success message - gracefully do nothing when a reorder succeeds
 		} catch ( error ) {
 			handleErrorThrown( error.message );
 			setStatuses( originalOrder );
