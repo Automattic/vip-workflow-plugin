@@ -14,7 +14,7 @@
       "step": "installPlugin",
       "pluginZipFile": {
         "resource": "url",
-        "url": "https://github-proxy.com/proxy/?repo=Automattic/vip-workflow-plugin&pr=27"
+        "url": "https://github-proxy.com/proxy/?repo=Automattic/vip-workflow-plugin"
       },
       "options": {
         "activate": true
