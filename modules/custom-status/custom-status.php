@@ -601,14 +601,14 @@ class Custom_Status extends Module {
 		if ( is_wp_error( $reassigned_result ) ) {
 			return $reassigned_result;
 		}
-    
-    /**
-			* Fires before a custom status is deleted from the database.
-			*
-			* @param int $status_id The ID of the status being deleted
-			* @param string $old_status_slug The slug of the status being deleted
-			* @param array $args The arguments passed to the delete function
-			*/
+
+ 		/**
+		 * Fires before a custom status is deleted from the database.
+		 *
+		 * @param int $status_id The ID of the status being deleted
+		 * @param string $old_status_slug The slug of the status being deleted
+		 * @param array $args The arguments passed to the delete function
+		 */
 		do_action( 'vw_delete_custom_status', $status_id, $old_status_slug, $args );
 
 		$result = wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
