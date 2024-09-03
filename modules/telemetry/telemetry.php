@@ -24,9 +24,6 @@ class Telemetry {
 	 */
 	public function __construct() {
 		$this->tracks = new Tracks( 'vip_workflow_' );
-
-		// init the events classes
-
 	}
 
 	/**

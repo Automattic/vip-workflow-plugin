@@ -75,7 +75,7 @@ class Status_Events {
 	 * @param string $slug The status slug
 	 * @param array $args The status arguments
 	 */
-	function record_delete_custom_status(
+	public function record_delete_custom_status(
 		int $status_id,
 		string $slug,
 		array $args,
@@ -92,7 +92,7 @@ class Status_Events {
 	 * @param int $status_id The status ID
 	 * @param array $args The status arguments
 	 */
-	function record_update_custom_status(
+	public function record_update_custom_status(
 		int $status_id,
 		array $args,
 	): void {
