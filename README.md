@@ -132,7 +132,7 @@ VIP Workflow adds a "Editorial Metadata" section to the post sidebar, which allo
 
 ### Editorial Metadata
 
-A post type that's supported at first, and then unsupported is used to make posts, then those posts will still show editorial metadata fields.
+If a post is created as a type that supports Editorial Metadata, that metadata will remain even if the post type is modified not to support Editorial Metadata. In other words, once a post is created with Editorial Metadata fields, those fields will remain regardless of configuration changes.
 
 ## Code Filters
 
