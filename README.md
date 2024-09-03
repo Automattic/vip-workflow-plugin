@@ -94,7 +94,9 @@ Note that, these statuses are also available in the quick edit experience on the
 
 The plugin doesn't expect any specific configuration, so your first step is to set up statuses that reflect your workflow. You may notice that the steps are listed in a linear order. The plugin assumes a linear workflow where content is moving from creation to publish.
 
-The plugin also sends notifications when a post's status changes. By default, email notifications are turned on for the blog admin. Additional email recipients can be configured. You can also set up webhook notifications under settings.
+The plugin also sends notifications when a post's status changes. By default, email notifications are turned on for the blog admin. Additional email recipients can be configured. You can also set up webhook notifications under Admin -> VIP Workflow -> Settings.
+
+You can also specify which types of content use custom statuses. If a post does not use custom statuses, it will use the standard WordPress publishing flow.
 
 ### Publish Guard
 
