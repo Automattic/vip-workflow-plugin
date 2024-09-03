@@ -82,6 +82,11 @@ export default function EditorialMetadataManager( {
 		}
 	};
 
+	// Convert metadata type to a label, that's in sentence case
+	const convertMetadataTypeToLabel = metadataType => {
+		return metadataType.charAt( 0 ).toUpperCase() + metadataType.slice( 1 );
+	};
+
 	const deleteModal = (
 		<ConfirmDeleteModal
 			confirmationMessage={ '' }
@@ -96,7 +101,7 @@ export default function EditorialMetadataManager( {
 			availableMetadataTypes={ availableMetadataTypes.map( availableMetadataType => {
 				return {
 					value: availableMetadataType,
-					label: availableMetadataType,
+					label: convertMetadataTypeToLabel( availableMetadataType ),
 				};
 			} ) }
 			metadata={ eMetadataTerm }
@@ -107,7 +112,7 @@ export default function EditorialMetadataManager( {
 
 	return (
 		<>
-			{ <SuccessNotice success={ success } /> }
+			{ success && <SuccessNotice successMessage={ success } setSuccess={ setSuccess } /> }
 			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'start' }>
 				<FlexItem>
@@ -131,6 +136,7 @@ export default function EditorialMetadataManager( {
 											<Text>
 												<i>{ eMetadataTerm.description }</i>
 											</Text>
+											<Text>{ convertMetadataTypeToLabel( eMetadataTerm.type ) }</Text>
 										</Flex>
 									</CardHeader>
 									<CardFooter>

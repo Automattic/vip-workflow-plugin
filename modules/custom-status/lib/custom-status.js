@@ -63,7 +63,7 @@ jQuery( document ).ready( function () {
 	}
 
 	// If we're on the Manage Posts screen, remove the trailing dashes left behind once we hide the post-state span (the status).
-	// We do this since we already add a custom column for post status on the screen since custom statuses are a core part of EF.
+	// We do this since we already add a custom column for post status on the screen since custom statuses are a core part of the plugin.
 	if ( jQuery( '.post-state' ).length > 0 ) {
 		vw_remove_post_title_trailing_dashes();
 	}

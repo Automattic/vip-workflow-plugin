@@ -86,7 +86,7 @@ class Settings extends Module {
 		add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
 
 		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ $this, 'helper_option_custom_post_type' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-		add_settings_field( 'publish_guard', __( 'Publish Guard:', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+		add_settings_field( 'publish_guard', __( 'Publish Guard', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 
 		add_settings_field( 'always_notify_admin', __( 'Always notify blog admin', 'vip-workflow' ), [ $this, 'settings_always_notify_admin_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 		add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'vip-workflow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
@@ -128,6 +128,8 @@ class Settings extends Module {
 			echo '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select>';
+
+		printf( '<p class="description">%s</p>', esc_html__( 'Require posts to travel through custom statuses before publishing.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -145,6 +147,8 @@ class Settings extends Module {
 			echo '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select>';
+
+		printf( '<p class="description">%s</p>', esc_html__( 'Always email the blog administator address when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -162,6 +166,8 @@ class Settings extends Module {
 			echo '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select>';
+
+		printf( '<p class="description">%s</p>', esc_html__( 'Notify a webhook URL when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -195,6 +201,8 @@ class Settings extends Module {
 			echo ' type="checkbox" />&nbsp;&nbsp;&nbsp;' . esc_html( $title ) . '</label>';
 			echo '<br />';
 		}
+
+		printf( '<p class="description" style="margin-top: 0.5rem">%s</p>', esc_html__( 'Enable workflow custom statuses on the above post types.', 'vip-workflow' ) );
 	}
 
 	/**

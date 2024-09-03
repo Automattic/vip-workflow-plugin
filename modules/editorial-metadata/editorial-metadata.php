@@ -16,15 +16,13 @@ use WP_Error;
 
 class Editorial_Metadata extends Module {
 
-	// ToDo: Review the default metadata types we provide OOB
+	// ToDo: Add date, and user as supported metadata types
 	const SUPPORTED_METADATA_TYPES = [
 		'checkbox',
-		'date',
-		'number',
 		'text',
 	];
 	const METADATA_TAXONOMY = 'vw_editorial_meta';
-	const METADATA_POSTMETA_KEY = '_vw_editorial_meta';
+	const METADATA_POSTMETA_KEY = 'vw_editorial_meta';
 
 	public $module;
 
@@ -35,8 +33,8 @@ class Editorial_Metadata extends Module {
 		$this->module_url = $this->get_module_url( __FILE__ );
 		$args             = [
 			'title'                 => __( 'Editorial Metadata', 'vip-workflow' ),
-			'short_description'     => __( 'Track details about your posts in progress.', 'vip-workflow' ),
-			'extended_description'  => __( 'Log details on every assignment using configurable editorial metadata. It is completely customizable; create fields for everything from due date to location to contact information to role assignments.', 'vip-workflow' ),
+			'short_description'     => __( 'Configure your editorial metadata for each post.', 'vip-workflow' ),
+			'extended_description'  => __( 'Editorial metadata can be used to enhance the details logged with each post. It is completely customizable for your workflow, using text and checkbox fields as supported field types.', 'vip-workflow' ),
 			'module_url'            => $this->module_url,
 			'slug'                  => 'editorial-metadata',
 			'configure_page_cb'    => 'print_configure_view',
@@ -48,10 +46,39 @@ class Editorial_Metadata extends Module {
 		// Register the taxonomy we use for Editorial Metadata with WordPress core
 		$this->register_taxonomy();
 
+		EditEditorialMetadata::init();
+
 		// Load CSS and JS resources that we probably need in the admin page
 		add_action( 'admin_enqueue_scripts', [ $this, 'action_admin_enqueue_scripts' ] );
 
-		EditEditorialMetadata::init();
+		// Load block editor JS
+		add_action( 'enqueue_block_editor_assets', [ $this, 'load_scripts_for_block_editor' ] );
+
+		// Load block editor CSS
+		add_action( 'enqueue_block_editor_assets', [ $this, 'load_styles_for_block_editor' ] );
+
+		// Register the post meta for each editorial metadata term
+		add_action( 'init', [ $this, 'register_editorial_metadata_terms_as_post_meta' ] );
+	}
+
+	/**
+	 * Register the post meta for each editorial metadata term
+	 */
+	public function register_editorial_metadata_terms_as_post_meta() {
+		$editorial_metadata_terms = $this->get_editorial_metadata_terms();
+
+		foreach ( $editorial_metadata_terms as $term ) {
+			$post_meta_key = $this->get_postmeta_key( $term );
+			$post_meta_args = $this->get_postmeta_args( $term );
+
+			// ToDo: If a post type was supported, a post was opened and saved, and then the post type was removed from the supported list,
+			// the post meta will still exist for new posts of that post type for a short duration.
+			// It works fine otherwise. This is a limitation of the current implementation.
+			// Working around this is quite expensive, and is fine for now.
+			foreach ( $this->get_supported_post_types() as $post_type ) {
+				register_post_meta( $post_type, $post_meta_key, $post_meta_args );
+			}
+		}
 	}
 
 	/**
@@ -87,12 +114,6 @@ class Editorial_Metadata extends Module {
 		// ToDo: Review the default metadata fields we provide OOB
 		$default_terms = [
 			[
-				'name' => __( 'First Draft Date', 'vip-workflow' ),
-				'slug' => 'first-draft-date',
-				'type' => 'date',
-				'description' => __( 'When the first draft needs to be ready.', 'vip-workflow' ),
-			],
-			[
 				'name' => __( 'Assignment', 'vip-workflow' ),
 				'slug' => 'assignment',
 				'type' => 'text',
@@ -107,7 +128,7 @@ class Editorial_Metadata extends Module {
 			[
 				'name' => __( 'Word Count', 'vip-workflow' ),
 				'slug' => 'word-count',
-				'type' => 'number',
+				'type' => 'text',
 				'description' => __( 'Required post length in words.', 'vip-workflow' ),
 			],
 		];
@@ -136,6 +157,23 @@ class Editorial_Metadata extends Module {
 				'url_edit_editorial_metadata'    => EditEditorialMetadata::get_crud_url(),
 			] );
 		}
+	}
+
+	public function load_scripts_for_block_editor() {
+		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/editorial-metadata/editorial-metadata-block.asset.php';
+		$dependencies = array_merge( $asset_file['dependencies'], [ 'vip-workflow-block-custom-status-script' ] );
+
+		wp_enqueue_script( 'vip-workflow-block-editorial-metadata-script', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-block.js', $dependencies, $asset_file['version'], true );
+
+		wp_localize_script( 'vip-workflow-block-editorial-metadata-script', 'VW_EDITORIAL_METADATA', [
+			'editorial_metadata_terms' => $this->get_editorial_metadata_terms(),
+		] );
+	}
+
+	public function load_styles_for_block_editor() {
+		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/editorial-metadata/editorial-metadata-block.asset.php';
+
+		wp_enqueue_style( 'vip-workflow-manager-styles', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-block.css', [ 'wp-components' ], $asset_file['version'] );
 	}
 
 	/**
@@ -176,6 +214,11 @@ class Editorial_Metadata extends Module {
 			// We require the position key later on
 			if ( ! isset( $term->position ) ) {
 				$term->position = false;
+			}
+
+			// Set the post meta key for the term, this is not set when the term is first created due to a lack of term_id.
+			if ( ! isset( $term->meta_key ) ) {
+				$term->meta_key = $this->get_postmeta_key( $term );
 			}
 
 			// Only add the term to the ordered array if it has a set position and doesn't conflict with another key
@@ -251,6 +294,7 @@ class Editorial_Metadata extends Module {
 			'position' => $args['position'],
 			'type' => $args['type'],
 		];
+
 		$encoded_description = $this->get_encoded_description( $args_to_encode );
 		$args['description'] = $encoded_description;
 
@@ -266,6 +310,8 @@ class Editorial_Metadata extends Module {
 		if ( is_wp_error( $inserted_term ) ) {
 			return $inserted_term;
 		} else {
+			// Update the term with the meta_key, as we use the term_id to generate it
+			$this->update_editorial_metadata_term( $inserted_term['term_id'] );
 			$inserted_term = $this->get_editorial_metadata_term_by( 'id', $inserted_term['term_id'] );
 		}
 
@@ -279,7 +325,7 @@ class Editorial_Metadata extends Module {
 	 * @param array $args Any values that need to be updated for the term
 	 * @return object|WP_Error $updated_term The updated term or a WP_Error object if something disastrous happened
 	*/
-	public function update_editorial_metadata_term( $term_id, $args ) {
+	public function update_editorial_metadata_term( $term_id, $args = [] ) {
 		$old_term = $this->get_editorial_metadata_term_by( 'id', $term_id );
 		if ( ! $old_term ) {
 			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ) );
@@ -296,6 +342,7 @@ class Editorial_Metadata extends Module {
 			'slug' => $old_term->slug,
 			'description' => $old_term->description,
 			'type' => $old_term->type,
+			'meta_key' => isset( $old_term->meta_key ) ? $old_term->meta_key : $this->get_postmeta_key( $old_term ),
 		);
 
 		$new_args = array_merge( $old_args, $args );
@@ -305,12 +352,14 @@ class Editorial_Metadata extends Module {
 			'description' => $new_args['description'],
 			'position' => $new_args['position'],
 			'type' => $new_args['type'],
+			'meta_key' => $new_args['meta_key'],
 		);
 		$encoded_description = $this->get_encoded_description( $args_to_encode );
 		$new_args['description'] = $encoded_description;
 
 		unset( $new_args['position'] );
 		unset( $new_args['type'] );
+		unset( $new_args['meta_key'] );
 
 		$updated_term = wp_update_term( $term_id, self::METADATA_TAXONOMY, $new_args );
 
@@ -334,6 +383,10 @@ class Editorial_Metadata extends Module {
 	 * @return bool $result Whether or not the term was deleted
 	 */
 	public function delete_editorial_metadata_term( $term_id ) {
+		$term = $this->get_editorial_metadata_term_by( 'id', $term_id );
+		$post_meta_key = $this->get_postmeta_key( $term_id, $term->type );
+		delete_post_meta_by_key( $post_meta_key );
+
 		$result = wp_delete_term( $term_id, self::METADATA_TAXONOMY );
 
 		if ( ! $result ) {
@@ -343,7 +396,67 @@ class Editorial_Metadata extends Module {
 		// Reset the internal object cache
 		$this->editorial_metadata_terms_cache = array();
 
+		// Re-order the positions after deletion
+		$editorial_metadata_terms = $this->get_editorial_metadata_terms();
+
+		// ToDo: Optimize this to only work on the next or previous item.
+		$current_postition = 1;
+
+		// save each status with the new position
+		foreach ( $editorial_metadata_terms as $editorial_metadata_term ) {
+			$this->update_editorial_metadata_term( $editorial_metadata_term->term_id, [ 'position' => $current_postition ] );
+
+			$current_postition++;
+		}
+
 		return $result;
+	}
+
+	 /** Generate the args for registering post meta
+	 *
+	 * @param WP_Term $term The term object
+	 * @return array $args Post meta args
+	 */
+	public function get_postmeta_args( $term ) {
+		$arg_type = '';
+		switch ( $term->type ) {
+			case 'checkbox':
+				$arg_type = 'boolean';
+				break;
+			case 'text':
+				$arg_type = 'string';
+				break;
+		}
+		$args = [
+			'type' => $arg_type,
+			'description' => $term->description,
+			'single' => true,
+			'show_in_rest' => true,
+			'sanitize_callback' => function ( $value ) use ( $arg_type ) {
+				switch ( $arg_type ) {
+					case 'boolean':
+						return boolval( $value );
+					case 'string':
+						return stripslashes( wp_filter_nohtml_kses( trim( $value ) ) );
+				}
+			},
+		];
+		return $args;
+	}
+
+	/**
+	 * Generate a unique key based on the term id and type
+	 *
+	 * Key is in the form of vw_editorial_meta_{type}_{term_id}
+	 *
+	 * @param WP_Term $term The term object
+	 * @return string $postmeta_key Unique key
+	 */
+	public function get_postmeta_key( $term ) {
+		$key = self::METADATA_POSTMETA_KEY;
+		$prefix = "{$key}_{$term->type}";
+		$postmeta_key = "{$prefix}_" . $term->term_id;
+		return $postmeta_key;
 	}
 
 	public function print_configure_view() {

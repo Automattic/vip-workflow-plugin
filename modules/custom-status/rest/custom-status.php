@@ -194,14 +194,8 @@ class EditStatus {
 
 		$add_status_result = $custom_status_module->add_custom_status( $status_name, $args );
 
-		if ( is_wp_error( $add_status_result ) ) {
-			return $add_status_result;
-		}
-
-		// ToDo: Switch this to give the new status back, and have the client handle the update
-		return [
-			'updated_statuses' => $custom_status_module->get_custom_statuses(),
-		];
+		// Regardless of an error being thrown, the result will be returned so the client can handle it.
+		return rest_ensure_response( $add_status_result );
 	}
 
 	/**
@@ -259,14 +253,8 @@ class EditStatus {
 		// ToDo: Ensure that we don't do an update when the name and description are the same as the current status
 		$update_status_result = $custom_status_module->update_custom_status( $term_id, $args );
 
-		if ( is_wp_error( $update_status_result ) ) {
-			return $update_status_result;
-		}
-
-		// ToDo: Switch this to give the edited status back, and have the client handle the update
-		return [
-			'updated_statuses' => $custom_status_module->get_custom_statuses(),
-		];
+		// Regardless of an error being thrown, the result will be returned so the client can handle it.
+		return rest_ensure_response( $update_status_result );
 	}
 
 	/**
@@ -287,14 +275,8 @@ class EditStatus {
 
 		$delete_status_result = $custom_status_module->delete_custom_status( $term_id );
 
-		// ToDo: Switch this to give back an error or true, and have the client handle the deletion
-		if ( is_wp_error( $delete_status_result ) ) {
-			return $delete_status_result;
-		} else {
-			return [
-				'updated_statuses' => $custom_status_module->get_custom_statuses(),
-			];
-		}
+		// Regardless of an error being thrown, the result will be returned so the client can handle it.
+		return rest_ensure_response( $delete_status_result );
 	}
 
 	/**
@@ -311,6 +293,7 @@ class EditStatus {
 			return new WP_Error( 'invalid', 'Status order must be an array.' );
 		}
 
+		// ToDo: Switch this to be a bulk update instead.
 		foreach ( $status_order as $position => $term_id ) {
 
 			// Have to add 1 to the position because the index started with zero
@@ -326,10 +309,8 @@ class EditStatus {
 			}
 		}
 
-		// ToDo: Just give back the new order, without this extra field.
-		return [
-			'updated_statuses' => $custom_status_module->get_custom_statuses(),
-		];
+		// Regardless of an error being thrown, the result will be returned so the client can handle it.
+		return rest_ensure_response( $custom_status_module->get_custom_statuses() );
 	}
 
 	// Public API

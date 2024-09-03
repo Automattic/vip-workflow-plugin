@@ -17,8 +17,13 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 	- [Plugin activation](#plugin-activation)
 - [Usage](#usage)
 	- [Admin](#admin)
+	- [Publish Guard](#admin)
 	- [Editorial Experience](#editorial-experience)
-	- [Preview Links](#preview-links)
+		- [Guided Status Movements](#guided-status-movements)
+		- [Preview Links](#preview-links)
+		- [Editorial Metadata](#editorial-metadata)
+- [Limitations](#limitations)
+	- [Editorial Metadata](#editorial-metadata-1)
 - [Code Filters](#code-filters)
 	- [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
 	- [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
@@ -89,25 +94,45 @@ Note that, these statuses are also available in the quick edit experience on the
 
 The plugin doesn't expect any specific configuration, so your first step is to set up statuses that reflect your workflow. You may notice that the steps are listed in a linear order. The plugin assumes a linear workflow where content is moving from creation to publish.
 
-By default, the plugin prevents publishing a post or page (the supported post types are configurable within settings) unless it has reached the last status on your list. This feature can be turned off under settings under the `Publish Guard` option.
-
 The plugin also sends notifications when a post's status changes. By default, email notifications are turned on for the blog admin. Additional email recipients can be configured. You can also set up webhook notifications under settings.
+
+### Publish Guard
+
+By default, VIP Workflow prevents publishing a post or page (the supported post types are configurable within settings) unless it has reached the last status on your list. This feature can be turned off under settings under the `Publish Guard` option in Admin -> VIP Workflow -> Settings.
 
 ### Editorial Experience
 
-To switch your post status, simply select the new status from the dropdown in the sidebar.
+#### Guided Status Movements
 
-### Preview Links
+VIP Workflow adds an editor button to move posts between custom post statuses:
+
+![Moving between custom statuses using a custom save process][media-guided-status-movements]
+
+While editing a post with a custom status, click the "Move to ..." button to advance to the next state. When [Publish Guard](#publish-guard) is enabled, the regular "Publish" button will be hidden until a post reaches the final custom status state.
+
+Custom statuses can also be modified by using the "Extended Post Status" row "Edit" button in the post sidebar.
+
+#### Preview Links
 
 VIP Workflow adds a "Preview" section to the post sidebar, which allows sharing previews of pre-published content:
 
-![A demo of the generate preview link feature on a pre-published post][media-generate-preview-link]
+![Generating a preview link on a pre-published post][media-generate-preview-link]
 
 Anybody with a preview link (including not logged-in users) will be able to view a post with a preview link. Preview links can expire in three ways:
 
 1. Via expiration. Preview links are generated with an expiration (1 hour, 8 hours, or 1 day by default). When this time has passed, the token URL will no longer be valid.
 2. Via one-time usage. If the "One-time use" checkbox is selected, the preview URL will only work a single time, and then the token will become invalid. If this box is not selected, a preview URL can be used any number of times before expiration.
 3. Via post status changes. If a post moves out of VIP Workflow's set of extended post statuses, tokens will no longer be valid. For example, a post moved to "Publish" will no longer have valid preview tokens.
+
+#### Editorial Metadata
+
+VIP Workflow adds a "Editorial Metadata" section to the post sidebar, which allows for additional data to be included with the post such as "Needs Legal Review". This can be managed under the plugin's settings, to get a visual for all of the configured editorial metadata fields.
+
+## Limitations
+
+### Editorial Metadata
+
+A post type that's supported at first, and then unsupported is used to make posts, then those posts will still show editorial metadata fields.
 
 ## Code Filters
 
@@ -279,6 +304,7 @@ This plugin has been based on the wonderful [EditFlow](https://github.com/Automa
 <!-- Links -->
 [media-generate-preview-link-custom-expiration]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link-custom-expiration.gif
 [media-generate-preview-link]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link.gif
+[media-guided-status-movements]: https://github.com/Automattic/vip-workflow-plugin/blob/media/guided-status-movements.gif
 [playground-blueprint]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/Automattic/vip-workflow-plugin/trunk/blueprint.json
 [repo-releases]: https://github.com/Automattic/vip-workflow-plugin/releases
 [wpvip-plugin-activate]: https://docs.wpvip.com/how-tos/activate-plugins-through-code/

@@ -1,112 +1,215 @@
 import './editor.scss';
 
-import { SelectControl } from '@wordpress/components';
-import { compose } from '@wordpress/compose';
-import { dispatch, select, subscribe, withDispatch, withSelect } from '@wordpress/data';
-import { PluginPostStatusInfo } from '@wordpress/edit-post';
-import { __ } from '@wordpress/i18n';
+import { compose, useViewportMatch } from '@wordpress/compose';
+import { dispatch, withDispatch, withSelect } from '@wordpress/data';
+import { PluginSidebar } from '@wordpress/edit-post';
+import { store as editorStore } from '@wordpress/editor';
+import { useMemo } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
+import clsx from 'clsx';
+import { useEffect } from 'react';
 
-/**
- * Map Custom Statuses as options for SelectControl
- */
-const statuses = window.VipWorkflowCustomStatuses.map( customStatus => ( {
-	label: customStatus.name,
-	value: customStatus.slug,
-} ) );
+import CustomStatusSidebar from './components/custom-status-sidebar';
+import useInterceptPluginSidebar from './hooks/use-intercept-plugin-sidebar';
 
-// This is necessary to prevent a call stack exceeded problem within Gutenberg, as our code is called several times for some reason.
-let postLocked = false;
+const pluginName = 'vip-workflow-custom-status';
+const sidebarName = 'vip-workflow-sidebar';
 
-/**
- * Subscribe to changes so we can set a default status and issue a notice when we lock/unlock the publishing capability.
- */
-subscribe( function () {
-	const postId = select( 'core/editor' ).getCurrentPostId();
-	if ( ! postId ) {
-		// Post isn't ready yet so don't do anything.
-		return;
-	}
+// Plugin sidebar
+const CustomSaveButtonSidebar = ( {
+	postType,
+	savedStatus,
+	editedStatus,
+	isUnsavedPost,
+	isSavingPost,
+	onUpdateStatus,
+} ) => {
+	const isTinyViewport = useViewportMatch( 'small', '<' );
+	const isWideViewport = useViewportMatch( 'wide', '>=' );
 
-	// For new posts, we need to force the default custom status which is the first entry.
-	const isCleanNewPost = select( 'core/editor' ).isCleanNewPost();
-	if ( isCleanNewPost ) {
-		dispatch( 'core/editor' ).editPost( {
-			status: statuses[ 0 ].value,
-		} );
-	}
+	const isCustomSaveButtonVisible = useMemo(
+		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, savedStatus ),
+		[ isUnsavedPost, postType, savedStatus ]
+	);
 
-	const selectedStatus = select( 'core/editor' ).getEditedPostAttribute( 'status' );
-	// check if the post status is in the list of custom statuses, and only then issue the notices
-	if (
-		typeof vw_publish_guard_enabled !== 'undefined' &&
-		vw_publish_guard_enabled &&
-		statuses.find( status => status.value === selectedStatus )
-	) {
-		const has_publish_capability =
-			select( 'core/editor' ).getCurrentPost()?._links?.[ 'wp:action-publish' ] ?? false;
-		if ( postLocked && has_publish_capability ) {
-			postLocked = false;
-			dispatch( 'core/notices' ).removeNotice( 'publish-guard-lock' );
-		} else if ( ! postLocked && ! has_publish_capability ) {
-			postLocked = true;
-			dispatch( 'core/notices' ).createInfoNotice( __( 'This post is locked from publishing.' ), {
-				id: 'publish-guard-lock',
-				type: 'snackbar',
-			} );
+	const isCustomSaveButtonDisabled = isSavingPost;
+
+	// Selectively remove the native save button when publish guard and workflow statuses are in use
+	useEffect( () => {
+		if ( VW_CUSTOM_STATUSES.is_publish_guard_enabled ) {
+			const editor = document.querySelector( '#editor' );
+
+			if ( isCustomSaveButtonVisible ) {
+				editor.classList.add( 'disable-native-save-button' );
+			} else {
+				editor.classList.remove( 'disable-native-save-button' );
+			}
+		} else {
+			// Allow both buttons to coexist when publish guard is disabled
 		}
-	}
-} );
+	}, [ isCustomSaveButtonVisible ] );
 
-/**
- * Custom status component
- * @param object props
- */
-const VIPWorkflowCustomPostStati = ( { onUpdate, status } ) => (
-	<PluginPostStatusInfo
-		className={ `vip-workflow-extended-post-status vip-workflow-extended-post-status-${ status }` }
-	>
-		<h4>
-			{ status !== 'publish'
-				? __( 'Extended Post Status', 'vip-workflow' )
-				: __( 'Extended Post Status Disabled.', 'vip-workflow' ) }
-		</h4>
+	const nextStatusTerm = useMemo( () => getNextStatusTerm( savedStatus ), [ savedStatus ] );
 
-		{ status !== 'publish' ? (
-			<SelectControl label="" value={ status } options={ statuses } onChange={ onUpdate } />
-		) : null }
+	useInterceptPluginSidebar(
+		`${ pluginName }/${ sidebarName }`,
+		( _isSidebarActive, _toggleSidebar ) => {
+			if ( isCustomSaveButtonDisabled ) {
+				return;
+			}
 
-		<small className="vip-workflow-extended-post-status-note">
-			{ status !== 'publish'
-				? __( 'Note: this will override all status settings above.', 'vip-workflow' )
-				: __( 'To select a custom status, please unpublish the content first.', 'vip-workflow' ) }
-		</small>
-	</PluginPostStatusInfo>
-);
+			if ( nextStatusTerm ) {
+				onUpdateStatus( nextStatusTerm.slug );
+				dispatch( editorStore ).savePost();
+			}
+		}
+	);
 
-const mapSelectToProps = select => {
+	const buttonText = getCustomSaveButtonText( nextStatusTerm, isWideViewport );
+
+	const InnerSaveButton = (
+		<CustomInnerSaveButton
+			buttonText={ buttonText }
+			isSavingPost={ isSavingPost }
+			isDisabled={ isCustomSaveButtonDisabled }
+			isTinyViewport={ isTinyViewport }
+		/>
+	);
+
+	return (
+		<>
+			{ /* "Extended Post Status" in the sidebar */ }
+			<CustomStatusSidebar
+				postType={ postType }
+				status={ editedStatus }
+				onUpdateStatus={ onUpdateStatus }
+			/>
+
+			{ /* Custom save button in the toolbar */ }
+			{ isCustomSaveButtonVisible && (
+				<PluginSidebar name={ sidebarName } title={ buttonText } icon={ InnerSaveButton }>
+					{ /* ToDo: Use this space to show approve/reject UI or other sidebar controls */ }
+					{ null }
+				</PluginSidebar>
+			) }
+		</>
+	);
+};
+
+const mapSelectProps = select => {
+	const {
+		getEditedPostAttribute,
+		getCurrentPostAttribute,
+		isSavingPost,
+		getCurrentPost,
+		getCurrentPostType,
+	} = select( editorStore );
+
+	const post = getCurrentPost();
+
+	// Brand-new unsaved posts have the 'auto-draft' status.
+	const isUnsavedPost = post?.status === 'auto-draft';
+
 	return {
-		status: select( 'core/editor' ).getEditedPostAttribute( 'status' ),
+		// The status from the last saved post. Updates when a post has been successfully saved in the backend.
+		savedStatus: getCurrentPostAttribute( 'status' ),
+
+		// The status from the current post in the editor. Changes immediately when editPost() is dispatched in the UI,
+		// before the post is updated in the backend.
+		editedStatus: getEditedPostAttribute( 'status' ),
+
+		postType: getCurrentPostType(),
+		isSavingPost: isSavingPost(),
+		isUnsavedPost,
 	};
 };
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchStatusToProps = dispatch => {
 	return {
-		onUpdate( status ) {
-			dispatch( 'core/editor' ).editPost( { status } );
+		onUpdateStatus( status ) {
+			const editPostOptions = {
+				// When we change post status, don't add this change to the undo stack.
+				// We don't want ctrl-z or the undo button in toolbar to rollback a post status change.
+				undoIgnore: true,
+			};
+
+			dispatch( editorStore ).editPost( { status }, editPostOptions );
 		},
 	};
 };
 
-const plugin = compose(
-	withSelect( mapSelectToProps ),
-	withDispatch( mapDispatchToProps )
-)( VIPWorkflowCustomPostStati );
-
-/**
- * Kick it off
- */
-registerPlugin( 'vip-workflow-custom-status', {
-	icon: 'vip-workflow',
-	render: plugin,
+registerPlugin( pluginName, {
+	render: compose(
+		withSelect( mapSelectProps ),
+		withDispatch( mapDispatchStatusToProps )
+	)( CustomSaveButtonSidebar ),
 } );
+
+// Components
+
+const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled, isTinyViewport } ) => {
+	const classNames = clsx( 'vip-workflow-save-button', {
+		'is-busy': isSavingPost,
+		'is-disabled': isDisabled,
+		'is-tiny': isTinyViewport,
+	} );
+
+	return <div className={ classNames }>{ buttonText }</div>;
+};
+
+// Utility methods
+
+const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
+	if ( isUnsavedPost ) {
+		// Show native "Save" for new posts
+		return false;
+	}
+
+	const isSupportedPostType = VW_CUSTOM_STATUSES.supported_post_types.includes( postType );
+
+	// Exclude the last custom status. Show the regular editor button on the last step.
+	const allButLastStatusTerm = VW_CUSTOM_STATUSES.status_terms.slice( 0, -1 );
+	const isSupportedStatusTerm = allButLastStatusTerm.map( t => t.slug ).includes( statusSlug );
+
+	return isSupportedPostType && isSupportedStatusTerm;
+};
+
+const getCustomSaveButtonText = ( nextStatusTerm, isWideViewport ) => {
+	let buttonText = __( 'Save', 'vip-workflow' );
+
+	if ( nextStatusTerm ) {
+		const nextStatusName = nextStatusTerm.name;
+
+		if ( isWideViewport ) {
+			// translators: %s: Next custom status name, e.g. "Draft"
+			buttonText = sprintf( __( 'Move to %s', 'vip-workflow' ), nextStatusName );
+		} else {
+			const truncatedStatus = truncateText( nextStatusName, 7 );
+
+			// translators: %s: Next custom status name, possibly truncated with an ellipsis. e.g. "Draft" or "Pendi…"
+			buttonText = sprintf( __( 'Move to %s', 'vip-workflow' ), truncatedStatus );
+		}
+	}
+
+	return buttonText;
+};
+
+const getNextStatusTerm = currentStatus => {
+	const currentIndex = VW_CUSTOM_STATUSES.status_terms.findIndex(
+		term => term.slug === currentStatus
+	);
+
+	if ( -1 === currentIndex || currentIndex === VW_CUSTOM_STATUSES.status_terms.length - 1 ) {
+		return false;
+	}
+
+	return VW_CUSTOM_STATUSES.status_terms[ currentIndex + 1 ];
+};
+
+const truncateText = ( text, length ) => {
+	if ( text.length > length ) {
+		return text.slice( 0, length ) + '…';
+	}
+	return text;
+};

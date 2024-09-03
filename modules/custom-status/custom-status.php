@@ -34,7 +34,7 @@ class Custom_Status extends Module {
 		$args         = [
 			'title'                => __( 'Workflow Config', 'vip-workflow' ),
 			'short_description'    => __( 'Configure your editorial workflow.', 'vip-workflow' ),
-			'extended_description' => __( 'Using the power of your own post statuses, configure the different stages of your workflow. You can change existing or add new ones anytime, and drag and drop to change their order.', 'vip-workflow' ),
+			'extended_description' => __( 'Starting from the top, each post status represents the publishing worklow to be followed. This workflow can be configured by re-ordering statuses as well as editing/deleting and creating new ones.', 'vip-workflow' ),
 			'module_url'           => $this->module_url,
 			'slug'                 => 'custom-status',
 			'configure_page_cb'    => 'print_configure_view',
@@ -264,8 +264,13 @@ class Custom_Status extends Module {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 		wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-		$custom_statuses = $this->get_custom_statuses();
-		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VipWorkflowCustomStatuses', $custom_statuses );
+		$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? true : false;
+
+		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
+			'is_publish_guard_enabled' => $publish_guard_enabled,
+			'status_terms'             => $this->get_custom_statuses(),
+			'supported_post_types'     => $this->get_supported_post_types(),
+		] );
 	}
 
 	public function load_styles_for_block_editor() {
@@ -365,8 +370,6 @@ class Custom_Status extends Module {
 				];
 			}
 
-			$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? 1 : 0;
-
 			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
 
 			// Now, let's print the JS vars
@@ -375,7 +378,6 @@ class Custom_Status extends Module {
 					var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
 					var current_status = '<?php echo esc_js( $selected ); ?>';
 					var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
-					var vw_publish_guard_enabled = '<?php echo esc_js( $publish_guard_enabled ); ?>';
 					var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
 				</script>
 			<?php
@@ -450,7 +452,8 @@ class Custom_Status extends Module {
 	 *
 	 * @param int|string $term The status to add or update
 	 * @param array|string $args Change the values of the inserted term
-	 * @return array|WP_Error $response The Term ID and Term Taxonomy ID
+	 *
+	 * @return object|WP_Error $inserted_term The newly inserted term object or a WP_Error object
 	 */
 	public function add_custom_status( $term, $args = [] ) {
 		// Term is always added to the end of the list
@@ -474,7 +477,7 @@ class Custom_Status extends Module {
 		 */
 		do_action( 'vw_add_custom_status', $term, $slug, $args );
 
-		$response            = wp_insert_term( $term, self::TAXONOMY_KEY, [
+		$inserted_term = wp_insert_term( $term, self::TAXONOMY_KEY, [
 			'slug'        => $slug,
 			'description' => $encoded_description,
 		] );
@@ -482,7 +485,14 @@ class Custom_Status extends Module {
 		// Reset our internal object cache
 		$this->custom_statuses_cache = [];
 
-		return $response;
+		// Populate the inserted term with the new values, or else only the term_taxonomy_id and term_id are returned.
+		if ( is_wp_error( $inserted_term ) ) {
+			return $inserted_term;
+		} else {
+			$inserted_term = $this->get_custom_status_by( 'id', $inserted_term['term_id'] );
+		}
+
+		return $inserted_term;
 	}
 
 	/**
@@ -570,46 +580,59 @@ class Custom_Status extends Module {
 
 		$old_status_slug = $old_status->slug;
 
+		if ( $this->is_restricted_status( $old_status_slug ) || 'draft' === $old_status_slug ) {
+			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $old_status->name . ')' );
+		}
+
 		// Reset our internal object cache
 		$this->custom_statuses_cache = [];
 
-		if ( ! $this->is_restricted_status( $old_status_slug ) && 'draft' !== $old_status_slug ) {
-			// Get the new status to reassign posts to, which would be the first custom status.
-			// In the event that the first custom status is being deleted, we'll reassign to the second custom status.
-			// Since draft cannot be deleted, we don't need to worry about ever getting index out of bounds.
-			$custom_statuses = $this->get_custom_statuses();
-			$new_status_slug = $custom_statuses[0]->slug;
-			if ( $old_status_slug === $new_status_slug ) {
-				$new_status_slug = $custom_statuses[1]->slug;
-			}
-
-			$reassigned_result = $this->reassign_post_status( $old_status_slug, $new_status_slug );
-			// If the reassignment failed, return the error
-			if ( is_wp_error( $reassigned_result ) ) {
-				return $reassigned_result;
-			}
-
-			// Reset status cache again, as reassign_post_status() will recache prior statuses
-			$this->custom_statuses_cache = [];
-
-			/**
-			 * Fires before a custom status is deleted from the database.
-			 *
-			 * @param int $status_id The ID of the status being deleted
-			 * @param string $old_status_slug The slug of the status being deleted
-			 * @param array $args The arguments passed to the delete function
-			 */
-			do_action( 'vw_delete_custom_status', $status_id, $old_status_slug, $args );
-
-			$result = wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
-			if ( ! $result || is_wp_error( $result ) ) {
-				return new WP_Error( 'invalid', __( 'Unable to delete custom status.', 'vip-workflow' ) );
-			}
-
-			return $result;
-		} else {
-			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $old_status->name . ')' );
+		// Get the new status to reassign posts to, which would be the first custom status.
+		// In the event that the first custom status is being deleted, we'll reassign to the second custom status.
+		// Since draft cannot be deleted, we don't need to worry about ever getting index out of bounds.
+		$custom_statuses = $this->get_custom_statuses();
+		$new_status_slug = $custom_statuses[0]->slug;
+		if ( $old_status_slug === $new_status_slug ) {
+			$new_status_slug = $custom_statuses[1]->slug;
 		}
+
+		$reassigned_result = $this->reassign_post_status( $old_status_slug, $new_status_slug );
+		// If the reassignment failed, return the error
+		if ( is_wp_error( $reassigned_result ) ) {
+			return $reassigned_result;
+		}
+    
+    /**
+			* Fires before a custom status is deleted from the database.
+			*
+			* @param int $status_id The ID of the status being deleted
+			* @param string $old_status_slug The slug of the status being deleted
+			* @param array $args The arguments passed to the delete function
+			*/
+		do_action( 'vw_delete_custom_status', $status_id, $old_status_slug, $args );
+
+		$result = wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
+		if ( ! $result ) {
+			return new WP_Error( 'invalid', __( 'Unable to delete custom status.', 'vip-workflow' ) );
+		}
+
+		// Reset status cache again, as reassign_post_status() will recache prior statuses
+		$this->custom_statuses_cache = [];
+
+		// Re-order the positions after deletion
+		$custom_statuses = $this->get_custom_statuses();
+
+		// ToDo: Optimize this to only work on the next or previous item.
+		$current_postition = 1;
+
+		// save each status with the new position
+		foreach ( $custom_statuses as $status ) {
+			$this->update_custom_status( $status->term_id, [ 'position' => $current_postition ] );
+
+			$current_postition++;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -818,6 +841,66 @@ class Custom_Status extends Module {
 		include_once __DIR__ . '/views/manage-workflow.php';
 	}
 
+	/**
+	 * Given a post ID, return true if the extended post status allows for publishing.
+	 *
+	 * @param int $post_id The post ID being queried.
+	 * @return bool True if the post should not be published based on the extended post status, false otherwise.
+	 */
+	public function workflow_is_publish_blocked( $post_id ) {
+		$post = get_post( $post_id );
+
+		if ( null === $post ) {
+			return false;
+		}
+
+		$custom_statuses = $this->get_custom_statuses();
+		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
+
+		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
+			// Post is not using a custom status, or is not a supported post type
+			return false;
+		}
+
+		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
+
+		if ( $status_before_publish->slug === $post->post_status ) {
+			// Post is in the last status, so it can be published
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Given a post ID, return true if the post type is supported and using a custom status, false otherwise.
+	 *
+	 * @param int $post_id The post ID being queried.
+	 * @return bool True if the post is using a custom status, false otherwise.
+	 */
+	public function is_post_using_custom_status( $post_id ) {
+		$post = get_post( $post_id );
+
+		if ( null === $post ) {
+			return false;
+		}
+
+		$custom_post_types = $this->get_supported_post_types();
+		$custom_statuses   = $this->get_custom_statuses();
+		$status_slugs      = wp_list_pluck( $custom_statuses, 'slug' );
+
+		return in_array( $post->post_type, $custom_post_types ) && in_array( $post->post_status, $status_slugs );
+	}
+
+	/**
+	 * Register REST API endpoints for custom statuses
+	 */
+	public function register_rest_endpoints() {
+		EditStatus::init();
+	}
+
+	// Hacks for custom statuses to work with core
+
 	// phpcs:disable:WordPress.Security.NonceVerification.Missing -- Disabling nonce verification but we should renable it.
 
 	/**
@@ -873,6 +956,7 @@ class Custom_Status extends Module {
 			}
 		}
 	}
+
 	//phpcs:enable:WordPress.Security.NonceVerification.Missing
 
 	/**
@@ -1246,65 +1330,6 @@ class Custom_Status extends Module {
 		/* translators: %s: post title */
 		$actions['view'] = '<a href="' . esc_url( $preview_link ) . '" title="' . esc_attr( sprintf( __( 'Preview &#8220;%s&#8221;' ), $post->post_title ) ) . '" rel="permalink">' . __( 'Preview' ) . '</a>';
 		return $actions;
-	}
-
-	/**
-	 * Given a post ID, return true if the extended post status allows for publishing.
-	 *
-	 * @param int $post_id The post ID being queried.
-	 * @return bool True if the post should not be published based on the extended post status, false otherwise.
-	 */
-	public function workflow_is_publish_blocked( $post_id ) {
-		$post = get_post( $post_id );
-
-		if ( null === $post ) {
-			return false;
-		}
-
-		$custom_statuses = $this->get_custom_statuses();
-		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
-
-		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
-			// Post is not using a custom status, or is not a supported post type
-			return false;
-		}
-
-		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
-
-		if ( $status_before_publish->slug === $post->post_status ) {
-			// Post is in the last status, so it can be published
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-
-	/**
-	 * Given a post ID, return true if the post type is supported and using a custom status, false otherwise.
-	 *
-	 * @param int $post_id The post ID being queried.
-	 * @return bool True if the post is using a custom status, false otherwise.
-	 */
-	public function is_post_using_custom_status( $post_id ) {
-		$post = get_post( $post_id );
-
-		if ( null === $post ) {
-			return false;
-		}
-
-		$custom_post_types = $this->get_supported_post_types();
-		$custom_statuses   = $this->get_custom_statuses();
-		$status_slugs      = wp_list_pluck( $custom_statuses, 'slug' );
-
-		return in_array( $post->post_type, $custom_post_types ) && in_array( $post->post_status, $status_slugs );
-	}
-
-	/**
-	 * Register REST API endpoints for custom statuses
-	 */
-	public function register_rest_endpoints() {
-		EditStatus::init();
 	}
 }
 

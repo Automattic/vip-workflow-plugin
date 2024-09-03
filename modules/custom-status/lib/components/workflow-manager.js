@@ -1,14 +1,13 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import apiFetch from '@wordpress/api-fetch';
-import { Button, Flex, FlexBlock, FlexItem } from '@wordpress/components';
-import { useRef, useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
-import { plusCircle } from '@wordpress/icons';
+import { Button, Flex, __experimentalHeading as Heading, Tooltip } from '@wordpress/components';
+import { useState } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 
-import CustomStatusEditor from './custom-status-editor';
 import DraggableCustomStatus from './draggable-custom-status';
-import WorkflowArrow, { useRefDimensions } from './workflow-arrow';
+import CreateEditCustomStatusModal from './modals/create-edit-custom-status-modal';
 import ErrorNotice from '../../../shared/js/components/error-notice';
+import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
 
 export default function WorkflowManager( { customStatuses } ) {
@@ -16,45 +15,86 @@ export default function WorkflowManager( { customStatuses } ) {
 	const [ error, setError ] = useState( null );
 
 	const [ statuses, setStatuses ] = useState( customStatuses );
+	const [ status, setStatus ] = useState( null );
 
-	const [ editStatus, setEditStatus ] = useState( null );
-	const [ isNewStatus, setIsNewStatus ] = useState( false );
-
-	const statusContainerRef = useRef( null );
-	const [ statusContanerWidth, statusContainerHeight ] = useRefDimensions( statusContainerRef );
-
-	const handleNewStatus = () => {
-		setIsNewStatus( true );
-		setEditStatus( {} );
-	};
-
-	const handleEditStatus = customStatus => {
-		setIsNewStatus( false );
-		setEditStatus( customStatus );
-	};
-
-	const handleCancelEditStatus = () => {
-		setEditStatus( null );
-	};
+	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
+	const [ isCreateEditModalVisible, setIsCreateEditModalVisible ] = useState( false );
 
 	const handleErrorThrown = error => {
 		setSuccess( null );
 		setError( error );
+		setIsConfirmingDelete( false );
+		setStatus( null );
 	};
 
-	const handleSuccess = message => {
+	const handleSuccess = ( message, statusResult ) => {
 		setError( null );
 		setSuccess( message );
+
+		if ( Array.isArray( statusResult ) ) {
+			setStatuses( statusResult );
+		} else if ( status && ! isConfirmingDelete ) {
+			setStatuses(
+				statuses.map( status => {
+					if ( status.term_id === statusResult.term_id ) {
+						return statusResult;
+					}
+					return status;
+				} )
+			);
+		} else if ( isConfirmingDelete ) {
+			setStatuses( statuses.filter( status => status.term_id !== statusResult.term_id ) );
+		} else {
+			setStatuses( [ ...statuses, statusResult ] );
+		}
+
+		setIsCreateEditModalVisible( false );
+		setIsConfirmingDelete( false );
 	};
 
-	const handleStatusesUpdated = newStatuses => {
-		setStatuses( newStatuses );
-		setEditStatus( null );
+	const handleDelete = async () => {
+		try {
+			await apiFetch( {
+				url: VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + status.term_id,
+				method: 'DELETE',
+			} );
+
+			handleSuccess(
+				sprintf( __( 'Status "%s" deleted successfully.', 'vip-workflow' ), status.name ),
+				status
+			);
+		} catch ( error ) {
+			handleErrorThrown( error.message );
+		}
 	};
+
+	const deleteModal = (
+		<ConfirmDeleteModal
+			confirmationMessage={
+				'Any existing posts with this status will be reassigned to the first status.'
+			}
+			name={ status?.name }
+			onCancel={ () => setIsConfirmingDelete( false ) }
+			onConfirmDelete={ handleDelete }
+		/>
+	);
+
+	const createEditModal = (
+		<CreateEditCustomStatusModal
+			customStatus={ status }
+			onCancel={ () => setIsCreateEditModalVisible( false ) }
+			onSuccess={ handleSuccess }
+		/>
+	);
 
 	const handleDragEnd = async result => {
 		// Dropped outside the list
 		if ( ! result.destination ) {
+			return;
+		}
+
+		// Dropped in the same position
+		if ( result.destination.index === result.source.index ) {
 			return;
 		}
 
@@ -69,14 +109,13 @@ export default function WorkflowManager( { customStatuses } ) {
 				status_positions: reorderedItems.map( item => item.term_id ),
 			};
 
-			const result = await apiFetch( {
+			await apiFetch( {
 				url: VW_CUSTOM_STATUS_CONFIGURE.url_reorder_status,
 				method: 'POST',
 				data,
 			} );
 
-			handleSuccess( __( 'Statuses reordered successfully.', 'vip-workflow' ) );
-			setStatuses( result.updated_statuses );
+			// Do not show a success message - gracefully do nothing when a reorder succeeds
 		} catch ( error ) {
 			handleErrorThrown( error.message );
 			setStatuses( originalOrder );
@@ -85,74 +124,94 @@ export default function WorkflowManager( { customStatuses } ) {
 
 	return (
 		<>
-			{ <SuccessNotice success={ success } /> }
+			{ success && <SuccessNotice successMessage={ success } setSuccess={ setSuccess } /> }
 			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
-			<Flex direction={ [ 'column', 'row' ] } justify={ 'start' } align={ 'start' }>
-				<FlexItem>
-					<Flex align={ 'start' } justify={ 'start' }>
-						<WorkflowArrow
-							start={ __( 'Create', 'vip-workflow' ) }
-							end={ __( 'Publish', 'vip-workflow' ) }
-							referenceDimensions={ { width: statusContanerWidth, height: statusContainerHeight } }
-						/>
+			<div className="status-section">
+				<Flex
+					className="status-start"
+					direction={ [ 'column' ] }
+					align="center"
+					justify="space-between"
+				>
+					<Tooltip
+						text={ __( 'This is the start point for your publishing workflow', 'vip-workflow' ) }
+					>
+						<Heading level={ 4 }>{ __( 'Starting Point', 'vip-workflow' ) }</Heading>
+					</Tooltip>
+				</Flex>
 
-						<div className="status-section">
-							<DragDropContext onDragEnd={ handleDragEnd }>
-								<Droppable droppableId="droppable">
-									{ ( provided, snapshot ) => (
-										<div
-											className="status-container"
-											{ ...provided.droppableProps }
-											ref={ el => {
-												statusContainerRef.current = el;
-												provided.innerRef( el );
-											} }
-											style={ getListStyle( snapshot.isDraggingOver ) }
-										>
-											{ statuses.map( ( item, index ) => (
-												<Draggable
-													key={ item.term_id }
-													draggableId={ `${ item.term_id }` }
-													index={ index }
-												>
-													{ ( provided, snapshot ) => (
-														<DraggableCustomStatus
-															customStatus={ item }
-															index={ index }
-															provided={ provided }
-															snapshot={ snapshot }
-															handleEditStatus={ handleEditStatus }
-														/>
-													) }
-												</Draggable>
-											) ) }
-											{ provided.placeholder }
-										</div>
+				<DragDropContext onDragEnd={ handleDragEnd }>
+					<Droppable droppableId="droppable">
+						{ provided => (
+							<div
+								className="status-container"
+								{ ...provided.droppableProps }
+								ref={ el => {
+									provided.innerRef( el );
+								} }
+							>
+								{ statuses.map( ( item, index ) => (
+									<Draggable
+										key={ item.term_id }
+										draggableId={ `${ item.term_id }` }
+										index={ index }
+									>
+										{ ( provided, snapshot ) => (
+											<DraggableCustomStatus
+												customStatus={ item }
+												provided={ provided }
+												snapshot={ snapshot }
+												handleEditStatus={ () => {
+													setStatus( item );
+													setIsCreateEditModalVisible( true );
+												} }
+												handleDeleteStatus={ () => {
+													setStatus( item );
+													setIsConfirmingDelete( true );
+												} }
+											/>
+										) }
+									</Draggable>
+								) ) }
+								{ provided.placeholder }
+
+								<Tooltip
+									text={ __(
+										'Add a new status at the end of your publishing workflow',
+										'vip-workflow'
 									) }
-								</Droppable>
-							</DragDropContext>
-
-							<div className="add-status">
-								<Button variant="secondary" icon={ plusCircle } onClick={ handleNewStatus }>
-									{ __( 'Add new', 'vip-workflow' ) }
-								</Button>
+								>
+									<Button
+										className="add-status"
+										variant="secondary"
+										icon={ 'plus' }
+										onClick={ () => {
+											setStatus( null );
+											setIsCreateEditModalVisible( true );
+										} }
+									></Button>
+								</Tooltip>
 							</div>
-						</div>
-					</Flex>
-				</FlexItem>
-				<FlexBlock>
-					{ editStatus && (
-						<CustomStatusEditor
-							status={ editStatus }
-							isNew={ isNewStatus }
-							onCancel={ handleCancelEditStatus }
-							onStatusesUpdated={ handleStatusesUpdated }
-							onErrorThrown={ handleErrorThrown }
-							onSuccess={ handleSuccess }
-						/>
-					) }
-				</FlexBlock>
-			</Flex>
+						) }
+					</Droppable>
+				</DragDropContext>
+
+				<Flex
+					direction={ [ 'column' ] }
+					align="center"
+					justify="space-between"
+					className="status-end"
+				>
+					<Tooltip
+						text={ __( 'This is the end point for your publishing workflow', 'vip-workflow' ) }
+					>
+						<Heading level={ 4 }>{ __( 'Publish', 'vip-workflow' ) }</Heading>
+					</Tooltip>
+				</Flex>
+			</div>
+
+			{ isConfirmingDelete && deleteModal }
+			{ isCreateEditModalVisible && createEditModal }
 		</>
 	);
 }
@@ -164,7 +223,3 @@ const reorder = ( list, startIndex, endIndex ) => {
 
 	return result;
 };
-
-const getListStyle = isDraggingOver => ( {
-	background: isDraggingOver ? 'lightblue' : 'white',
-} );

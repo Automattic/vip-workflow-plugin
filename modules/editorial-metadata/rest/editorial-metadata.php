@@ -88,16 +88,6 @@ class EditEditorialMetadata {
 						return absint( $param );
 					},
 				],
-				'type'        => [
-					'required'          => true,
-					'validate_callback' => function ( $param ) {
-						$param = trim( $param );
-						return ! empty( $param ) && in_array( $param, Editorial_Metadata::SUPPORTED_METADATA_TYPES );
-					},
-					'sanitize_callback' => function ( $param ) {
-						return trim( $param );
-					},
-				],
 
 				// Optional parameters
 				'description' => [
@@ -189,7 +179,6 @@ class EditEditorialMetadata {
 		$editorial_metadata_name        = sanitize_text_field( $request->get_param( 'name' ) );
 		$editorial_metadata_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$editorial_metadata_description = $request->get_param( 'description' );
-		$editorial_metadata_type         = $request->get_param( 'type' );
 
 		$editorial_metadata_module = VIP_Workflow::instance()->editorial_metadata;
 
@@ -224,7 +213,6 @@ class EditEditorialMetadata {
 		$args = [
 			'description' => $editorial_metadata_description,
 			'slug'        => $editorial_metadata_slug,
-			'type'        => $editorial_metadata_type,
 			'name'        => $editorial_metadata_name,
 		];
 
