@@ -602,7 +602,7 @@ class Custom_Status extends Module {
 			return $reassigned_result;
 		}
 
- 		/**
+		/**
 		 * Fires before a custom status is deleted from the database.
 		 *
 		 * @param int $status_id The ID of the status being deleted
