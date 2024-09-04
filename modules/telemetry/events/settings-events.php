@@ -23,6 +23,24 @@ class Settings_Events {
 	}
 
 	/**
+	 * Register the event callbacks
+	 */
+	public function register_events(): void {
+		add_action(
+			'vw_upgrade_version',
+			[ $this, 'record_admin_update' ],
+			10,
+			2
+		);
+		add_action(
+			'vw_save_settings',
+			[ $this, 'record_settings_update' ],
+			10,
+			2
+		);
+	}
+
+	/**
 	 * Record an event when the plugin is upgraded
 	 *
 	 * @param string $previous_version The previous version

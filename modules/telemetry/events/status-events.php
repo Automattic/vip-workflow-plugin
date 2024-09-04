@@ -24,6 +24,36 @@ class Status_Events {
 	}
 
 	/**
+	 * Register the event callbacks
+	 */
+	public function register_events(): void {
+		add_action(
+			'transition_post_status',
+			[ $this, 'record_custom_status_change' ],
+			10,
+			3
+		);
+		add_action(
+			'vw_add_custom_status',
+			[ $this, 'record_add_custom_status' ],
+			10,
+			3
+		);
+		add_action(
+			'vw_delete_custom_status',
+			[ $this, 'record_delete_custom_status' ],
+			10,
+			3
+		);
+		add_action(
+			'vw_update_custom_status',
+			[ $this, 'record_update_custom_status' ],
+			10,
+			2
+		);
+	}
+
+	/**
 	 * Record an event when a post's custom status changes
 	 *
 	 * @param string $new_status The new status

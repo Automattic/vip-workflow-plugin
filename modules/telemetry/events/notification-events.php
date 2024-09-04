@@ -24,6 +24,18 @@ class Notification_Events {
 	}
 
 	/**
+	 * Register the event callbacks
+	 */
+	public function register_events(): void {
+		add_action(
+			'vw_notification_status_change',
+			[ $this, 'record_notification_sent' ],
+			10,
+			3
+		);
+	}
+
+	/**
 	 * Record an event when a notification is sent
 	 *
 	 * @param WP_Post $post The post object
