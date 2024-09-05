@@ -37,19 +37,19 @@ class Status_Events {
 			'vw_add_custom_status',
 			[ $this, 'record_add_custom_status' ],
 			10,
-			3
+			2
 		);
 		add_action(
 			'vw_delete_custom_status',
 			[ $this, 'record_delete_custom_status' ],
 			10,
-			3
+			2
 		);
 		add_action(
 			'vw_update_custom_status',
 			[ $this, 'record_update_custom_status' ],
 			10,
-			2
+			3
 		);
 	}
 
@@ -90,7 +90,6 @@ class Status_Events {
 	public function record_add_custom_status(
 		string $term,
 		string $slug,
-		array $args,
 	): void {
 		$this->tracks->record_event( 'custom_status_created', [
 			'term' => $term,
@@ -108,7 +107,6 @@ class Status_Events {
 	public function record_delete_custom_status(
 		int $status_id,
 		string $slug,
-		array $args,
 	): void {
 		$this->tracks->record_event( 'custom_status_deleted', [
 			'status_id' => $status_id,
@@ -120,15 +118,18 @@ class Status_Events {
 	 * Record an event when a custom status is updated
 	 *
 	 * @param int $status_id The status ID
-	 * @param array $args The status arguments
+	 * @param string $slug The status slug
+	 * @param int $position The status position
 	 */
 	public function record_update_custom_status(
 		int $status_id,
-		array $args,
+		string $slug,
+		int $position,
 	): void {
 		$this->tracks->record_event( 'custom_status_changed', [
 			'status_id' => $status_id,
-			'slug'      => $args['slug'],
+			'slug'      => $slug,
+			'position'  => $position,
 		] );
 	}
 }

@@ -546,9 +546,15 @@ class Custom_Status extends Module {
 		 * Fires before a custom status is updated in the database.
 		 *
 		 * @param int $status_id The ID of the status being updated
-		 * @param array $args The arguments passed to the update function
+		 * @param string $slug The slug of the status being updated
+		 * @param int $position The position of the status being updated
 		 */
-		do_action( 'vw_update_custom_status', $status_id, $args );
+		do_action(
+			'vw_update_custom_status',
+			$status_id,
+			isset( $args['slug'] ) ? $args['slug'] : $old_status->slug,
+			isset( $args['position'] ) ? $args['position'] : $old_status->position
+		);
 
 		$updated_status = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
 
