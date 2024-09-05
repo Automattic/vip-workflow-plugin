@@ -52,15 +52,16 @@ class Settings_Events {
 		// Get supported post types
 		$supported_post_types = VIP_Workflow::instance()->custom_status->get_supported_post_types();
 
-		$total_posts = 0;
+		$published_posts = 0;
+		$custom_status_posts = 0;
 		foreach ( $supported_post_types as $post_type ) {
 			// Get all posts count for each post type
 			$posts_count = wp_count_posts( $post_type );
 
 			// Only care about published and posts with custom status
-			$total_posts += (int) $posts_count->publish;
+			$published_posts += (int) $posts_count->publish;
 			foreach ( $custom_statuses as $status ) {
-				$total_posts += (int) $posts_count->{ $status->slug };
+				$custom_status_posts += (int) $posts_count->{ $status->slug };
 			}
 		}
 
@@ -68,7 +69,7 @@ class Settings_Events {
 			'previous_version' => $previous_version,
 			'new_version'      => $new_version,
 			'custom_statuses'  => count( $custom_statuses ),
-			'total_posts'      => $total_posts,
+			'published_posts'  => $published_posts,
 		] );
 	}
 
