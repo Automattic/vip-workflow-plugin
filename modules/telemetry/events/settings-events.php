@@ -66,10 +66,10 @@ class Settings_Events {
 		}
 
 		$this->tracks->record_event( 'administration_update', [
-			'previous_version' => $previous_version,
-			'new_version'      => $new_version,
-			'custom_statuses'  => count( $custom_statuses ),
-			'published_posts'  => $published_posts,
+			'previous_version'    => $previous_version,
+			'new_version'         => $new_version,
+			'custom_status_posts' => $custom_status_posts,
+			'published_posts'     => $published_posts,
 		] );
 	}
 
