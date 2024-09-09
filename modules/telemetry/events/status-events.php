@@ -85,7 +85,6 @@ class Status_Events {
 	 *
 	 * @param string $term The term name
 	 * @param string $slug The term slug
-	 * @param array $args The term arguments
 	 */
 	public function record_add_custom_status(
 		string $term,
@@ -102,7 +101,6 @@ class Status_Events {
 	 *
 	 * @param int $status_id The status ID
 	 * @param string $slug The status slug
-	 * @param array $args The status arguments
 	 */
 	public function record_delete_custom_status(
 		int $status_id,
