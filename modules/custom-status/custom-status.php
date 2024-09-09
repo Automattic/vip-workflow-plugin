@@ -466,16 +466,16 @@ class Custom_Status extends Module {
 			$args['position'] = $default_position;
 		}
 
-		$encoded_description = $this->get_encoded_description( $args );
-
 		/**
 		 * Fires before a custom status is added to the database.
 		 *
 		 * @param string $term The status to add or update
 		 * @param string $slug The slug of the status
-		 * @param array|string $args Change the values of the inserted term
+		 * @param string $description Change the values of the inserted term
 		 */
-		do_action( 'vw_add_custom_status', $term, $slug, $args );
+		do_action( 'vw_add_custom_status', $term, $slug, $args['description'] );
+
+		$encoded_description = $this->get_encoded_description( $args );
 
 		$inserted_term = wp_insert_term( $term, self::TAXONOMY_KEY, [
 			'slug'        => $slug,
@@ -613,9 +613,8 @@ class Custom_Status extends Module {
 		 *
 		 * @param int $status_id The ID of the status being deleted
 		 * @param string $old_status_slug The slug of the status being deleted
-		 * @param array $args The arguments passed to the delete function
 		 */
-		do_action( 'vw_delete_custom_status', $status_id, $old_status_slug, $args );
+		do_action( 'vw_delete_custom_status', $status_id, $old_status_slug );
 
 		$result = wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
 		if ( ! $result ) {
