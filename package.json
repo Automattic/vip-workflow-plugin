@@ -7,8 +7,11 @@
     "dev": "webpack --watch",
     "dev:hot": "wp-scripts start -c webpack.config.js --hot",
     "wp-env": "wp-env",
-    "lint-js": "eslint modules",
-    "lint-js-fix": "eslint modules --fix"
+		"check-types": "tsc --noEmit",
+    "lint:js": "eslint modules",
+    "lint:js:fix": "eslint modules --fix",
+		"lint:css:fix": "wp-scripts lint-style --fix",
+    "lint:css": "wp-scripts lint-style"
   },
   "repository": {
     "type": "git",
@@ -47,6 +50,14 @@
     "prettier": "npm:wp-prettier@2.8.5",
     "react": "^18.3.1",
     "react-dom": "^18.0.0",
-    "webpack": "^5.91.0"
+    "webpack": "^5.91.0",
+		"@types/wordpress__block-editor": "^11.5.15",
+    "@types/wordpress__editor": "^14.3.0",
+    "stylelint": "^14.16.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.2"
+  },
+  "stylelint": {
+    "extends": "./node_modules/@wordpress/scripts/config/.stylelintrc.json"
   }
 }
