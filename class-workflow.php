@@ -75,12 +75,14 @@ class VIP_Workflow {
 		// VIP Workflow base module
 		require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/class-module.php';
 
+		$skip_module_dirs = [ 'shared', 'preview' ];
+
 		// Scan the modules directory and include any modules that exist there
 		$module_dirs = scandir( VIP_WORKFLOW_ROOT . '/modules/' );
 		$class_names = [];
 		foreach ( $module_dirs as $module_dir ) {
 			// Skip the . and .. directories, as well as the shared folder
-			if ( file_exists( VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php" ) && 'shared' !== $module_dir ) {
+			if ( file_exists( VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php" ) && ! in_array( $module_dir, $skip_module_dirs ) ) {
 				include_once VIP_WORKFLOW_ROOT . "/modules/{$module_dir}/$module_dir.php";
 
 				// Prepare the class name because it should be standardized
