@@ -22,10 +22,11 @@ jobs:
         with:
           php-version: '8.2'
 
-      - name: Setup Node.js
-        uses: Automattic/vip-actions/nodejs-setup@trunk
+      - name: Set up NodeJS
+        uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version: 'lts/*'
+          cache: npm
 
       - name: Run ESLint
         run: npm run lint:js
@@ -45,10 +46,11 @@ jobs:
         with:
           php-version: '8.2'
 
-      - name: Setup Node.js
-        uses: Automattic/vip-actions/nodejs-setup@trunk
+      - name: Set up NodeJS
+        uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version: 'lts/*'
+          cache: npm
 
       - name: Install Composer dependencies
         uses: ramsey/composer-install@v3
