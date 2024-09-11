@@ -22,7 +22,7 @@ jobs:
             wp: '6.2'
             allowed_failure: false
           # Check latest WP with the highest supported PHP.
-          - php: 'latest'
+          - php: '8.3'
             wp: 'master'
             allowed_failure: false
 
