@@ -18,8 +18,6 @@
     "automattic/vipwpcs": "^3.0"
   },
   "scripts": {
-    "cs": "@php ./vendor/bin/phpcs -p -s -v -n . --standard=\"phpcs.xml.dist\" --extensions=php --ignore=\"/vendor/*,/node_modules/*\"",
-    "cbf": "@php ./vendor/bin/phpcbf -p -s -v -n . --standard=\"phpcs.xml.dist\" --extensions=php --ignore=\"/vendor/*,/node_modules/*\"",
 		"test": "wp-env run tests-cli --env-cwd=wp-content/plugins/vip-workflow-plugin ./vendor/bin/phpunit -c phpunit.xml.dist",
 		"test-multisite": "wp-env run tests-cli --env-cwd=wp-content/plugins/vip-workflow-plugin /bin/bash -c 'WP_MULTISITE=1 ./vendor/bin/phpunit'",
 		"test-watch": [
