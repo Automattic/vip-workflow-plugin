@@ -1,7 +1,7 @@
 /* @override http://localhost:8888/wpplugindev/wp-content/plugins/vip-workflow/css/settings.css?ver=0.6.4 */
 
 .float-right {
-	float:right;
+	float: right;
 }
 
 .float-left {
@@ -46,41 +46,41 @@
 .vip-workflow-modules .vip-workflow-module p {
 	font-size: 12px;
 	color: #3d3d3d;
-	line-height: 150%;
-	font-family: "Helvetica Neue",Helvetica,Arial,"Lucida Grande",Verdana,"Bitstream Vera Sans",sans-serif;
+	line-height: 150;
+	font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", Verdana, "Bitstream Vera Sans", sans-serif;
 }
 
 .vip-workflow-modules .vip-workflow-module h4 {
-	color: #000000;
-    font-family: "Helvetica Neue",Helvetica,Arial,"Lucida Grande",Verdana,"Bitstream Vera Sans",sans-serif;
-    font-size: 17px;
-    font-style: normal;
-    font-weight: normal;
-    line-height: 1.1;
-    margin: 0;
-    padding: 0;
+	color: #000;
+	font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", Verdana, "Bitstream Vera Sans", sans-serif;
+	font-size: 17px;
+	font-style: normal;
+	font-weight: 400;
+	line-height: 1.1;
+	margin: 0;
+	padding: 0;
 }
 
 .vip-workflow-modules .vip-workflow-module .vip-workflow-module-actions {
 	position: absolute;
-	bottom: 0px;
+	bottom: 0;
 	left: 10px;
 	width: 250px;
 }
 
 .vip-workflow-modules .vip-workflow-module .button-primary:hover {
-	color: #FFFFFF;
-	border-color: #3B5D0C;
+	color: #fff;
+	border-color: #3b5d0c;
 }
 
 .vip-workflow-modules .vip-workflow-module .button-primary.configure-vip-workflow-module {
 	color: #f1f1f1;
 	border: solid 1px #666;
-	background: #DDD;
-	background: -webkit-gradient(linear, left top, left bottom, from(#BBB), to(#888));
-	background: -moz-linear-gradient(top,  #BBB,  #888);
+	background: #ddd;
+	background: -webkit-gradient(linear, left top, left bottom, from(#bbb), to(#888));
+	background: -moz-linear-gradient(top, #bbb, #888);
 	box-shadow: none;
-	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#BBB', endColorstr='#888');
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#BBB", endColorstr="#888");
 	text-shadow: none;
 	float: right;
 }
@@ -90,7 +90,7 @@
 }
 
 .vip-workflow-modules .vip-workflow-module .button-primary.configure-vip-workflow-module:hover {
-	color: #FFF;
+	color: #fff;
 	border-color: #444;
 }
 
@@ -126,7 +126,7 @@ h3.nav-tab-wrapper {
 	position: relative;
 	top: -5px;
 	margin-left: 25px;
-	font-weight:normal;
+	font-weight: 400;
 	font-size: 12px;
 	line-height: 20px;
 	padding-left: 25px;
@@ -139,14 +139,14 @@ h3.nav-tab-wrapper {
 }
 
 .vip-workflow-updated-message {
-	background-color: #FFFFE0;
-	border: 1px solid #E6DB55;
+	background-color: #ffffe0;
+	border: 1px solid #e6db55;
 	transition: opacity 0.5s ease;
 }
 
 .vip-workflow-error-message {
-	background-color: #FFEBE8;
-	border: 1px solid #CC0000;
+	background-color: #ffebe8;
+	border: 1px solid #c00;
 }
 
 /* Admin Menu Icon */

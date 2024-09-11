@@ -7,10 +7,14 @@
     "dev": "webpack --watch",
     "dev:hot": "wp-scripts start -c webpack.config.js --hot",
     "wp-env": "wp-env",
-		"check-types": "tsc --noEmit",
-    "lint:js": "eslint modules",
-    "lint:js:fix": "eslint modules --fix",
-		"lint:css:fix": "wp-scripts lint-style --fix",
+    "check-types": "tsc --noEmit",
+		"lint": "npm run lint:js && npm run lint:css && npm run lint:php && npm run lint:phpcs",
+    "lint:php": "phplint '**/*.php' '!build/**' '!vendor/**' '!node_modules/**' > /dev/null",
+    "lint:phpcs": "vendor/bin/phpcs -p -s -v -n . --standard=\"phpcs.xml.dist\" --extensions=php --ignore=\"/vendor/*,/node_modules/*\"",
+    "lint:phpcs:fix": "vendor/bin/phpcbf -p -s -v -n . --standard=\"phpcs.xml.dist\" --extensions=php --ignore=\"/vendor/*,/node_modules/*\"",
+    "lint:js": "eslint --ext 'js,jsx,ts,tsx' --quiet",
+    "lint:js:fix": "eslint --ext 'js,jsx,ts,tsx' --quiet --fix",
+    "lint:css:fix": "wp-scripts lint-style --fix",
     "lint:css": "wp-scripts lint-style"
   },
   "repository": {
@@ -27,6 +31,8 @@
     "@automattic/eslint-plugin-wpvip": "^0.13.0",
     "@babel/preset-react": "^7.24.7",
     "@hello-pangea/dnd": "^16.6.0",
+    "@types/wordpress__block-editor": "^11.5.15",
+    "@types/wordpress__editor": "^14.3.0",
     "@wordpress/api-fetch": "^7.2.0",
     "@wordpress/block-editor": "^14.0.0",
     "@wordpress/components": "^27.6.0",
@@ -47,15 +53,14 @@
     "dotenv": "^16.4.5",
     "eslint": "^8.56.0",
     "glob": "^10.4.2",
+    "phplint": "^2.0.5",
     "prettier": "npm:wp-prettier@2.8.5",
     "react": "^18.3.1",
     "react-dom": "^18.0.0",
-    "webpack": "^5.91.0",
-		"@types/wordpress__block-editor": "^11.5.15",
-    "@types/wordpress__editor": "^14.3.0",
     "stylelint": "^14.16.1",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "webpack": "^5.91.0"
   },
   "stylelint": {
     "extends": "./node_modules/@wordpress/scripts/config/.stylelintrc.json"
