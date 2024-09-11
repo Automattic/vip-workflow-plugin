@@ -1,7 +1,5 @@
 ---
-
 ### :warning: This plugin is currently in Beta. It is designed to run on [WordPress VIP](https://wpvip.com). This beta release is not intended for use on a production environment.
-
 ---
 
 # WordPress VIP Workflow Plugin (Beta)
@@ -19,7 +17,7 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
   - [Plugin activation](#plugin-activation)
 - [Usage](#usage)
   - [Admin](#admin)
-  - [Publish Guard](#admin)
+  - [Publish Guard](#publish-guard)
   - [Editorial Experience](#editorial-experience)
     - [Guided Status Movements](#guided-status-movements)
     - [Preview Links](#preview-links)
