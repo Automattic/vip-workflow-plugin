@@ -33,6 +33,9 @@ jobs:
       - name: Run CSS lint
         run: npm run lint:css
 
+      - name: Check formatting
+        run: npm run format:check
+
   phpcs:
     name: PHPCS
     runs-on: ubuntu-latest

@@ -1,6 +1,8 @@
-----
+---
+
 ### :warning: This plugin is currently in Beta. It is designed to run on [WordPress VIP](https://wpvip.com). This beta release is not intended for use on a production environment.
-----
+
+---
 
 # WordPress VIP Workflow Plugin (Beta)
 
@@ -12,26 +14,26 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 
 - [Try it out](#try-it-out)
 - [Installation](#installation)
-	- [Install via `git subtree`](#install-via-git-subtree)
-	- [Install via ZIP file](#install-via-zip-file)
-	- [Plugin activation](#plugin-activation)
+  - [Install via `git subtree`](#install-via-git-subtree)
+  - [Install via ZIP file](#install-via-zip-file)
+  - [Plugin activation](#plugin-activation)
 - [Usage](#usage)
-	- [Admin](#admin)
-	- [Publish Guard](#admin)
-	- [Editorial Experience](#editorial-experience)
-		- [Guided Status Movements](#guided-status-movements)
-		- [Preview Links](#preview-links)
-		- [Editorial Metadata](#editorial-metadata)
+  - [Admin](#admin)
+  - [Publish Guard](#admin)
+  - [Editorial Experience](#editorial-experience)
+    - [Guided Status Movements](#guided-status-movements)
+    - [Preview Links](#preview-links)
+    - [Editorial Metadata](#editorial-metadata)
 - [Limitations](#limitations)
-	- [Editorial Metadata](#editorial-metadata-1)
+  - [Editorial Metadata](#editorial-metadata-1)
 - [Code Filters](#code-filters)
-	- [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
-	- [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
-	- [`vw_preview_expiration_options`](#vw_preview_expiration_options)
+  - [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
+  - [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
+  - [`vw_preview_expiration_options`](#vw_preview_expiration_options)
 - [Development](#development)
-	- [Building the plugin](#building-the-plugin)
-	- [Using Hot Module Replacement](#using-hot-module-replacement)
-	- [Tests](#tests)
+  - [Building the plugin](#building-the-plugin)
+  - [Using Hot Module Replacement](#using-hot-module-replacement)
+  - [Tests](#tests)
 - [Credits](#credits)
 
 ## Try it out
@@ -273,17 +275,17 @@ React hot reloading is supported. A few configuration steps are required for the
 1. Set `define( 'SCRIPT_DEBUG', true );` in your `wp-config.php` or `vip-config.php`. At the time of writing, this is [a `wp-scripts` limitation](https://github.com/WordPress/gutenberg/blob/9e07a75/packages/scripts/README.md?plain=1#L390).
 2. Run `npm run dev:hot`. If you're running WordPress on a non-localhost hostname, e.g. on `vip dev-env`, you may also need to specify the hostname:
 
-    ```bash
-    HOST=mysite.vipdev.lndo.site npm run dev:hot
-    ```
+   ```bash
+   HOST=mysite.vipdev.lndo.site npm run dev:hot
+   ```
 
-    This can also be specified using a `.env` configuration file:
+   This can also be specified using a `.env` configuration file:
 
-    ```
-    HOST=mysite.vipdev.lndo.site
-    ```
+   ```
+   HOST=mysite.vipdev.lndo.site
+   ```
 
-    If you use `wp-env`, you should be able to skip specifying `HOST` manually.
+   If you use `wp-env`, you should be able to skip specifying `HOST` manually.
 
 3. If HMR is not working and you're developing out of a new component tree, you may also need to opt-in to hot module reloading via [`module.hot.accept()`](https://github.com/Automattic/vip-workflow-plugin/blob/e058354/modules/custom-status/lib/custom-status-configure.js#L19-L21)
 
@@ -302,6 +304,7 @@ composer run test
 This plugin has been based on the wonderful [EditFlow](https://github.com/Automattic/Edit-Flow) plugin developed by Daniel Bachhuber, Scott Bressler, Mohammad Jangda, and others.
 
 <!-- Links -->
+
 [media-generate-preview-link-custom-expiration]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link-custom-expiration.gif
 [media-generate-preview-link]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link.gif
 [media-guided-status-movements]: https://github.com/Automattic/vip-workflow-plugin/blob/media/guided-status-movements.gif
