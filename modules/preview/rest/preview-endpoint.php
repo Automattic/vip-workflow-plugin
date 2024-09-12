@@ -8,6 +8,7 @@
 namespace VIPWorkflow\Modules\Preview;
 
 use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Modules\Preview;
 use WP_Error;
 use WP_REST_Request;
 
@@ -46,7 +47,7 @@ class PreviewEndpoint {
 				'expiration'      => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
-						$expiration_options = VIP_Workflow::instance()->preview->get_link_expiration_options();
+						$expiration_options = Preview::get_link_expiration_options();
 						$expiration_values  = wp_list_pluck( $expiration_options, 'value' );
 
 						return in_array( $param, $expiration_values );
@@ -142,7 +143,7 @@ class PreviewEndpoint {
 	 * @return int|WP_Error The number of seconds that the expiration represents or a WP_Error if the value is invalid.
 	 */
 	private static function get_expiration_seconds( $expiration_value ) {
-		$expiration_options         = VIP_Workflow::instance()->preview->get_link_expiration_options();
+		$expiration_options         = Preview::get_link_expiration_options();
 		$selected_expiration_option = array_values( array_filter( $expiration_options, function ( $option ) use ( $expiration_value ) {
 			return $option['value'] === $expiration_value;
 		} ) );
