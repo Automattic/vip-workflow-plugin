@@ -130,7 +130,12 @@ class Preview {
 	// Public API
 
 	/**
-	 * Get the expiration options available in the preview modal dropdown.
+	 * Returns the valid set of expiration options for preview links. See the
+	 * vw_preview_expiration_options filter for customization.
+	 *
+	 * @access public
+	 *
+	 * @return array
 	 */
 	public static function get_link_expiration_options(): array {
 		/**
