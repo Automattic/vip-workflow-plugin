@@ -22,9 +22,9 @@ class EditorialMetadata {
 		'checkbox',
 		'text',
 	];
-	const METADATA_TAXONOMY = 'vw_editorial_meta';
-	const METADATA_POSTMETA_KEY = 'vw_editorial_meta';
-	const SETTINGS_SLUG = 'vw-editorial-metadata';
+	const METADATA_TAXONOMY        = 'vw_editorial_meta';
+	const METADATA_POSTMETA_KEY    = 'vw_editorial_meta';
+	const SETTINGS_SLUG            = 'vw-editorial-metadata';
 
 	private static $editorial_metadata_terms_cache = [];
 
@@ -60,7 +60,7 @@ class EditorialMetadata {
 		$editorial_metadata_terms = self::get_editorial_metadata_terms();
 
 		foreach ( $editorial_metadata_terms as $term ) {
-			$post_meta_key = self::get_postmeta_key( $term );
+			$post_meta_key  = self::get_postmeta_key( $term );
 			$post_meta_args = self::get_postmeta_args( $term );
 
 			// ToDo: If a post type was supported, a post was opened and saved, and then the post type was removed from the supported list,
@@ -84,16 +84,16 @@ class EditorialMetadata {
 
 		register_taxonomy( self::METADATA_TAXONOMY, $supported_post_types,
 			[
-				'public' => false,
-				'labels' => [
-					'name' => _x( 'Editorial Metadata', 'taxonomy general name', 'vip-workflow' ),
+				'public'  => false,
+				'labels'  => [
+					'name'          => _x( 'Editorial Metadata', 'taxonomy general name', 'vip-workflow' ),
 					'singular_name' => _x( 'Editorial Metadata', 'taxonomy singular name', 'vip-workflow' ),
-					'search_items' => __( 'Search Editorial Metadata', 'vip-workflow' ),
+					'search_items'  => __( 'Search Editorial Metadata', 'vip-workflow' ),
 					'popular_items' => __( 'Popular Editorial Metadata', 'vip-workflow' ),
-					'all_items' => __( 'All Editorial Metadata', 'vip-workflow' ),
-					'edit_item' => __( 'Edit Editorial Metadata', 'vip-workflow' ),
-					'update_item' => __( 'Update Editorial Metadata', 'vip-workflow' ),
-					'add_new_item' => __( 'Add New Editorial Metadata', 'vip-workflow' ),
+					'all_items'     => __( 'All Editorial Metadata', 'vip-workflow' ),
+					'edit_item'     => __( 'Edit Editorial Metadata', 'vip-workflow' ),
+					'update_item'   => __( 'Update Editorial Metadata', 'vip-workflow' ),
+					'add_new_item'  => __( 'Add New Editorial Metadata', 'vip-workflow' ),
 					'new_item_name' => __( 'New Editorial Metadata', 'vip-workflow' ),
 				],
 				'rewrite' => false,
@@ -107,25 +107,25 @@ class EditorialMetadata {
 	 * @access private
 	 */
 	public static function setup_install(): void {
-		InstallUtilities::install_if_first_run( self::SETTINGS_SLUG, function() {
+		InstallUtilities::install_if_first_run( self::SETTINGS_SLUG, function () {
 			// ToDo: Review the default metadata fields we provide OOB
 			$default_terms = [
 				[
-					'name' => __( 'Assignment', 'vip-workflow' ),
-					'slug' => 'assignment',
-					'type' => 'text',
+					'name'        => __( 'Assignment', 'vip-workflow' ),
+					'slug'        => 'assignment',
+					'type'        => 'text',
 					'description' => __( 'What the post needs to cover.', 'vip-workflow' ),
 				],
 				[
-					'name' => __( 'Needs Photo', 'vip-workflow' ),
-					'slug' => 'needs-photo',
-					'type' => 'checkbox',
+					'name'        => __( 'Needs Photo', 'vip-workflow' ),
+					'slug'        => 'needs-photo',
+					'type'        => 'checkbox',
 					'description' => __( 'Checked if this post needs a photo.', 'vip-workflow' ),
 				],
 				[
-					'name' => __( 'Word Count', 'vip-workflow' ),
-					'slug' => 'word-count',
-					'type' => 'text',
+					'name'        => __( 'Word Count', 'vip-workflow' ),
+					'slug'        => 'word-count',
+					'type'        => 'text',
 					'description' => __( 'Required post length in words.', 'vip-workflow' ),
 				],
 			];
@@ -172,8 +172,8 @@ class EditorialMetadata {
 			wp_enqueue_style( 'vip-workflow-editorial-metadata-styles', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-editorial-metadata-configure', 'VW_EDITORIAL_METADATA_CONFIGURE', [
-				'supported_metadata_types' => self::SUPPORTED_METADATA_TYPES,
-				'editorial_metadata_terms' => self::get_editorial_metadata_terms(),
+				'supported_metadata_types'    => self::SUPPORTED_METADATA_TYPES,
+				'editorial_metadata_terms'    => self::get_editorial_metadata_terms(),
 				'url_edit_editorial_metadata' => EditorialMetadataEndpoint::get_url(),
 			] );
 		}
@@ -185,7 +185,7 @@ class EditorialMetadata {
 	 * @access private
 	 */
 	public static function load_scripts_for_block_editor(): void {
-		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/editorial-metadata/editorial-metadata-block.asset.php';
+		$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/editorial-metadata/editorial-metadata-block.asset.php';
 		$dependencies = array_merge( $asset_file['dependencies'], [ 'vip-workflow-block-custom-status-script' ] );
 
 		wp_enqueue_script( 'vip-workflow-block-editorial-metadata-script', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-block.js', $dependencies, $asset_file['version'], true );
@@ -231,7 +231,7 @@ class EditorialMetadata {
 		}
 
 		$ordered_terms = [];
-		$hold_to_end = [];
+		$hold_to_end   = [];
 
 		// Order the terms
 		foreach ( $terms as $key => $term ) {
@@ -296,7 +296,7 @@ class EditorialMetadata {
 
 		// ToDo: This is inefficient as we are fetching all the terms, and then finding the one that matches.
 		$terms = self::get_editorial_metadata_terms();
-		$term = wp_filter_object_list( $terms, [ $field => $value ] );
+		$term  = wp_filter_object_list( $terms, [ $field => $value ] );
 
 		$term = array_shift( $term );
 
@@ -311,22 +311,22 @@ class EditorialMetadata {
 		// Term is always added to the end of the list
 		$default_position = count( self::get_editorial_metadata_terms() ) + 1;
 
-		$defaults = [
-			'position' => $default_position,
-			'name' => '',
-			'slug' => '',
+		$defaults  = [
+			'position'    => $default_position,
+			'name'        => '',
+			'slug'        => '',
 			'description' => '',
-			'type' => '',
+			'type'        => '',
 		];
-		$args = array_merge( $defaults, $args );
+		$args      = array_merge( $defaults, $args );
 		$term_name = $args['name'];
 		unset( $args['name'] );
 
 		// We're encoding metadata that isn't supported by default in the term's description field
 		$args_to_encode = [
 			'description' => $args['description'],
-			'position' => $args['position'],
-			'type' => $args['type'],
+			'position'    => $args['position'],
+			'type'        => $args['type'],
 		];
 
 		$encoded_description = TaxonomyUtilities::get_encoded_description( $args_to_encode );
@@ -371,24 +371,24 @@ class EditorialMetadata {
 		$new_args = [];
 
 		$old_args = [
-			'position' => $old_term->position,
-			'name' => $old_term->name,
-			'slug' => $old_term->slug,
+			'position'    => $old_term->position,
+			'name'        => $old_term->name,
+			'slug'        => $old_term->slug,
 			'description' => $old_term->description,
-			'type' => $old_term->type,
-			'meta_key' => isset( $old_term->meta_key ) ? $old_term->meta_key : self::get_postmeta_key( $old_term ),
+			'type'        => $old_term->type,
+			'meta_key'    => isset( $old_term->meta_key ) ? $old_term->meta_key : self::get_postmeta_key( $old_term ),
 		];
 
 		$new_args = array_merge( $old_args, $args );
 
 		// We're encoding metadata that isn't supported by default in the term's description field
-		$args_to_encode = [
+		$args_to_encode          = [
 			'description' => $new_args['description'],
-			'position' => $new_args['position'],
-			'type' => $new_args['type'],
-			'meta_key' => $new_args['meta_key'],
+			'position'    => $new_args['position'],
+			'type'        => $new_args['type'],
+			'meta_key'    => $new_args['meta_key'],
 		];
-		$encoded_description = TaxonomyUtilities::get_encoded_description( $args_to_encode );
+		$encoded_description     = TaxonomyUtilities::get_encoded_description( $args_to_encode );
 		$new_args['description'] = $encoded_description;
 
 		unset( $new_args['position'] );
@@ -417,7 +417,7 @@ class EditorialMetadata {
 	 * @return bool $result Whether or not the term was deleted
 	 */
 	public static function delete_editorial_metadata_term( int $term_id ): bool {
-		$term = self::get_editorial_metadata_term_by( 'id', $term_id );
+		$term          = self::get_editorial_metadata_term_by( 'id', $term_id );
 		$post_meta_key = self::get_postmeta_key( $term );
 		delete_post_meta_by_key( $post_meta_key );
 
@@ -440,7 +440,7 @@ class EditorialMetadata {
 		foreach ( $editorial_metadata_terms as $editorial_metadata_term ) {
 			self::update_editorial_metadata_term( $editorial_metadata_term->term_id, [ 'position' => $current_postition ] );
 
-			$current_postition++;
+			++$current_postition;
 		}
 
 		return $result;
@@ -463,10 +463,10 @@ class EditorialMetadata {
 		}
 
 		$args = [
-			'type' => $arg_type,
-			'description' => $term->description,
-			'single' => true,
-			'show_in_rest' => true,
+			'type'              => $arg_type,
+			'description'       => $term->description,
+			'single'            => true,
+			'show_in_rest'      => true,
 			'sanitize_callback' => function ( $value ) use ( $arg_type ) {
 				switch ( $arg_type ) {
 					case 'boolean':
@@ -489,8 +489,8 @@ class EditorialMetadata {
 	 * @return string $postmeta_key Unique key
 	 */
 	public static function get_postmeta_key( WP_Term $term ): string {
-		$key = self::METADATA_POSTMETA_KEY;
-		$prefix = "{$key}_{$term->type}";
+		$key          = self::METADATA_POSTMETA_KEY;
+		$prefix       = "{$key}_{$term->type}";
 		$postmeta_key = "{$prefix}_" . $term->term_id;
 		return $postmeta_key;
 	}

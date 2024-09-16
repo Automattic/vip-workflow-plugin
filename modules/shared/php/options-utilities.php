@@ -31,7 +31,7 @@ class OptionsUtilities {
 	 * @return bool True if the option was updated, false otherwise.
 	 */
 	public static function update_module_option_key( string $module_slug, string $key, string $value ): bool {
-		$module_options = self::get_module_options( $module_slug );
+		$module_options       = self::get_module_options( $module_slug );
 		$module_options->$key = $value;
 
 		$module_options_key = self::get_module_options_key( $module_slug );
@@ -50,6 +50,6 @@ class OptionsUtilities {
 		$module_options_name = str_replace( '-', '_', $module_options_name );
 
 		$vip_workflow = VIP_Workflow::instance();
-		return sprintf('%s%s_options', $vip_workflow->options_group, $module_options_name );
+		return sprintf( '%s%s_options', $vip_workflow->options_group, $module_options_name );
 	}
 }

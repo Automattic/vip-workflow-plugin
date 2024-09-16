@@ -16,9 +16,9 @@ $message_slug = isset( $_REQUEST['message'] ) ? sanitize_title( $_REQUEST['messa
 <div class="wrap vip-workflow-admin">
 	<div class="explanation">
 		<h3>
-			<?php esc_html_e('Configure VIP Workflow settings.', 'vip-workflow'); ?>
+			<?php esc_html_e( 'Configure VIP Workflow settings.', 'vip-workflow' ); ?>
 			<?php if ( $message_slug && isset( $messages[ $message_slug ] ) ) { ?>
-			<?php printf( '<span class="vip-workflow-updated-message vip-workflow-message">%s</span>', esc_html( $messages[ $message_slug ] ) ); ?>
+				<?php printf( '<span class="vip-workflow-updated-message vip-workflow-message">%s</span>', esc_html( $messages[ $message_slug ] ) ); ?>
 			<?php } ?>
 		</h3>
 	</div>

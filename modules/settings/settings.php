@@ -256,7 +256,7 @@ class Settings extends Module {
 			return false;
 		}
 
-		$module_name = sanitize_key( $_POST['vip_workflow_module_name'] );
+		$module_name = 'settings';
 
 		if ( 'update' != $_POST['action']
 		|| VIP_Workflow::instance()->$module_name->module->options_group_name != $_POST['option_page'] ) {
