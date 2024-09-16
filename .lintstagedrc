@@ -1,5 +1,6 @@
 {
-	"*.php": [ "phplint", "vendor/bin/phpcs" ],
-	"*.js": [ "eslint . --ext .js" ],
+	"*.php": [ "composer run cbf && composer run cs" ],
+	"*.js": [ "eslint . --fix --ext .js" ],
+	"*.css": [ "npm run lint:css:fix" ],
 	"*.{json, md, yml, yaml}": [ "prettier --write" ]
 }
