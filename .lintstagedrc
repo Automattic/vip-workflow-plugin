@@ -1,4 +1,0 @@
-{
-	"*.{json, js, md, yml, yaml}": [ "prettier --write" ],
-	"*.js": [ "eslint . --ext .js" ]
-}
