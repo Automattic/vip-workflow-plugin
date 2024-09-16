@@ -22,6 +22,23 @@ module.exports = [
 		entry: {
 			...wpScriptsModulesEntries,
 		},
+		module: {
+			...defaultScriptsConfig.module,
+			rules: [
+				...defaultScriptsConfig.module.rules,
+				{
+					test: /\.tsx?$/,
+					use: [
+						{
+							loader: 'ts-loader',
+							options: {
+								transpileOnly: true,
+							},
+						},
+					],
+				},
+			],
+		},
 		output: {
 			...defaultScriptsConfig.output,
 			path: __dirname + '/dist/modules/',

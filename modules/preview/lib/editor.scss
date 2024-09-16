@@ -1,7 +1,8 @@
 .vip-workflow-preview {
 	margin-top: 0;
 
-	/* Ensure layout in sidebar is ordered before "Extended Post Status" section, as layout order is not guaranteed */
+	// Ensure layout in sidebar is ordered before "Extended Post Status"
+	// section, as layout order is not guaranteed
 	order: 10;
 }
 
