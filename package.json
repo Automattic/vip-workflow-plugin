@@ -11,15 +11,11 @@
     "cmd:format": "prettier '**/*.(js|json|jsx|md|ts|tsx|yml|yaml)'",
     "format": "npm run cmd:format -- --write",
     "format:check": "npm run cmd:format -- --check",
-    "lint": "npm run lint:js && npm run lint:css && npm run lint:php && npm run lint:phpcs",
-    "lint:php": "phplint '**/*.php' '!build/**' '!vendor/**' '!node_modules/**' > /dev/null",
-    "lint:phpcs": "vendor/bin/phpcs -p -s -v -n . --standard=\"phpcs.xml.dist\" --extensions=php --ignore=\"/vendor/*,/node_modules/*\"",
-    "lint:phpcs:fix": "vendor/bin/phpcbf -p -s -v -n . --standard=\"phpcs.xml.dist\" --extensions=php --ignore=\"/vendor/*,/node_modules/*\"",
+    "lint": "npm run lint:js && npm run lint:css",
     "lint:js": "eslint --ext 'js,jsx,ts,tsx' --quiet",
     "lint:js:fix": "eslint --ext 'js,jsx,ts,tsx' --quiet --fix",
     "lint:css:fix": "wp-scripts lint-style --fix",
-    "lint:css": "wp-scripts lint-style",
-    "prepare": "husky"
+    "lint:css": "wp-scripts lint-style"
   },
   "repository": {
     "type": "git",
@@ -57,16 +53,13 @@
     "dotenv": "^16.4.5",
     "eslint": "^8.56.0",
     "glob": "^10.4.2",
-    "phplint": "^2.0.5",
     "prettier": "npm:wp-prettier@2.8.5",
     "react": "^18.3.1",
     "react-dom": "^18.0.0",
     "stylelint": "^14.16.1",
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.2",
-    "webpack": "^5.91.0",
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10"
+    "webpack": "^5.91.0"
   },
   "stylelint": {
     "extends": "./node_modules/@wordpress/scripts/config/.stylelintrc.json"

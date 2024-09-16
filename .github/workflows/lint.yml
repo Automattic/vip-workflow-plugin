@@ -50,8 +50,5 @@ jobs:
         with:
           composer-options: --prefer-dist --no-progress
 
-      - name: Run PHPLint
-        run: npm run lint:php
-
-      - name: Run PHPCS
-        run: npm run lint:phpcs
+      - name: Run PHP lint
+        run: composer run cs
