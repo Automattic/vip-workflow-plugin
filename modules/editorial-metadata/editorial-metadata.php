@@ -9,6 +9,7 @@ namespace VIPWorkflow\Modules;
 require_once __DIR__ . '/rest/editorial-metadata-endpoint.php';
 
 use VIPWorkflow\Modules\EditorialMetadata\REST\EditorialMetadataEndpoint;
+use VIPWorkflow\Modules\Shared\PHP\InstallUtilities;
 use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
 use VIPWorkflow\VIP_Workflow;
 use WP_Error;
@@ -33,6 +34,9 @@ class EditorialMetadata {
 
 		// Register the post meta for each editorial metadata term
 		add_action( 'init', [ __CLASS__, 'register_editorial_metadata_terms_as_post_meta' ] );
+
+		// Setup editorial metadata on first install
+		add_action( 'init', [ __CLASS__, 'setup_install' ] );
 
 		// Add menu sidebar item
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_menu' ] );
@@ -98,6 +102,44 @@ class EditorialMetadata {
 	}
 
 	/**
+	 * Load default editorial metadata the first time the module is loaded
+	 *
+	 * @access private
+	 */
+	public static function setup_install(): void {
+		InstallUtilities::install_if_first_run( self::SETTINGS_SLUG, function() {
+			// ToDo: Review the default metadata fields we provide OOB
+			$default_terms = [
+				[
+					'name' => __( 'Assignment', 'vip-workflow' ),
+					'slug' => 'assignment',
+					'type' => 'text',
+					'description' => __( 'What the post needs to cover.', 'vip-workflow' ),
+				],
+				[
+					'name' => __( 'Needs Photo', 'vip-workflow' ),
+					'slug' => 'needs-photo',
+					'type' => 'checkbox',
+					'description' => __( 'Checked if this post needs a photo.', 'vip-workflow' ),
+				],
+				[
+					'name' => __( 'Word Count', 'vip-workflow' ),
+					'slug' => 'word-count',
+					'type' => 'text',
+					'description' => __( 'Required post length in words.', 'vip-workflow' ),
+				],
+			];
+
+			// Load the metadata fields if the slugs don't conflict
+			foreach ( $default_terms as $term ) {
+				if ( ! term_exists( $term['slug'], self::METADATA_TAXONOMY ) ) {
+					self::insert_editorial_metadata_term( $term );
+				}
+			}
+		});
+	}
+
+	/**
 	 * Register admin sidebar menu
 	 *
 	 * @access private
@@ -115,41 +157,6 @@ class EditorialMetadata {
 	 */
 	public static function render_settings_view(): void {
 		include_once __DIR__ . '/views/manage-editorial-metadata.php';
-	}
-
-	/**
-	 * Load default editorial metadata the first time the module is loaded
-	 */
-	// alecg: Figure out how to install
-	public function install() {
-		// ToDo: Review the default metadata fields we provide OOB
-		$default_terms = [
-			[
-				'name' => __( 'Assignment', 'vip-workflow' ),
-				'slug' => 'assignment',
-				'type' => 'text',
-				'description' => __( 'What the post needs to cover.', 'vip-workflow' ),
-			],
-			[
-				'name' => __( 'Needs Photo', 'vip-workflow' ),
-				'slug' => 'needs-photo',
-				'type' => 'checkbox',
-				'description' => __( 'Checked if this post needs a photo.', 'vip-workflow' ),
-			],
-			[
-				'name' => __( 'Word Count', 'vip-workflow' ),
-				'slug' => 'word-count',
-				'type' => 'text',
-				'description' => __( 'Required post length in words.', 'vip-workflow' ),
-			],
-		];
-
-		// Load the metadata fields if the slugs don't conflict
-		foreach ( $default_terms as $term ) {
-			if ( ! term_exists( $term['slug'], self::METADATA_TAXONOMY ) ) {
-				self::insert_editorial_metadata_term( $term );
-			}
-		}
 	}
 
 	/**
@@ -411,7 +418,7 @@ class EditorialMetadata {
 	 */
 	public static function delete_editorial_metadata_term( int $term_id ): bool {
 		$term = self::get_editorial_metadata_term_by( 'id', $term_id );
-		$post_meta_key = self::get_postmeta_key( $term_id, $term->type );
+		$post_meta_key = self::get_postmeta_key( $term );
 		delete_post_meta_by_key( $post_meta_key );
 
 		$result = wp_delete_term( $term_id, self::METADATA_TAXONOMY );

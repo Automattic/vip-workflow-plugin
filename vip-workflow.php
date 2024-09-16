@@ -46,6 +46,8 @@ define( 'VIP_WORKFLOW_REST_NAMESPACE', 'vip-workflow/v1' );
 require_once VIP_WORKFLOW_ROOT . '/class-workflow.php';
 
 // Utility classes
+require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/install-utilities.php';
+require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/options-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/taxonomy-utilities.php';
 
 // Modules
