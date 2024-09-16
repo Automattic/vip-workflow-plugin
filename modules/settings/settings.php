@@ -11,6 +11,7 @@ use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
 
 class Settings extends Module {
+	const SETTINGS_SLUG = 'vw-settings';
 
 	public $module;
 
@@ -44,6 +45,8 @@ class Settings extends Module {
 	 * Initialize the rest of the stuff in the class if the module is active
 	 */
 	public function init() {
+		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+
 		add_action( 'admin_init', array( $this, 'helper_settings_validate_and_save' ), 100 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 
@@ -53,10 +56,19 @@ class Settings extends Module {
 	}
 
 	/**
+	 * Add the settings page to the admin menu
+	 */
+	public function add_admin_menu() {
+		$menu_title = __( 'Settings', 'vip-workflow' );
+
+		add_submenu_page( Custom_Status::SETTINGS_SLUG, $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ] );
+	}
+
+	/**
 	 * Add settings JS to the settings page
 	 */
 	public function action_admin_enqueue_scripts() {
-		if ( $this->is_whitelisted_settings_view() ) {
+		if ( VIP_Workflow::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
 			wp_enqueue_script( 'vip-workflow-settings-js', $this->module_url . 'lib/settings.js', array( 'jquery' ), VIP_WORKFLOW_VERSION, true );
 		}
 	}
@@ -100,17 +112,8 @@ class Settings extends Module {
 	/**
 	 * Adds Settings page for VIP Workflow.
 	 */
-	public function print_default_settings() {
-		?>
-		<form class="basic-settings" action="<?php echo esc_url( menu_page_url( $this->module->settings_slug, false ) ); ?>" method="post">
-			<?php settings_fields( $this->module->options_group_name ); ?>
-			<?php do_settings_sections( $this->module->options_group_name ); ?>
-			<?php
-				echo '<input id="vip_workflow_module_name" name="vip_workflow_module_name" type="hidden" value="' . esc_attr( $this->module->name ) . '" />';
-			?>
-			<p class="submit"><?php submit_button( null, 'primary', 'submit', false ); ?></p>
-		</form>
-			<?php
+	public function render_settings_view() {
+		include_once __DIR__ . '/views/settings.php';
 	}
 
 	/**
@@ -249,7 +252,7 @@ class Settings extends Module {
 	 */
 	public function helper_settings_validate_and_save() {
 
-		if ( ! isset( $_POST['action'], $_POST['_wpnonce'], $_POST['option_page'], $_POST['_wp_http_referer'], $_POST['vip_workflow_module_name'], $_POST['submit'] ) || ! is_admin() ) {
+		if ( ! isset( $_POST['action'], $_POST['_wpnonce'], $_POST['option_page'], $_POST['_wp_http_referer'], $_POST['submit'] ) || ! is_admin() ) {
 			return false;
 		}
 

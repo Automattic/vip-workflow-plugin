@@ -11,6 +11,7 @@ require_once __DIR__ . '/rest/custom-status.php';
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\CustomStatus\REST\EditStatus;
+use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
 use WP_Error;
 use WP_Query;
 use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
@@ -24,6 +25,8 @@ class Custom_Status extends Module {
 	// This is taxonomy name used to store all our custom statuses
 	const TAXONOMY_KEY = 'post_status';
 
+	const SETTINGS_SLUG = 'vw-custom-status';
+
 	/**
 	 * Register the module with VIP Workflow but don't do anything else
 	 */
@@ -33,8 +36,6 @@ class Custom_Status extends Module {
 		// Register the module with VIP Workflow
 		$args         = [
 			'title'                => __( 'Workflow Config', 'vip-workflow' ),
-			'short_description'    => __( 'Configure your editorial workflow.', 'vip-workflow' ),
-			'extended_description' => __( 'Starting from the top, each post status represents the publishing worklow to be followed. This workflow can be configured by re-ordering statuses as well as editing/deleting and creating new ones.', 'vip-workflow' ),
 			'module_url'           => $this->module_url,
 			'slug'                 => 'custom-status',
 			'configure_page_cb'    => 'print_configure_view',
@@ -51,7 +52,7 @@ class Custom_Status extends Module {
 
 		// Register our settings
 		if ( ! $this->disable_custom_statuses_for_post_type() ) {
-			// Load CSS and JS resources that we probably need in the admin page
+			// Load CSS and JS resources for the admin page
 			add_action( 'admin_enqueue_scripts', [ $this, 'action_admin_enqueue_scripts' ] );
 
 			// Assets for block editor UI.
@@ -65,6 +66,9 @@ class Custom_Status extends Module {
 
 		// Add custom statuses to the post states.
 		add_filter( 'display_post_states', [ $this, 'add_status_to_post_states' ], 10, 2 );
+
+		// Register sidebar menu
+		add_action( 'admin_menu', [ $this, 'add_admin_menu' ], 6 /* Prior to default registration of sub-pages */ );
 
 		// These seven-ish methods are hacks for fixing bugs in WordPress core
 		add_action( 'admin_init', [ $this, 'check_timestamp_on_publish' ] );
@@ -214,11 +218,19 @@ class Custom_Status extends Module {
 			$post_type = $this->get_current_post_type();
 		}
 
-		if ( $post_type && ! in_array( $post_type, $this->get_supported_post_types() ) ) {
+		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
+
+		if ( $post_type && ! in_array( $post_type, $supported_post_types ) ) {
 			return true;
 		}
 
 		return false;
+	}
+
+	public function add_admin_menu() {
+		$menu_title  = __( 'VIP Workflow', 'vip-workflow' );
+
+		add_menu_page( $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ] );
 	}
 
 	public function configure_page_cb() {
@@ -230,7 +242,7 @@ class Custom_Status extends Module {
 	 */
 	public function action_admin_enqueue_scripts() {
 		// Load Javascript we need to use on the configuration views
-		if ( $this->is_whitelisted_settings_view() ) {
+		if ( VIP_Workflow::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
 			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
 			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
@@ -269,14 +281,14 @@ class Custom_Status extends Module {
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
 			'is_publish_guard_enabled' => $publish_guard_enabled,
 			'status_terms'             => $this->get_custom_statuses(),
-			'supported_post_types'     => $this->get_supported_post_types(),
+			'supported_post_types'     => VIP_Workflow::instance()->get_supported_post_types(),
 		] );
 	}
 
 	public function load_styles_for_block_editor() {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 
-		wp_enqueue_style( 'vip-workflow-manager-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.css', [ 'wp-components' ], $asset_file['version'] );
+		wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.css', [], $asset_file['version'] );
 	}
 
 	/**
@@ -287,7 +299,7 @@ class Custom_Status extends Module {
 	public function is_whitelisted_page() {
 		global $pagenow;
 
-		if ( ! in_array( $this->get_current_post_type(), $this->get_supported_post_types() ) ) {
+		if ( ! in_array( $this->get_current_post_type(), VIP_Workflow::instance()->get_supported_post_types() ) ) {
 			return false;
 		}
 
@@ -406,7 +418,7 @@ class Custom_Status extends Module {
 		}
 
 		// Bail early if the post type is not supported or if its a not supported capability for this guard
-		if ( ! in_array( $post->post_type, $this->get_supported_post_types() ) || ! isset( $supported_publish_caps_map[ $post->post_type ] ) ) {
+		if ( ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) || ! isset( $supported_publish_caps_map[ $post->post_type ] ) ) {
 			return $allcaps;
 		}
 
@@ -466,7 +478,7 @@ class Custom_Status extends Module {
 			$args['position'] = $default_position;
 		}
 
-		$encoded_description = $this->get_encoded_description( $args );
+		$encoded_description = TaxonomyUtilities::get_encoded_description( $args );
 
 		$inserted_term = wp_insert_term( $term, self::TAXONOMY_KEY, [
 			'slug'        => $slug,
@@ -530,7 +542,7 @@ class Custom_Status extends Module {
 		$args_to_encode                = [];
 		$args_to_encode['description'] = ( isset( $args['description'] ) ) ? $args['description'] : $old_status->description;
 		$args_to_encode['position']    = ( isset( $args['position'] ) ) ? $args['position'] : $old_status->position;
-		$encoded_description           = $this->get_encoded_description( $args_to_encode );
+		$encoded_description           = TaxonomyUtilities::get_encoded_description( $args_to_encode );
 		$args['description']           = $encoded_description;
 
 		$updated_status = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
@@ -640,7 +652,7 @@ class Custom_Status extends Module {
 		$hold_to_end      = [];
 		foreach ( $statuses as $key => $status ) {
 			// Unencode and set all of our psuedo term meta because we need the position if it exists
-			$unencoded_description = $this->get_unencoded_description( $status->description );
+			$unencoded_description = TaxonomyUtilities::get_unencoded_description( $status->description );
 			if ( is_array( $unencoded_description ) ) {
 				foreach ( $unencoded_description as $key => $value ) {
 					$status->$key = $value;
@@ -707,7 +719,7 @@ class Custom_Status extends Module {
 	 */
 	public function reassign_post_status( $old_status, $new_status ) {
 		$old_status_post_ids = ( new WP_Query( [
-			'post_type'      => $this->get_supported_post_types(),
+			'post_type'      => VIP_Workflow::instance()->get_supported_post_types(),
 			'post_status'    => $old_status,
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
@@ -757,7 +769,7 @@ class Custom_Status extends Module {
 	 * @return array $post_states
 	 */
 	public function add_status_to_post_states( $post_states, $post ) {
-		if ( ! in_array( $post->post_type, $this->get_supported_post_types(), true ) ) {
+		if ( ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types(), true ) ) {
 			// Return early if this post type doesn't support custom statuses.
 			return $post_states;
 		}
@@ -811,7 +823,7 @@ class Custom_Status extends Module {
 	/**
 	 * Primary configuration page for custom status class, which is also the main entry point for configuring the plugin
 	 */
-	public function print_configure_view() {
+	public function render_settings_view() {
 		include_once __DIR__ . '/views/manage-workflow.php';
 	}
 
@@ -831,7 +843,7 @@ class Custom_Status extends Module {
 		$custom_statuses = $this->get_custom_statuses();
 		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
 
-		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
+		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
 			// Post is not using a custom status, or is not a supported post type
 			return false;
 		}
@@ -859,7 +871,7 @@ class Custom_Status extends Module {
 			return false;
 		}
 
-		$custom_post_types = $this->get_supported_post_types();
+		$custom_post_types = VIP_Workflow::instance()->get_supported_post_types();
 		$custom_statuses   = $this->get_custom_statuses();
 		$status_slugs      = wp_list_pluck( $custom_statuses, 'slug' );
 
@@ -985,7 +997,7 @@ class Custom_Status extends Module {
 
 		// Ignore if it's not a post status and post type we support
 		if ( ! in_array( $data['post_status'], $status_slugs )
-		|| ! in_array( $data['post_type'], $this->get_supported_post_types() ) ) {
+		|| ! in_array( $data['post_type'], VIP_Workflow::instance()->get_supported_post_types() ) ) {
 			return $data;
 		}
 
@@ -1013,7 +1025,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		if ( ! in_array( $post_status, $status_slugs )
-		|| ! in_array( $post_type, $this->get_supported_post_types() ) ) {
+		|| ! in_array( $post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
 			return null;
 		}
 
@@ -1047,7 +1059,7 @@ class Custom_Status extends Module {
 		|| ! is_admin()
 		|| 'post.php' != $pagenow
 		|| ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_supported_post_types() )
+		|| ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() )
 		|| strpos( $preview_link, 'preview_id' ) !== false
 		|| 'sample' === $post->filter ) {
 			return $preview_link;
@@ -1072,7 +1084,7 @@ class Custom_Status extends Module {
 		}
 
 		//Should we be doing anything at all?
-		if ( ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
+		if ( ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
 			return $permalink;
 		}
 
@@ -1141,7 +1153,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		if ( ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
+		|| ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
 			return $permalink;
 		}
 
@@ -1183,7 +1195,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		if ( ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
+		|| ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
 			return $permalink;
 		}
 
@@ -1275,7 +1287,7 @@ class Custom_Status extends Module {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 		if ( 'edit.php' != $pagenow
 		|| ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, $this->get_supported_post_types() ) ) {
+		|| ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
 			return $actions;
 		}
 

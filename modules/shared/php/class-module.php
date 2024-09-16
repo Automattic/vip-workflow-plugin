@@ -76,22 +76,6 @@ class Module {
 	}
 
 	/**
-	 * Collect all of the active post types
-	 *
-	 * @return array $post_types All of the post types that are 'on'
-	 */
-	public function get_supported_post_types() {
-		$post_types = array();
-		$post_types_options = VIP_Workflow::instance()->settings->module->options->post_types;
-		foreach ( $post_types_options as $post_type => $value ) {
-			if ( 'on' === $value ) {
-				$post_types[] = $post_type;
-			}
-		}
-		return $post_types;
-	}
-
-	/**
 	 * Get core's 'draft' and 'pending' post statuses, but include our special attributes
 	 *
 	 * @return array
@@ -175,58 +159,6 @@ class Module {
 			)
 		);
 		exit;
-	}
-
-	/**
-	 * Whether or not the current page is our settings view. Determination is based on $pagenow, $_GET['page'], and if it's settings module or not.
-	 *
-	 * @return bool $is_settings_view Return true if it is
-	 */
-	public function is_whitelisted_settings_view() {
-		global $pagenow;
-
-		// All of the settings views are based on admin.php and a $_GET['page'] parameter
-		if ( 'admin.php' != $pagenow || ! isset( $_GET['page'] ) ) {
-			return false;
-		}
-
-		// Load all of the modules that have a settings slug/ callback for the settings page
-		foreach ( VIP_Workflow::instance()->modules as $mod_name => $mod_data ) {
-			if ( $mod_data->configure_page_cb ) {
-				$settings_view_slugs[] = $mod_data->settings_slug;
-			}
-		}
-
-		// The current page better be in the array of registered settings view slugs
-		if ( ! in_array( $_GET['page'], $settings_view_slugs ) ) {
-			return false;
-		}
-
-		return true;
-	}
-
-
-	/**
-	 * This is a hack, Hack, HACK!!!
-	 * Encode all of the given arguments as a serialized array, and then base64_encode
-	 * Used to store extra data in a term's description field
-	 *
-	 * @param array $args The arguments to encode
-	 * @return string Arguments encoded in base64
-	 */
-	public function get_encoded_description( $args = array() ) {
-		return base64_encode( maybe_serialize( $args ) );
-	}
-
-	/**
-	 * If given an encoded string from a term's description field,
-	 * return an array of values. Otherwise, return the original string
-	 *
-	 * @param string $string_to_unencode Possibly encoded string
-	 * @return array Array if string was encoded, otherwise the string as the 'description' field
-	 */
-	public function get_unencoded_description( $string_to_unencode ) {
-		return maybe_unserialize( base64_decode( $string_to_unencode ) );
 	}
 
 	/**

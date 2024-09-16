@@ -44,7 +44,7 @@ class Notifications extends Module {
 	 * Set up and send post status change notification email
 	 */
 	public function notification_status_change( $new_status, $old_status, $post ) {
-		$supported_post_types = $this->get_supported_post_types();
+		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
 		}
