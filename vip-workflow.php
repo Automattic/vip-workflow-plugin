@@ -25,13 +25,13 @@ define( 'VIP_WORKFLOW_LOADED', true );
 // ToDo: When 6.4 is our min version, switch to wp_admin_notice.
 global $wp_version;
 if ( version_compare( phpversion(), '8.0', '<' ) || version_compare( $wp_version, '6.2', '<' ) ) {
-	add_action( 'admin_notices', function () {
-		?>
+		add_action( 'admin_notices', function () {
+			?>
 		<div class="notice notice-error">
 			<p><?php esc_html_e( 'VIP Workflow requires PHP 8.0+ and WordPress 6.2+.', 'vip-workflow' ); ?></p>
 		</div>
-		<?php
-	}, 10, 0 );
+			<?php
+		}, 10, 0 );
 	return;
 }
 

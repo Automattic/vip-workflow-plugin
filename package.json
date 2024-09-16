@@ -15,8 +15,7 @@
     "lint:js": "eslint --ext 'js,jsx,ts,tsx' --quiet",
     "lint:js:fix": "eslint --ext 'js,jsx,ts,tsx' --quiet --fix",
     "lint:css:fix": "wp-scripts lint-style --fix",
-    "lint:css": "wp-scripts lint-style",
-    "prepare": "husky"
+    "lint:css": "wp-scripts lint-style"
   },
   "repository": {
     "type": "git",
@@ -60,9 +59,7 @@
     "stylelint": "^14.16.1",
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.2",
-    "webpack": "^5.91.0",
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10"
+    "webpack": "^5.91.0"
   },
   "stylelint": {
     "extends": "./node_modules/@wordpress/scripts/config/.stylelintrc.json"
