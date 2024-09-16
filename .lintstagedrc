@@ -1,8 +1,0 @@
-{
-	"*.php": [
-		"php ./vendor/bin/phpcbf -p -s -v -n . --standard=phpcs.xml.dist --extensions=php --ignore=/vendor/*,/node_modules/*"
-	],
-	"*.js": [ "eslint --ext 'js,jsx,ts,tsx' --quiet --fix" ],
-	"*.css": [ "wp-scripts lint-style --fix" ],
-	"*.{json, md, yml, yaml}": [ "prettier --write" ]
-}
