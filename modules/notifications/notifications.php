@@ -179,7 +179,7 @@ class Notifications extends Module {
 			$this->send_email( 'status-change', $post, $subject, $body );
 
 			// ToDo: See how we can optimize this, using batching as well as async processing.
-			if ( 'on' === VIP_Workflow::instance()->settings->module->options->send_to_webhook ) {
+			if ( ! empty( VIP_Workflow::instance()->settings->module->options->webhook_url ) ) {
 				/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
 				$format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
 				$text   = sprintf( $format, $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name );
@@ -217,15 +217,21 @@ class Notifications extends Module {
 	 * @param string $message_headers. (optional) Message headers
 	 */
 	public function send_email( $action, $post, $subject, $message, $message_headers = '' ) {
-
-		// Get list of email recipients -- set them CC
-		$recipients = $this->get_notification_recipients( $post, true );
-
-		if ( $recipients && ! is_array( $recipients ) ) {
-			$recipients = explode( ',', $recipients );
+		// Do nothing if the post isn't set.
+		$post_id = $post->ID;
+		if ( ! $post_id ) {
+			return;
 		}
 
-		// ToDo: Figure out best filters to add for the email.
+		// Ensure the email address is set from settings.
+		if ( empty( VIP_Workflow::instance()->settings->module->options->email_address ) ) {
+			return;
+		}
+
+		$email_recipients[] = VIP_Workflow::instance()->settings->module->options->email_address;
+
+		// Customize the recipients.
+		$email_recipients = apply_filters( 'vw_notification_email_recipients', $email_recipients, $post );
 
 		if ( ! empty( $recipients ) ) {
 			// ToDo: Let's batch these emails, and send collate the updates so we don't schedule too many emails.
@@ -309,33 +315,6 @@ class Notifications extends Module {
 	 */
 	public function send_single_email( $to, $subject, $message, $message_headers = '' ) {
 		wp_mail( $to, $subject, $message, $message_headers );
-	}
-
-	/**
-	 * Returns a list of recipients for a given post.
-	 *
-	 * @param WP_Post $post
-	 * @param bool $string Whether to return recipients as comma-delimited string or array.
-	 * @return string|array Recipients to receive notification.
-	 */
-	private function get_notification_recipients( $post, $string = false ) {
-		$post_id = $post->ID;
-		if ( ! $post_id ) {
-			return $string ? '' : [];
-		}
-
-		// Email all admins if enabled.
-		$admins = [];
-		if ( 'on' === VIP_Workflow::instance()->settings->module->options->always_notify_admin ) {
-			$admins[] = get_option( 'admin_email' );
-		}
-
-		// If string set to true, return comma-delimited.
-		if ( $string && is_array( $admins ) ) {
-			return implode( ',', $admins );
-		} else {
-			return $admins;
-		}
 	}
 
 	/**

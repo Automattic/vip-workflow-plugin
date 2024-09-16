@@ -90,15 +90,8 @@ class Settings extends Module {
 		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ $this, 'helper_option_custom_post_type' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 		add_settings_field( 'publish_guard', __( 'Publish Guard', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 
-		add_settings_field( 'send_to_email', __( 'Send Email', 'vip-workflow' ), [ $this, 'settings_send_to_email' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-		add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'vip-workflow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-
-		// Hide the webhook url and email address field by default if "Send to Webhook" or "Send Email" is disabled
-		$email_address_class = 'on' === $this->module->options->send_to_email ? '' : 'hidden';
-		$webhook_url_class   = 'on' === $this->module->options->send_to_webhook ? '' : 'hidden';
-
-		add_settings_field( 'email_address', __( 'Email Address', 'vip-workflow' ), [ $this, 'settings_email_address' ], $this->module->options_group_name, $this->module->options_group_name . '_general', [ 'class' => $email_address_class ] );
-		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general', [ 'class' => $webhook_url_class ] );
+		add_settings_field( 'email_address', __( 'Email Address', 'vip-workflow' ), [ $this, 'settings_email_address' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 	}
 
 	/**
@@ -137,48 +130,11 @@ class Settings extends Module {
 	}
 
 	/**
-	 * Option to enable sending emails
-	 */
-	public function settings_send_to_email() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="send_to_email" name="' . esc_attr( $this->module->options_group_name ) . '[send_to_email]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->send_email, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-
-		printf( '<p class="description">%s</p>', esc_html__( 'Notify via email, when posts change custom statuses.', 'vip-workflow' ) );
-	}
-
-	/**
 	 * Option to set an email address to send notifications to
 	 */
 	public function settings_email_address() {
 		printf( '<input type="text" id="email_address" name="%s[email_address]" value="%s" />', esc_attr( $this->module->options_group_name ), esc_attr( $this->module->options->email_address ) );
-	}
-
-	/**
-	 * Option to enable sending notifications to Slack
-	 */
-	public function settings_send_to_webhook() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="send_to_webhook" name="' . esc_attr( $this->module->options_group_name ) . '[send_to_webhook]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->send_to_webhook, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-
-		printf( '<p class="description">%s</p>', esc_html__( 'Notify a webhook URL when posts change custom statuses.', 'vip-workflow' ) );
+		printf( '<p class="description">%s</p>', esc_html__( 'Notify via email, when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -186,6 +142,7 @@ class Settings extends Module {
 	 */
 	public function settings_webhook_url() {
 		printf( '<input type="text" id="webhook_url" name="%s[webhook_url]" value="%s" />', esc_attr( $this->module->options_group_name ), esc_attr( $this->module->options->webhook_url ) );
+		printf( '<p class="description">%s</p>', esc_html__( 'Notify a webhook URL when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -220,6 +177,7 @@ class Settings extends Module {
 	 * Validate input from the end user
 	 */
 	public function settings_validate( $new_options ) {
+		// ToDo: There's no error messages shown right now, or any kind of notice that data is invalid.
 
 		// Whitelist validation for the post type options
 		if ( ! isset( $new_options['post_types'] ) ) {
@@ -232,26 +190,14 @@ class Settings extends Module {
 			$new_options['publish_guard'] = 'off';
 		}
 
-		// White list validation for the 'send_to_email' option
-		if ( ! isset( $new_options['send_to_email'] ) || 'on' != $new_options['send_to_email'] ) {
-			$new_options['send_to_email'] = 'off';
-		}
-
 		// White list validation for the 'email_address' option
-		$new_options['email_address'] = trim( $new_options['email_address'] );
-		if ( ! isset( $new_options['email_address'] ) || esc_url_raw( $new_options['email_address'] ) !== $new_options['email_address'] ) {
+		if ( ! isset( $new_options['email_address'] ) || ! filter_var( $new_options['email_address'], FILTER_VALIDATE_EMAIL ) ) {
 			$new_options['email_address'] = '';
 		} else {
-			$new_options['email_address'] = esc_url_raw( $new_options['email_address'] );
-		}
-
-		// White list validation for the 'send_to_webhook' option
-		if ( ! isset( $new_options['send_to_webhook'] ) || 'on' != $new_options['send_to_webhook'] ) {
-			$new_options['send_to_webhook'] = 'off';
+			$new_options['email_address'] = sanitize_email( $new_options['email_address'] );
 		}
 
 		// White list validation for the 'slack_webhook_url' option
-		$new_options['webhook_url'] = trim( $new_options['webhook_url'] );
 		if ( ! isset( $new_options['webhook_url'] ) || esc_url_raw( $new_options['webhook_url'] ) !== $new_options['webhook_url'] ) {
 			$new_options['webhook_url'] = '';
 		} else {
