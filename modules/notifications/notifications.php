@@ -233,9 +233,15 @@ class Notifications extends Module {
 		// Customize the recipients.
 		$email_recipients = apply_filters( 'vw_notification_email_recipients', $email_recipients, $post );
 
-		if ( ! empty( $recipients ) ) {
+		// Customize the subject.
+		$subject = apply_filters( 'vw_notification_email_subject', $subject, $post );
+
+		// Customize the message.
+		$message = apply_filters( 'vw_notification_email_message', $message, $post );
+
+		if ( ! empty( $email_recipients ) ) {
 			// ToDo: Let's batch these emails, and send collate the updates so we don't schedule too many emails.
-			$this->schedule_emails( $recipients, $subject, $message, $message_headers );
+			$this->schedule_emails( $email_recipients, $subject, $message, $message_headers );
 		}
 	}
 
