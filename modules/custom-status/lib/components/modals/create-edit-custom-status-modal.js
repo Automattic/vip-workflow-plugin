@@ -19,7 +19,7 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
 	const [ isReviewRequired, setIsReviewRequired ] = useState(
-		customStatus?.isReviewRequired || false
+		customStatus?.is_review_required || false
 	);
 	const [ isRequesting, setIsRequesting ] = useState( false );
 
@@ -34,10 +34,12 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 		const data = {
 			name,
 			description,
+			is_review_required: isReviewRequired,
 		};
 
 		try {
 			setIsRequesting( true );
+
 			const result = await apiFetch( {
 				url:
 					VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + ( customStatus ? customStatus.term_id : '' ),
