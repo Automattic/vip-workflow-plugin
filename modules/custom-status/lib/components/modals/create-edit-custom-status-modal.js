@@ -1,5 +1,14 @@
 import apiFetch from '@wordpress/api-fetch';
-import { Button, Modal, TextControl, TextareaControl, Tooltip } from '@wordpress/components';
+import {
+	Button,
+	Modal,
+	TextControl,
+	TextareaControl,
+	Tooltip,
+	ToggleControl,
+	__experimentalDivider as Divider,
+	__experimentalHStack as HStack,
+} from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -9,6 +18,9 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	const [ error, setError ] = useState( null );
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
+	const [ isReviewRequired, setIsReviewRequired ] = useState(
+		customStatus?.isReviewRequired || false
+	);
 	const [ isRequesting, setIsRequesting ] = useState( false );
 
 	let titleText;
@@ -55,31 +67,42 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 		>
 			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<TextControl
-				help={ __( 'The name is used to identify the custom status.', 'vip-workflow' ) }
 				label={ __( 'Name', 'vip-workflow' ) }
+				help={ __( 'The name is used to identify the custom status.', 'vip-workflow' ) }
 				onChange={ setName }
 				value={ name }
 			/>
 			<TextareaControl
+				label={ __( 'Description', 'vip-workflow' ) }
 				help={ __(
 					'The description is primarily for administrative use, to give you some context on what the custom status is to be used for.',
 					'vip-workflow'
 				) }
-				label={ __( 'Description', 'vip-workflow' ) }
 				onChange={ setDescription }
 				value={ description }
 			/>
-			<Tooltip
-				text={
-					customStatus
-						? __( 'Update the custom status', 'vip-workflow' )
-						: __( 'Save the new custom status', 'vip-workflow' )
-				}
-			>
-				<Button variant="primary" onClick={ handleSave } disabled={ isRequesting }>
-					{ customStatus ? __( 'Update', 'vip-workflow' ) : __( 'Save', 'vip-workflow' ) }
-				</Button>
-			</Tooltip>
+			<Divider margin="1rem" />
+
+			<ToggleControl
+				label={ __( 'This status requires a review', 'vip-workflow' ) }
+				help={ __( 'Require a review from an editor to move to the next status.', 'vip-workflow' ) }
+				checked={ isReviewRequired }
+				onChange={ value => setIsReviewRequired( value ) }
+			/>
+
+			<HStack justify="right">
+				<Tooltip
+					text={
+						customStatus
+							? __( 'Update the custom status', 'vip-workflow' )
+							: __( 'Save the new custom status', 'vip-workflow' )
+					}
+				>
+					<Button variant="primary" onClick={ handleSave } disabled={ isRequesting }>
+						{ customStatus ? __( 'Update', 'vip-workflow' ) : __( 'Save', 'vip-workflow' ) }
+					</Button>
+				</Tooltip>
+			</HStack>
 		</Modal>
 	);
 }
