@@ -137,29 +137,12 @@ class Notifications extends Module {
 			} else {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Status Changed for "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
-				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-				$body .= sprintf( __( 'Status was changed for %1$s #%2$s "%3$s" by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+
+				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email, 6. old status, 7. new status  */
+				$body .= sprintf( __( 'Status was changed for %1$s #%2$s "%3$s" by %4$s %5$s from "%6$s" to "%7$s"', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email, $old_status_friendly_name, $new_status_friendly_name ) . "\r\n";
 			}
-
-			/* translators: 1: date, 2: time, 3: timezone */
-			$body .= sprintf( __( 'This action was taken on %1$s at %2$s %3$s', 'vip-workflow' ), date_i18n( get_option( 'date_format' ) ), date_i18n( get_option( 'time_format' ) ), get_option( 'timezone_string' ) ) . "\r\n";
-
-			// Email body
-			$body .= "\r\n";
-			/* translators: 1: old status, 2: new status */
-			$body .= sprintf( __( '%1$s => %2$s', 'vip-workflow' ), $old_status_friendly_name, $new_status_friendly_name );
-			$body .= "\r\n\r\n";
 
 			$body .= "--------------------\r\n\r\n";
-
-			/* translators: 1: post type */
-			$body .= sprintf( __( '== %s Details ==', 'vip-workflow' ), $post_type ) . "\r\n";
-			/* translators: 1: post title */
-			$body .= sprintf( __( 'Title: %s', 'vip-workflow' ), $post_title ) . "\r\n";
-			if ( ! empty( $post_author ) ) {
-				/* translators: 1: author name, 2: author email */
-				$body .= sprintf( __( 'Author: %1$s (%2$s)', 'vip-workflow' ), $post_author->display_name, $post_author->user_email ) . "\r\n";
-			}
 
 			$edit_link = htmlspecialchars_decode( get_edit_post_link( $post_id ) );
 			if ( 'publish' != $new_status ) {
@@ -167,8 +150,6 @@ class Notifications extends Module {
 			} else {
 				$view_link = htmlspecialchars_decode( get_permalink( $post_id ) );
 			}
-			$body .= "\r\n";
-			$body .= __( '== Actions ==', 'vip-workflow' ) . "\r\n";
 			/* translators: 1: edit link */
 			$body .= sprintf( __( 'Edit: %s', 'vip-workflow' ), $edit_link ) . "\r\n";
 			/* translators: 1: view link */
@@ -199,12 +180,8 @@ class Notifications extends Module {
 		$body  = '';
 		$body .= "\r\n--------------------\r\n";
 		/* translators: 1: post title */
-		$body .= sprintf( __( 'You are receiving this email because you are subscribed to "%s".', 'vip-workflow' ), vw_draft_or_post_title( $post->ID ) );
+		$body .= __( 'You are receiving this email because a notification was configured via the VIP Workflow Plugin.', 'vip-workflow' );
 		$body .= "\r\n";
-		/* translators: 1: date */
-		$body .= sprintf( __( 'This email was sent %s.', 'vip-workflow' ), gmdate( 'r' ) );
-		$body .= "\r\n \r\n";
-		$body .= get_option( 'blogname' ) . ' | ' . get_bloginfo( 'url' ) . ' | ' . admin_url( '/' ) . "\r\n";
 		return $body;
 	}
 
@@ -230,14 +207,15 @@ class Notifications extends Module {
 
 		$email_recipients[] = VIP_Workflow::instance()->settings->module->options->email_address;
 
-		// Customize the recipients.
+		/**
+		 * Filter the email recipients
+		 *
+		 * @param array $email_recipients Array of email recipients
+		 * @param WP_Post $post Post object
+		 */
 		$email_recipients = apply_filters( 'vw_notification_email_recipients', $email_recipients, $post );
 
-		// Customize the subject.
-		$subject = apply_filters( 'vw_notification_email_subject', $subject, $post );
-
-		// Customize the message.
-		$message = apply_filters( 'vw_notification_email_message', $message, $post );
+		// ToDo: Should we add a filter to allow for customizing the email subject, body and headers?
 
 		if ( ! empty( $email_recipients ) ) {
 			// ToDo: Let's batch these emails, and send collate the updates so we don't schedule too many emails.

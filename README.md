@@ -17,15 +17,15 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
   - [Plugin activation](#plugin-activation)
 - [Usage](#usage)
   - [Admin](#admin)
+  - [Notifications](#notifications)
   - [Publish Guard](#publish-guard)
   - [Editorial Experience](#editorial-experience)
     - [Guided Status Movements](#guided-status-movements)
     - [Preview Links](#preview-links)
     - [Editorial Metadata](#editorial-metadata)
-- [Limitations](#limitations)
-  - [Editorial Metadata](#editorial-metadata-1)
 - [Code Filters](#code-filters)
   - [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
+  - [`vw_notification_email_recipients`](#vw_notification_email_recipients)
   - [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
   - [`vw_preview_expiration_options`](#vw_preview_expiration_options)
 - [Development](#development)
@@ -94,9 +94,13 @@ Note that, these statuses are also available in the quick edit experience on the
 
 The plugin doesn't expect any specific configuration, so your first step is to set up statuses that reflect your workflow. You may notice that the steps are listed in a linear order. The plugin assumes a linear workflow where content is moving from creation to publish.
 
-The plugin also sends notifications when a post's status changes. By default, email notifications are turned on for the blog admin. Additional email recipients can be configured. You can also set up webhook notifications under Admin -> VIP Workflow -> Settings.
-
 You can also specify which types of content use custom statuses. If a post does not use custom statuses, it will use the standard WordPress publishing flow.
+
+### Notifications
+
+VIP Workflow has the ability to send email and/or webhook notifications when a post's status changes. By default, these are off as no email address or webhook is provided out of the box. You set up webhook and/or email notifications under Admin -> VIP Workflow -> Settings.
+
+Additional filters are available here to customize the notifications that are sent.
 
 ### Publish Guard
 
@@ -130,12 +134,6 @@ Anybody with a preview link (including not logged-in users) will be able to view
 
 VIP Workflow adds a "Editorial Metadata" section to the post sidebar, which allows for additional data to be included with the post such as "Needs Legal Review". This can be managed under the plugin's settings, to get a visual for all of the configured editorial metadata fields.
 
-## Limitations
-
-### Editorial Metadata
-
-If a post is created as a type that supports Editorial Metadata, that metadata will remain even if the post type is modified not to support Editorial Metadata. In other words, once a post is created with Editorial Metadata fields, those fields will remain regardless of configuration changes.
-
 ## Code Filters
 
 ### `vw_notification_ignored_statuses`
@@ -162,6 +160,32 @@ add_filter( 'vw_notification_ignored_statuses', function ( $ignored_statuses, $p
     }
 
     return $ignored_statuses;
+}, 10, 2 );
+```
+
+### `vw_notification_email_recipients`
+
+Change the recipients that receive an email notification, when the status of a post changes. By default, it is set to the configured email address under Admin -> VIP Workflow -> Settings.
+
+```php
+/**
+* Filter the email recipients
+*
+* @param array $email_recipients Array of email recipients
+* @param WP_Post $post Post object
+*/
+apply_filters( 'vw_notification_email_recipients', $email_recipients, $post );
+```
+
+For example, this filter can be used to send email notifications to more than just 1 recipients especially for special statuses:
+
+```php
+add_filter( 'vw_notification_email_recipients', function ( $email_recipients, $post ) {
+  if ( $post->post_status === 'legal-review' ) {
+    $email_recipients[] = 'saul.goodman@sgoodmanassoc.com';
+  }
+
+  return $email_recipients;
 }, 10, 2 );
 ```
 
