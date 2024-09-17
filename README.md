@@ -180,7 +180,7 @@ apply_filters( 'vw_notification_email_recipients', $email_recipients, $post );
 For example, this filter can be used to send email notifications to more than just 1 recipients especially for special statuses:
 
 ```php
-add_filter( 'vw_notification_email_recipients', function ( $email_recipients, $post ) {
+add_filter( 'vw_notification_email_recipients', function ( $email_recipients, $action, $post  ) {
   if ( $post->post_status === 'legal-review' ) {
     $email_recipients[] = 'saul.goodman@sgoodmanassoc.com';
   }

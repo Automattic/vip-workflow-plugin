@@ -108,17 +108,17 @@ class Notifications extends Module {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] New %2$s Created: "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-				$body .= sprintf( __( 'A new %1$s (#%2$s "%3$s") was created by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user->display_name, $current_user->user_email ) . "\r\n";
+				$body .= sprintf( __( 'A new %1$s (#%2$s "%3$s") was created by %4$s %5$s.', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user->display_name, $current_user->user_email ) . "\r\n";
 			} elseif ( 'trash' == $new_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Trashed: "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-				$body .= sprintf( __( '%1$s #%2$s "%3$s" was moved to the trash by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+				$body .= sprintf( __( '%1$s #%2$s "%3$s" was moved to the trash by %4$s %5$s.', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
 			} elseif ( 'trash' == $old_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Restored (from Trash): "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-				$body .= sprintf( __( '%1$s #%2$s "%3$s" was restored from trash by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+				$body .= sprintf( __( '%1$s #%2$s "%3$s" was restored from trash by %4$s %5$s.', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
 			} elseif ( 'future' == $new_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Scheduled: "%3$s"' ), $blogname, $post_type, $post_title );
@@ -128,21 +128,21 @@ class Notifications extends Module {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Published: "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-				$body .= sprintf( __( '%1$s #%2$s "%3$s" was published by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+				$body .= sprintf( __( '%1$s #%2$s "%3$s" was published by %4$s %5$s.', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
 			} elseif ( 'publish' == $old_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Unpublished: "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
-				$body .= sprintf( __( '%1$s #%2$s "%3$s" was unpublished by %4$s %5$s', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
+				$body .= sprintf( __( '%1$s #%2$s "%3$s" was unpublished by %4$s %5$s.', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
 			} else {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Status Changed for "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
 
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email, 6. old status, 7. new status  */
-				$body .= sprintf( __( 'Status was changed for %1$s #%2$s "%3$s" by %4$s %5$s from "%6$s" to "%7$s"', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email, $old_status_friendly_name, $new_status_friendly_name ) . "\r\n";
+				$body .= sprintf( __( 'Status was changed for %1$s #%2$s "%3$s" by %4$s %5$s from "%6$s" to "%7$s".', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email, $old_status_friendly_name, $new_status_friendly_name ) . "\r\n";
 			}
 
-			$body .= "--------------------\r\n\r\n";
+			$body .= "\r\n";
 
 			$edit_link = htmlspecialchars_decode( get_edit_post_link( $post_id ) );
 			if ( 'publish' != $new_status ) {
@@ -173,10 +173,9 @@ class Notifications extends Module {
 	/**
 	 * Get the footer for the email notification
 	 *
-	 * @param WP_Post $post
 	 * @return string Footer for the email notification
 	 */
-	public function get_notification_footer( $post ) {
+	public function get_notification_footer() {
 		$body  = '';
 		$body .= "\r\n--------------------\r\n";
 		/* translators: 1: post title */
@@ -211,9 +210,10 @@ class Notifications extends Module {
 		 * Filter the email recipients
 		 *
 		 * @param array $email_recipients Array of email recipients
+		 * @param string $action Action being taken
 		 * @param WP_Post $post Post object
 		 */
-		$email_recipients = apply_filters( 'vw_notification_email_recipients', $email_recipients, $post );
+		$email_recipients = apply_filters( 'vw_notification_email_recipients', $email_recipients, $action, $post );
 
 		// ToDo: Should we add a filter to allow for customizing the email subject, body and headers?
 
