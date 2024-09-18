@@ -1,48 +1,34 @@
 <?php
 /**
- * class Notifications
- * Email notifications for VIP Workflow and more
+ * The notifications module for sending email/webhook notifications.
+ *
+ * @package vip-workflow
  */
 namespace VIPWorkflow\Modules;
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Modules\Shared\PHP\Module;
 use function VIPWorkflow\Modules\Shared\PHP\vw_draft_or_post_title;
 
-class Notifications extends Module {
-
-	public $module;
+class Notifications {
 
 	/**
-	 * Register the module with VIP Workflow but don't do anything else
+	 * Initialize the notifications module
 	 */
-	public function __construct() {
-
-		// Register the module with VIP Workflow
-		$this->module_url = $this->get_module_url( __FILE__ );
-		$args             = [
-			'module_url'            => $this->module_url,
-			'slug'                  => 'notifications',
-		];
-		$this->module     = VIP_Workflow::instance()->register_module( 'notifications', $args );
-	}
-
-	/**
-	 * Initialize the notifications class if the plugin is enabled
-	 */
-	public function init() {
+	public static function init(): void {
 		// Send notifications on post status change
-		add_action( 'transition_post_status', [ $this, 'notification_status_change' ], 10, 3 );
+		add_action( 'transition_post_status', [ __CLASS__, 'notification_status_change' ], 10, 3 );
+
 		// Schedule email sending
-		add_action( 'vw_send_scheduled_emails', [ $this, 'send_emails' ], 10, 4 );
+		add_action( 'vw_send_scheduled_emails', [ __CLASS__, 'send_emails' ], 10, 4 );
+
 		// Schedule webhook sending
-		add_action( 'vw_send_scheduled_webhook', [ $this, 'send_to_webhook' ], 10, 4 );
+		add_action( 'vw_send_scheduled_webhook', [ __CLASS__, 'send_to_webhook' ], 10, 4 );
 	}
 
 	/**
 	 * Set up and send post status change notification email
 	 */
-	public function notification_status_change( $new_status, $old_status, $post ) {
+	public static function notification_status_change( $new_status, $old_status, $post ) {
 		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
@@ -120,7 +106,7 @@ class Notifications extends Module {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Scheduled: "%3$s"' ), $blogname, $post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email 6. scheduled date  */
-				$body .= sprintf( __( '%1$s #%2$s "%3$s" was scheduled by %4$s %5$s.  It will be published on %6$s' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email, $this->get_scheduled_datetime( $post ) ) . "\r\n";
+				$body .= sprintf( __( '%1$s #%2$s "%3$s" was scheduled by %4$s %5$s.  It will be published on %6$s' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email, self::get_scheduled_datetime( $post ) ) . "\r\n";
 			} elseif ( 'publish' == $new_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Published: "%3$s"', 'vip-workflow' ), $blogname, $post_type, $post_title );
@@ -152,11 +138,11 @@ class Notifications extends Module {
 			/* translators: 1: view link */
 			$body .= sprintf( __( 'View: %s', 'vip-workflow' ), $view_link ) . "\r\n";
 
-			$body .= $this->get_notification_footer( $post );
+			$body .= self::get_notification_footer( $post );
 
-			$this->schedule_emails( 'status-change', $post, $subject, $body );
+			self::schedule_emails( 'status-change', $post, $subject, $body );
 
-			$this->schedule_webhook_notification( $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name, $post->post_modified_gmt );
+			self::schedule_webhook_notification( $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name, $post->post_modified_gmt );
 		}
 	}
 
@@ -165,7 +151,7 @@ class Notifications extends Module {
 	 *
 	 * @return string Footer for the email notification
 	 */
-	public function get_notification_footer() {
+	public static function get_notification_footer() {
 		$body  = '';
 		$body .= "\r\n--------------------\r\n";
 		/* translators: 1: post title */
@@ -182,7 +168,7 @@ class Notifications extends Module {
 	 * @param string $message Body of the email
 	 * @param string $message_headers. (optional) Message headers
 	 */
-	public function schedule_emails( $action, $post, $subject, $message, $message_headers = '' ) {
+	public static function schedule_emails( $action, $post, $subject, $message, $message_headers = '' ) {
 		// Ensure the email address is set from settings.
 		if ( empty( VIP_Workflow::instance()->settings->module->options->email_address ) ) {
 			return;
@@ -239,7 +225,7 @@ class Notifications extends Module {
 	 * @param string $message Body of the email
 	 * @param string $message_headers. (optional) Message headers
 	 */
-	public function send_emails( $recipients, $subject, $message, $message_headers = '' ) {
+	public static function send_emails( $recipients, $subject, $message, $message_headers = '' ) {
 		$response = wp_mail( $recipients, $subject, $message, $message_headers );
 
 		// ToDo: Switch to using log2logstash instead of error_log.
@@ -261,7 +247,7 @@ class Notifications extends Module {
 	 * @param string $new_status New status of the post
 	 * @param string $post_timestamp Timestamp of the post's last update
 	 */
-	public function schedule_webhook_notification( $current_user, $post_type, $post_id, $edit_link, $post_title, $old_status, $new_status, $post_timestamp ) {
+	public static function schedule_webhook_notification( $current_user, $post_type, $post_id, $edit_link, $post_title, $old_status, $new_status, $post_timestamp ) {
 		// Ensure the webhook URL is set from settings.
 		if ( empty( VIP_Workflow::instance()->settings->module->options->webhook_url ) ) {
 			return;
@@ -284,7 +270,7 @@ class Notifications extends Module {
 	 * @param string $message_type Type of message being sent
 	 * @param string $timestamp Timestamp of the message that corresponds to the time at which the post was updated
 	 */
-	public function send_to_webhook( $message, $message_type, $timestamp ) {
+	public static function send_to_webhook( $message, $message_type, $timestamp ) {
 		$webhook_url = VIP_Workflow::instance()->settings->module->options->webhook_url;
 
 		// Set up the payload
@@ -323,7 +309,7 @@ class Notifications extends Module {
 	* @param  obj    $post               Post object
 	* @return str    $scheduled_datetime The scheduled datetime in human-readable format
 	*/
-	private function get_scheduled_datetime( $post ) {
+	private static function get_scheduled_datetime( $post ) {
 
 			$scheduled_ts = strtotime( $post->post_date );
 
@@ -334,3 +320,5 @@ class Notifications extends Module {
 			return sprintf( __( '%1$s at %2$s', 'vip-workflow' ), $date, $time );
 	}
 }
+
+Notifications::init();

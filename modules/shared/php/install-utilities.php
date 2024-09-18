@@ -7,9 +7,6 @@
 
 namespace VIPWorkflow\Modules\Shared\PHP;
 
-use stdClass;
-use VIPWorkflow\VIP_Workflow;
-
 class InstallUtilities {
 	/**
 	 * Given a module name, run a callback function if the module is being run for the first time
