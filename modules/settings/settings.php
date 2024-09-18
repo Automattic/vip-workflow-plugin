@@ -216,28 +216,23 @@ class Settings extends Module {
 			return false;
 		}
 
-		$module_name = 'settings';
-
 		if ( 'update' != $_POST['action']
-		|| VIP_Workflow::instance()->$module_name->module->options_group_name != $_POST['option_page'] ) {
+		|| VIP_Workflow::instance()->settings->module->options_group_name != $_POST['option_page'] ) {
 			return false;
 		}
 
-		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), VIP_Workflow::instance()->$module_name->module->options_group_name . '-options' ) ) {
+		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), VIP_Workflow::instance()->settings->module->options_group_name . '-options' ) ) {
 			wp_die( esc_html__( 'Cheatin&#8217; uh?' ) );
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- check is already done above
-		$new_options = ( isset( $_POST[ VIP_Workflow::instance()->$module_name->module->options_group_name ] ) ) ? $_POST[ VIP_Workflow::instance()->$module_name->module->options_group_name ] : array();
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validation and sanitization is done in the settings_validate method
+		$new_options = ( isset( $_POST[ VIP_Workflow::instance()->settings->module->options_group_name ] ) ) ? $_POST[ VIP_Workflow::instance()->settings->module->options_group_name ] : array();
 
-		// Only call the validation callback if it exists?
-		if ( method_exists( VIP_Workflow::instance()->$module_name, 'settings_validate' ) ) {
-			$new_options = VIP_Workflow::instance()->$module_name->settings_validate( $new_options );
-		}
+		$new_options = VIP_Workflow::instance()->settings->settings_validate( $new_options );
 
 		// Cast our object and save the data.
-		$new_options = (object) array_merge( (array) VIP_Workflow::instance()->$module_name->module->options, $new_options );
-		VIP_Workflow::instance()->update_all_module_options( VIP_Workflow::instance()->$module_name->module->name, $new_options );
+		$new_options = (object) array_merge( (array) VIP_Workflow::instance()->settings->module->options, $new_options );
+		VIP_Workflow::instance()->update_all_module_options( VIP_Workflow::instance()->settings->module->name, $new_options );
 
 		// Redirect back to the settings page that was submitted without any previous messages
 		$goback = add_query_arg( 'message', 'settings-updated', remove_query_arg( array( 'message' ), wp_get_referer() ) );
