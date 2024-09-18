@@ -48,7 +48,7 @@ class Preview {
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 		$custom_status_slugs  = wp_list_pluck( $custom_status_module->get_custom_statuses(), 'slug' );
-		$custom_post_types    = $custom_status_module->get_supported_post_types();
+		$custom_post_types    = VIP_Workflow::instance()->get_supported_post_types();
 
 		wp_localize_script( 'vip-workflow-preview-script', 'VW_PREVIEW', [
 			'custom_post_types'    => $custom_post_types,

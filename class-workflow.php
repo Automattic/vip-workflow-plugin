@@ -124,7 +124,6 @@ class VIP_Workflow {
 		add_action( 'init', [ $this, 'action_init_after' ], 1000 );
 
 		add_action( 'admin_init', [ $this, 'action_admin_init' ] );
-		add_action( 'admin_menu', [ $this, 'action_admin_menu' ] );
 	}
 
 	/**
@@ -174,76 +173,6 @@ class VIP_Workflow {
 	}
 
 	/**
-	 * Add module pages to the admin menu
-	 */
-	public function action_admin_menu() {
-		$main_module = self::instance()->modules->custom_status;
-		$menu_title  = __( 'VIP Workflow', 'vip-workflow' );
-
-		add_menu_page( $menu_title, $menu_title, 'manage_options', $main_module->settings_slug, function () use ( $main_module ) {
-			return $this->menu_controller( $main_module->settings_slug );
-		} );
-
-		foreach ( self::instance()->modules as $mod_name => $mod_data ) {
-			if ( $mod_data->configure_page_cb && $mod_name !== $main_module->name ) {
-				add_submenu_page( $main_module->settings_slug, $mod_data->title, $mod_data->title, 'manage_options', $mod_data->settings_slug, function () use ( $mod_data ) {
-					return $this->menu_controller( $mod_data->settings_slug );
-				} );
-			}
-		}
-	}
-
-	/**
-	 * Handles all settings and configuration page requests. Required element for VIP Workflow
-	 */
-	public function menu_controller( $mod_slug ) {
-		$requested_module = self::instance()->get_module_by( 'settings_slug', $mod_slug );
-		if ( ! $requested_module ) {
-			wp_die( esc_html__( 'Not a registered VIP Workflow module', 'vip-workflow' ) );
-		}
-
-		$configure_callback    = $requested_module->configure_page_cb;
-		$requested_module_name = $requested_module->name;
-
-		$this->print_default_header( $requested_module );
-		self::instance()->$requested_module_name->$configure_callback();
-		$this->print_default_footer();
-	}
-
-	/**
-	 * Print the header on the top of each module page
-	 */
-	public function print_default_header( $current_module ) {
-		// If there's been a message, let's display it
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Message slugs correspond to preset read-only strings and do not require nonce checks.
-		$message_slug = isset( $_REQUEST['message'] ) ? sanitize_title( $_REQUEST['message'] ) : false;
-
-		if ( $message_slug && isset( $current_module->messages[ $message_slug ] ) ) {
-			$display_text = sprintf( '<span class="vip-workflow-updated-message vip-workflow-message">%s</span>', esc_html( $current_module->messages[ $message_slug ] ) );
-		}
-
-		// If there's been an error, let's display it
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Error slugs correspond to preset read-only strings and do not require nonce checks.
-		$error_slug = isset( $_REQUEST['error'] ) ? sanitize_title( $_REQUEST['error'] ) : false;
-
-		if ( $error_slug && isset( $current_module->messages[ $error_slug ] ) ) {
-			$display_text = sprintf( '<span class="vip-workflow-error-message vip-workflow-message">%s</span>', esc_html( $current_module->messages[ $error_slug ] ) );
-		}
-
-		include_once __DIR__ . '/modules/shared/php/views/module-header.php';
-	}
-
-	/**
-	 * Print the footer for each module page
-	 */
-	public function print_default_footer() {
-		// End the wrap <div> started in the header
-		echo '</div>';
-	}
-
-	/**
 	 * Register a new module
 	 */
 	public function register_module( $name, $args = [] ) {
@@ -263,10 +192,6 @@ class VIP_Workflow {
 			'options'              => false,
 			'configure_page_cb'    => false,
 			'configure_link_text'  => __( 'Configure', 'vip-workflow' ),
-			// These messages are applied to modules and can be overridden if custom messages are needed
-			'messages'             => [
-				'settings-updated' => __( 'Settings updated.', 'vip-workflow' ),
-			],
 			'autoload'             => true, // autoloading a module will remove the ability to enable or disable it
 		];
 		if ( isset( $args['messages'] ) ) {
@@ -371,6 +296,44 @@ class VIP_Workflow {
 		$this->modules->$mod_name->options = $new_options;
 		$this->$mod_name->module           = $this->modules->$mod_name;
 		return update_option( $this->options_group . $mod_name . '_options', $this->modules->$mod_name->options );
+	}
+
+
+	/**
+	 * Collect all of the active post types
+	 *
+	 * @return array $post_types All of the post types that are 'on'
+	 */
+	public function get_supported_post_types(): array {
+		// ToDo: Move this function to a shared static helper after we've refactored into static modules
+
+		$post_types         = [];
+		$post_types_options = $this->settings->module->options->post_types;
+
+		foreach ( $post_types_options as $post_type => $value ) {
+			if ( 'on' === $value ) {
+				$post_types[] = $post_type;
+			}
+		}
+
+		return $post_types;
+	}
+
+	/**
+	 * Whether or not the current page is our settings view. Determination is based on $pagenow, $_GET['page'], and if it's settings module or not.
+	 *
+	 * @return bool $is_settings_view Return true if it is
+	 */
+	public static function is_settings_view_loaded( string $slug ): bool {
+		global $pagenow;
+
+		// All of the settings views are based on admin.php and a $_GET['page'] parameter
+		if ( 'admin.php' != $pagenow || ! isset( $_GET['page'] ) ) {
+			return false;
+		}
+
+		// The current page better be in the array of registered settings view slugs
+		return $_GET['page'] === $slug;
 	}
 }
 
