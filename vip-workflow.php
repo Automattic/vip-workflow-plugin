@@ -5,7 +5,7 @@
  * Description: Adding additional editorial workflow capabilities to WordPress.
  * Author: WordPress VIP
  * Text Domain: vip-workflow
- * Version: 0.2.0
+ * Version: 0.3.0
  * Requires at least: 6.2
  * Requires PHP: 8.0
  * License: GPL-3
@@ -36,7 +36,7 @@ if ( version_compare( phpversion(), '8.0', '<' ) || version_compare( $wp_version
 }
 
 // Define contants
-define( 'VIP_WORKFLOW_VERSION', '0.2.0' );
+define( 'VIP_WORKFLOW_VERSION', '0.3.0' );
 define( 'VIP_WORKFLOW_ROOT', __DIR__ );
 define( 'VIP_WORKFLOW_URL', plugins_url( '/', __FILE__ ) );
 define( 'VIP_WORKFLOW_SETTINGS_PAGE', add_query_arg( 'page', 'vw-settings', get_admin_url( null, 'admin.php' ) ) );
