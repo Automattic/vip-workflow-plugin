@@ -103,3 +103,9 @@
 .components-dropdown-menu__menu button[aria-controls="vip-workflow-custom-status:vip-workflow-sidebar"] .vip-workflow-save-button {
 	display: none;
 }
+
+// Remove the star-shaped icon from the sidebar that allows "Unpinning" our button-sidebar.
+// The "unpin" action for the custom sidebar is also blocked via dispatch override in code if this CSS class changes.
+#vip-workflow-custom-status\:vip-workflow-sidebar .interface-complementary-area__pin-unpin-item {
+	display: none;
+}
