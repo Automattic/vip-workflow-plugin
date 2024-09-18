@@ -21,9 +21,6 @@ class Notifications extends Module {
 		// Register the module with VIP Workflow
 		$this->module_url = $this->get_module_url( __FILE__ );
 		$args             = [
-			'title'                 => __( 'Notifications', 'vip-workflow' ),
-			'short_description'     => __( 'Update your team of important changes to your content.', 'vip-workflow' ),
-			'extended_description'  => __( 'You can keep everyone updated about what is happening with a given content. This is possible through webhook notifications, and emails to admins. Each status change sends out a notification to the specified webhook URL(i.e.: Slack incoming webhooks) and/or email notifications to the admin.', 'vip-workflow' ),
 			'module_url'            => $this->module_url,
 			'slug'                  => 'notifications',
 		];
@@ -37,7 +34,9 @@ class Notifications extends Module {
 		// Send notifications on post status change
 		add_action( 'transition_post_status', [ $this, 'notification_status_change' ], 10, 3 );
 		// Schedule email sending
-		add_action( 'vw_send_scheduled_email', [ $this, 'send_single_email' ], 10, 4 );
+		add_action( 'vw_send_scheduled_emails', [ $this, 'send_emails' ], 10, 4 );
+		// Schedule webhook sending
+		add_action( 'vw_send_scheduled_webhook', [ $this, 'send_to_webhook' ], 10, 4 );
 	}
 
 	/**
@@ -61,15 +60,13 @@ class Notifications extends Module {
 			// Get current user
 			$current_user = wp_get_current_user();
 
-			$post_author = get_userdata( $post->post_author );
-
 			$blogname = get_option( 'blogname' );
 
 			$body = '';
 
 			$post_id    = $post->ID;
 			$post_title = vw_draft_or_post_title( $post_id );
-			$post_type  = get_post_type_object( $post->post_type )->labels->singular_name;
+			$post_type  = $post->post_type;
 
 			if ( 0 != $current_user->ID ) {
 				$current_user_display_name = $current_user->display_name;
@@ -157,16 +154,9 @@ class Notifications extends Module {
 
 			$body .= $this->get_notification_footer( $post );
 
-			$this->send_email( 'status-change', $post, $subject, $body );
+			$this->schedule_emails( 'status-change', $post, $subject, $body );
 
-			// ToDo: See how we can optimize this, using batching as well as async processing.
-			if ( ! empty( VIP_Workflow::instance()->settings->module->options->webhook_url ) ) {
-				/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
-				$format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
-				$text   = sprintf( $format, $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name );
-
-				$this->send_to_webhook( $text, 'status-change', $current_user, $post );
-			}
+			$this->schedule_webhook_notification( $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name, $post->post_modified_gmt );
 		}
 	}
 
@@ -192,57 +182,115 @@ class Notifications extends Module {
 	 * @param string $message Body of the email
 	 * @param string $message_headers. (optional) Message headers
 	 */
-	public function send_email( $action, $post, $subject, $message, $message_headers = '' ) {
-		// Do nothing if the post isn't set.
-		$post_id = $post->ID;
-		if ( ! $post_id ) {
-			return;
-		}
-
+	public function schedule_emails( $action, $post, $subject, $message, $message_headers = '' ) {
 		// Ensure the email address is set from settings.
 		if ( empty( VIP_Workflow::instance()->settings->module->options->email_address ) ) {
 			return;
 		}
 
-		$email_recipients[] = VIP_Workflow::instance()->settings->module->options->email_address;
+		$email_recipients = [ VIP_Workflow::instance()->settings->module->options->email_address ];
 
 		/**
 		 * Filter the email recipients
 		 *
 		 * @param array $email_recipients Array of email recipients
-		 * @param string $action Action being taken
+		 * @param string $action Action being taken, eg. status-change
 		 * @param WP_Post $post Post object
 		 */
 		$email_recipients = apply_filters( 'vw_notification_email_recipients', $email_recipients, $action, $post );
 
-		// ToDo: Should we add a filter to allow for customizing the email subject, body and headers?
+		/**
+		 * Filter the email subject
+		 *
+		 * @param string $subject Subject of the email
+		 * @param string $action Action being taken, eg. status-change
+		 *
+		 */
+		$subject       = apply_filters( 'vw_notification_email_subject', $subject, $action, $post );
+
+		/**
+		 * Filter the email message
+		 *
+		 * @param string $message Body of the email
+		 * @param string $action Action being taken, eg. status-change
+		 * @param WP_Post $post Post object
+		 */
+		$message       = apply_filters( 'vw_notification_email_message', $message, $action, $post );
+
+		/**
+		 * Filter the email headers
+		 *
+		 * @param string $message_headers Message headers
+		 * @param string $action Action being taken, eg. status-change
+		 * @param WP_Post $post Post object
+		 */
+		$message_headers = apply_filters( 'vw_notification_email_headers', $message_headers, $action, $post );
 
 		if ( ! empty( $email_recipients ) ) {
-			// ToDo: Let's batch these emails, and send collate the updates so we don't schedule too many emails.
-			$this->schedule_emails( $email_recipients, $subject, $message, $message_headers );
+			wp_schedule_single_event( time(), 'vw_send_scheduled_emails', [ $email_recipients, $subject, $message, $message_headers ] );
 		}
 	}
 
 	/**
-	 * Send notifications to Slack
+	 * Sends emails
 	 *
-	 * @param string $message Message to be sent to webhook
-	 * @param string $action Action being taken. Currently only `status-change`
-	 * @param WP_User $user User who is taking the action
-	 * @param WP_Post $post Post that the action is being taken on
+	 * @param mixed $to Emails to send to
+	 * @param string $subject Subject of the email
+	 * @param string $message Body of the email
+	 * @param string $message_headers. (optional) Message headers
 	 */
-	public function send_to_webhook( $message, $action, $user, $post ) {
-		$webhook_url = VIP_Workflow::instance()->settings->module->options->webhook_url;
+	public function send_emails( $recipients, $subject, $message, $message_headers = '' ) {
+		$response = wp_mail( $recipients, $subject, $message, $message_headers );
 
-		// Bail if the webhook URL is not set
-		if ( empty( $webhook_url ) ) {
+		// ToDo: Switch to using log2logstash instead of error_log.
+		if ( ! $response ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( 'Unable to send notification to email(s) provided.' );
+		}
+	}
+
+	/**
+	 * Schedule a webhook notification
+	 *
+	 * @param string $current_user Current user's name
+	 * @param string $post_type Post type
+	 * @param int $post_id Post ID
+	 * @param string $edit_link Edit link for the post
+	 * @param string $post_title Post title
+	 * @param string $old_status Old status of the post
+	 * @param string $new_status New status of the post
+	 * @param string $post_timestamp Timestamp of the post's last update
+	 */
+	public function schedule_webhook_notification( $current_user, $post_type, $post_id, $edit_link, $post_title, $old_status, $new_status, $post_timestamp ) {
+		// Ensure the webhook URL is set from settings.
+		if ( empty( VIP_Workflow::instance()->settings->module->options->webhook_url ) ) {
 			return;
 		}
 
+		/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
+		$format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
+		$message   = sprintf( $format, $current_user, $post_type, $post_id, $edit_link, $post_title, $old_status, $new_status );
+
+		$message_type = 'plugin:vip-workflow:post-update';
+		$timestamp    = $post_timestamp;
+
+		wp_schedule_single_event( time(), 'vw_send_scheduled_webhook', [ $message, $message_type, $timestamp ] );
+	}
+
+	/**
+	 * Send notifications to a webhook
+	 *
+	 * @param string $message Message to be sent to webhook
+	 * @param string $message_type Type of message being sent
+	 * @param string $timestamp Timestamp of the message that corresponds to the time at which the post was updated
+	 */
+	public function send_to_webhook( $message, $message_type, $timestamp ) {
+		$webhook_url = VIP_Workflow::instance()->settings->module->options->webhook_url;
+
 		// Set up the payload
 		$payload = [
-			'type'      => 'plugin:vip-workflow:post-update',
-			'timestamp' => $post->post_modified_gmt,
+			'type'      => $message_type,
+			'timestamp' => $timestamp,
 			'data'      => $message,
 		];
 
@@ -250,11 +298,8 @@ class Notifications extends Module {
 		 * Filter the payload before sending it to the webhook
 		 *
 		 * @param array $payload Payload to be sent to the webhook
-		 * @param string $action Action being taken
-		 * @param WP_User $user User who is taking the action
-		 * @param WP_Post $post Post that the action is being taken on
 		 */
-		$payload = apply_filters( 'vw_notification_send_to_webhook_payload', $payload, $action, $user, $post );
+		$payload = apply_filters( 'vw_notification_send_to_webhook_payload', $payload );
 
 		// Send the notification
 		$response = wp_remote_post(
@@ -264,41 +309,12 @@ class Notifications extends Module {
 				'headers' => [ 'Content-Type' => 'application/json' ],
 			]
 		);
+
+		// ToDo: Switch to using log2logstash instead of error_log.
 		if ( is_wp_error( $response ) ) {
-			$this->print_ajax_response( 'error', 'Unable to send notification to webhook provided', 400 );
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( 'Unable to send notification to webhook provided.' );
 		}
-	}
-
-	/**
-	 * Schedules emails to be sent in succession
-	 *
-	 * @param mixed $recipients Individual email or array of emails
-	 * @param string $subject Subject of the email
-	 * @param string $message Body of the email
-	 * @param string $message_headers. (optional) Message headers
-	 * @param int $time_offset (optional) Delay in seconds per email
-	 */
-	public function schedule_emails( $recipients, $subject, $message, $message_headers = '', $time_offset = 1 ) {
-		$recipients = (array) $recipients;
-
-		$send_time = time();
-
-		foreach ( $recipients as $recipient ) {
-			wp_schedule_single_event( $send_time, 'vw_send_scheduled_email', [ $recipient, $subject, $message, $message_headers ] );
-			$send_time += $time_offset;
-		}
-	}
-
-	/**
-	 * Sends an individual email
-	 *
-	 * @param mixed $to Email to send to
-	 * @param string $subject Subject of the email
-	 * @param string $message Body of the email
-	 * @param string $message_headers. (optional) Message headers
-	 */
-	public function send_single_email( $to, $subject, $message, $message_headers = '' ) {
-		wp_mail( $to, $subject, $message, $message_headers );
 	}
 
 	/**

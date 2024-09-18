@@ -26,6 +26,9 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 - [Code Filters](#code-filters)
   - [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
   - [`vw_notification_email_recipients`](#vw_notification_email_recipients)
+  - [`vw_notification_email_subject`](#vw_notification_email_subject)
+  - [`vw_notification_email_message`](#vw_notification_email_message)
+  - [`vw_notification_email_headers`](#vw_notification_email_headers)
   - [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
   - [`vw_preview_expiration_options`](#vw_preview_expiration_options)
 - [Development](#development)
@@ -172,9 +175,10 @@ Change the recipients that receive an email notification, when the status of a p
 * Filter the email recipients
 *
 * @param array $email_recipients Array of email recipients
+* @param string $action Action being taken, eg. status-change
 * @param WP_Post $post Post object
 */
-apply_filters( 'vw_notification_email_recipients', $email_recipients, $post );
+apply_filters( 'vw_notification_email_recipients', $email_recipients, $action, $post );
 ```
 
 For example, this filter can be used to send email notifications to more than just 1 recipients especially for special statuses:
@@ -186,6 +190,75 @@ add_filter( 'vw_notification_email_recipients', function ( $email_recipients, $a
   }
 
   return $email_recipients;
+}, 10, 2 );
+```
+
+### `vw_notification_email_subject`
+
+Change the subject of the email that recipients receive, when the status of a post changes.
+
+```php
+/**
+* Filter the email subject
+*
+* @param string $subject Subject of the email
+* @param string $action Action being taken, eg. status-change
+* @param WP_Post $post Post object
+*/
+apply_filters( 'vw_notification_email_subject', $subject, $action, $post );
+```
+
+For example, this filter can be used to set a standardized subject regardless of what the status is:
+
+```php
+add_filter( 'vw_notification_email_subject', function ( $subject, $action, $post  ) {
+  return __( 'Content Status Update' );
+}, 10, 2 );
+```
+
+### `vw_notification_email_message`
+
+Change the message of the email that recipients receive, when the status of a post changes.
+
+```php
+/**
+* Filter the email message
+*
+* @param string $message Body of the email
+* @param string $action Action being taken, eg. status-change
+* @param WP_Post $post Post object
+*/
+apply_filters( 'vw_notification_email_message', $message, $action, $post );
+```
+
+For example, this filter can be used to replace the signature that the plugin adds to the footer of the email with a company one instead:
+
+```php
+add_filter( 'vw_notification_email_message', function ( $message, $action, $post  ) {
+  return str_replace( 'You are receiving this email because a notification was configured via the VIP Workflow Plugin.', 'You are receiving this email as part of ACME Corp.', $message);
+}, 10, 2 );
+```
+
+### `vw_notification_email_headers`
+
+Change the headers used for the email that recipients receive, when the status of a post changes. By default, they are the standard headers set by wp_mail.
+
+```php
+/**
+* Filter the email recipients
+*
+* @param array $message_headers Message headers
+* @param string $action Action being taken, eg. status-change
+* @param WP_Post $post Post object
+*/
+apply_filters( 'vw_notification_email_headers', $message_headers, $post );
+```
+
+For example, this filter can be used to send HTML formatted email notifications instead of the default plain text formatted email notifications:
+
+```php
+add_filter( 'vw_notification_email_headers', function ( $message_headers, $action, $post  ) {
+  return [ 'Content-Type: text/html; charset=UTF-8' ];
 }, 10, 2 );
 ```
 
@@ -206,22 +279,19 @@ Change the payload sent to the webhook, when the status of a post changes. By de
 * Filter the payload before sending it to the webhook
 *
 * @param array $payload Payload to be sent to the webhook
-* @param string $action Action being taken
-* @param WP_User $user User who is taking the action
-* @param WP_Post $post Post that the action is being taken on
 */
 
-apply_filters( 'vw_notification_send_to_webhook_payload', $payload, $action, $user, $post );
+apply_filters( 'vw_notification_send_to_webhook_payload', $payload );
 ```
 
 For example, this filter can be used to customize the payload so that it's compatible with Slack's [incoming webhooks](https://api.slack.com/messaging/webhooks):
 
 ```php
-add_filter( 'vw_notification_send_to_webhook_payload', function ( $payload, $action, $user, $post ) {
+add_filter( 'vw_notification_send_to_webhook_payload', function ( $payload ) {
     return [
         'text' => $payload['data'],
     ];
-}, 10, 4 );
+}, 10, 1 );
 ```
 
 ### `vw_preview_expiration_options`

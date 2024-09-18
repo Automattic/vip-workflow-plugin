@@ -22,8 +22,6 @@ class Settings extends Module {
 		// Register the module with VIP Workflow
 		$this->module_url = $this->get_module_url( __FILE__ );
 		$args             = array(
-			'title'             => __( 'Settings', 'vip-workflow' ),
-			'short_description' => __( 'Configure VIP Workflow settings.', 'vip-workflow' ),
 			'module_url'        => $this->module_url,
 			'slug'              => 'settings',
 			'default_options'   => array(
@@ -225,8 +223,7 @@ class Settings extends Module {
 			return false;
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- wp_verify_nonce() is already doing the necessary work
-		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'], VIP_Workflow::instance()->$module_name->module->options_group_name . '-options' ) ) {
+		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), VIP_Workflow::instance()->$module_name->module->options_group_name . '-options' ) ) {
 			wp_die( esc_html__( 'Cheatin&#8217; uh?' ) );
 		}
 
