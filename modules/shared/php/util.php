@@ -2,7 +2,7 @@
 
 namespace VIPWorkflow\Modules\Shared\PHP;
 
-if ( ! function_exists( 'vw_draft_or_post_title' ) ) :
+if ( ! function_exists( 'vw_draft_or_post_title' ) ) {
 	/**
 	 * Copy of core's _draft_or_post_title without the filters
 	 *
@@ -15,7 +15,7 @@ if ( ! function_exists( 'vw_draft_or_post_title' ) ) :
 		$post = get_post( $post_id );
 		return ! empty( $post->post_title ) ? $post->post_title : __( '(no title)', 'vip-workflow' );
 	}
-endif;
+}
 
 /**
  * This function is necessary to make post preview pagination work with custom post statuses

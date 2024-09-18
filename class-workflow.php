@@ -176,23 +176,12 @@ class VIP_Workflow {
 	 * Register a new module
 	 */
 	public function register_module( $name, $args = [] ) {
-
-		// A title and name is required for every module
-		if ( ! isset( $args['title'], $name ) ) {
-			return false;
-		}
-
 		$defaults = [
-			'title'                => '',
-			'short_description'    => '',
-			'extended_description' => '',
 			'slug'                 => '',
 			'post_type_support'    => '',
 			'default_options'      => [],
 			'options'              => false,
 			'configure_page_cb'    => false,
-			'configure_link_text'  => __( 'Configure', 'vip-workflow' ),
-			'autoload'             => true, // autoloading a module will remove the ability to enable or disable it
 		];
 		if ( isset( $args['messages'] ) ) {
 			$args['messages'] = array_merge( (array) $args['messages'], $defaults['messages'] );

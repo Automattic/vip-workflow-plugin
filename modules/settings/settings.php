@@ -22,8 +22,6 @@ class Settings extends Module {
 		// Register the module with VIP Workflow
 		$this->module_url = $this->get_module_url( __FILE__ );
 		$args             = array(
-			'title'             => __( 'Settings', 'vip-workflow' ),
-			'short_description' => __( 'Configure VIP Workflow settings.', 'vip-workflow' ),
 			'module_url'        => $this->module_url,
 			'slug'              => 'settings',
 			'default_options'   => array(
@@ -32,8 +30,7 @@ class Settings extends Module {
 					'page' => 'on',
 				],
 				'publish_guard'       => 'on',
-				'always_notify_admin' => 'on',
-				'send_to_webhook'     => 'off',
+				'email_address'       => '',
 				'webhook_url'         => '',
 			),
 			'configure_page_cb' => 'print_default_settings',
@@ -100,13 +97,8 @@ class Settings extends Module {
 		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ $this, 'helper_option_custom_post_type' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 		add_settings_field( 'publish_guard', __( 'Publish Guard', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 
-		add_settings_field( 'always_notify_admin', __( 'Always notify blog admin', 'vip-workflow' ), [ $this, 'settings_always_notify_admin_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-		add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'vip-workflow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-
-		// Hide the Webhook URL field by default if "Send to Webhook" is disabled
-		$webhook_url_class = 'on' === $this->module->options->send_to_webhook ? '' : 'hidden';
-
-		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general', [ 'class' => $webhook_url_class ] );
+		add_settings_field( 'email_address', __( 'Email Address', 'vip-workflow' ), [ $this, 'settings_email_address' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
 	}
 
 	/**
@@ -136,41 +128,11 @@ class Settings extends Module {
 	}
 
 	/**
-	 * Option for whether the blog admin email address should be always notified or not
+	 * Option to set an email address to send notifications to
 	 */
-	public function settings_always_notify_admin_option() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="always_notify_admin" name="' . esc_attr( $this->module->options_group_name ) . '[always_notify_admin]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->always_notify_admin, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-
-		printf( '<p class="description">%s</p>', esc_html__( 'Always email the blog administator address when posts change custom statuses.', 'vip-workflow' ) );
-	}
-
-	/**
-	 * Option to enable sending notifications to Slack
-	 */
-	public function settings_send_to_webhook() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="send_to_webhook" name="' . esc_attr( $this->module->options_group_name ) . '[send_to_webhook]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->send_to_webhook, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-
-		printf( '<p class="description">%s</p>', esc_html__( 'Notify a webhook URL when posts change custom statuses.', 'vip-workflow' ) );
+	public function settings_email_address() {
+		printf( '<input type="text" id="email_address" name="%s[email_address]" value="%s" />', esc_attr( $this->module->options_group_name ), esc_attr( $this->module->options->email_address ) );
+		printf( '<p class="description">%s</p>', esc_html__( 'Notify via email, when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -178,6 +140,7 @@ class Settings extends Module {
 	 */
 	public function settings_webhook_url() {
 		printf( '<input type="text" id="webhook_url" name="%s[webhook_url]" value="%s" />', esc_attr( $this->module->options_group_name ), esc_attr( $this->module->options->webhook_url ) );
+		printf( '<p class="description">%s</p>', esc_html__( 'Notify a webhook URL when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -212,6 +175,7 @@ class Settings extends Module {
 	 * Validate input from the end user
 	 */
 	public function settings_validate( $new_options ) {
+		// ToDo: There's no error messages shown right now, or any kind of notice that data is invalid.
 
 		// Whitelist validation for the post type options
 		if ( ! isset( $new_options['post_types'] ) ) {
@@ -224,18 +188,14 @@ class Settings extends Module {
 			$new_options['publish_guard'] = 'off';
 		}
 
-		// Whitelist validation for the 'always_notify_admin' options
-		if ( ! isset( $new_options['always_notify_admin'] ) || 'on' != $new_options['always_notify_admin'] ) {
-			$new_options['always_notify_admin'] = 'off';
-		}
-
-		// White list validation for the 'send_to_slack' option
-		if ( ! isset( $new_options['send_to_webhook'] ) || 'on' != $new_options['send_to_webhook'] ) {
-			$new_options['send_to_webhook'] = 'off';
+		// White list validation for the 'email_address' option
+		if ( ! isset( $new_options['email_address'] ) || ! filter_var( $new_options['email_address'], FILTER_VALIDATE_EMAIL ) ) {
+			$new_options['email_address'] = '';
+		} else {
+			$new_options['email_address'] = sanitize_email( $new_options['email_address'] );
 		}
 
 		// White list validation for the 'slack_webhook_url' option
-		$new_options['webhook_url'] = trim( $new_options['webhook_url'] );
 		if ( ! isset( $new_options['webhook_url'] ) || esc_url_raw( $new_options['webhook_url'] ) !== $new_options['webhook_url'] ) {
 			$new_options['webhook_url'] = '';
 		} else {
@@ -256,27 +216,23 @@ class Settings extends Module {
 			return false;
 		}
 
-		$module_name = 'settings';
-
 		if ( 'update' != $_POST['action']
-		|| VIP_Workflow::instance()->$module_name->module->options_group_name != $_POST['option_page'] ) {
+		|| VIP_Workflow::instance()->settings->module->options_group_name != $_POST['option_page'] ) {
 			return false;
 		}
 
-		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'], VIP_Workflow::instance()->$module_name->module->options_group_name . '-options' ) ) {
+		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), VIP_Workflow::instance()->settings->module->options_group_name . '-options' ) ) {
 			wp_die( esc_html__( 'Cheatin&#8217; uh?' ) );
 		}
 
-		$new_options = ( isset( $_POST[ VIP_Workflow::instance()->$module_name->module->options_group_name ] ) ) ? $_POST[ VIP_Workflow::instance()->$module_name->module->options_group_name ] : array();
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validation and sanitization is done in the settings_validate method
+		$new_options = ( isset( $_POST[ VIP_Workflow::instance()->settings->module->options_group_name ] ) ) ? $_POST[ VIP_Workflow::instance()->settings->module->options_group_name ] : array();
 
-		// Only call the validation callback if it exists?
-		if ( method_exists( VIP_Workflow::instance()->$module_name, 'settings_validate' ) ) {
-			$new_options = VIP_Workflow::instance()->$module_name->settings_validate( $new_options );
-		}
+		$new_options = VIP_Workflow::instance()->settings->settings_validate( $new_options );
 
 		// Cast our object and save the data.
-		$new_options = (object) array_merge( (array) VIP_Workflow::instance()->$module_name->module->options, $new_options );
-		VIP_Workflow::instance()->update_all_module_options( VIP_Workflow::instance()->$module_name->module->name, $new_options );
+		$new_options = (object) array_merge( (array) VIP_Workflow::instance()->settings->module->options, $new_options );
+		VIP_Workflow::instance()->update_all_module_options( VIP_Workflow::instance()->settings->module->name, $new_options );
 
 		// Redirect back to the settings page that was submitted without any previous messages
 		$goback = add_query_arg( 'message', 'settings-updated', remove_query_arg( array( 'message' ), wp_get_referer() ) );

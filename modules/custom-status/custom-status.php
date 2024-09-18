@@ -35,7 +35,6 @@ class Custom_Status extends Module {
 		$this->module_url = $this->get_module_url( __FILE__ );
 		// Register the module with VIP Workflow
 		$args         = [
-			'title'                => __( 'Workflow Config', 'vip-workflow' ),
 			'module_url'           => $this->module_url,
 			'slug'                 => 'custom-status',
 			'configure_page_cb'    => 'print_configure_view',
