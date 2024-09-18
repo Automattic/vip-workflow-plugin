@@ -1,7 +1,7 @@
 <?php
 /**
- * class EditStatus
- * REST endpoint for updating a custom status
+ * class CustomStatusEndpoint
+ * REST endpoint for managing custom statuses
  */
 
 namespace VIPWorkflow\Modules\CustomStatus\REST;
@@ -14,7 +14,7 @@ use WP_Term;
 
 defined( 'ABSPATH' ) || exit;
 
-class EditStatus {
+class CustomStatusEndpoint {
 	/**
 	 * Initialize the class
 	 */

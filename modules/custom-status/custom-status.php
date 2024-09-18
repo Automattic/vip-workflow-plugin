@@ -6,11 +6,11 @@
 
 namespace VIPWorkflow\Modules;
 
-require_once __DIR__ . '/rest/custom-status.php';
+require_once __DIR__ . '/rest/custom-status-endpoint.php';
 
+use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
-use VIPWorkflow\Modules\CustomStatus\REST\EditStatus;
 use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
 use WP_Error;
 use WP_Query;
@@ -88,7 +88,7 @@ class Custom_Status extends Module {
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
 
 		// REST endpoints
-		EditStatus::init();
+		CustomStatusEndpoint::init();
 
 		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
 	}
@@ -249,8 +249,8 @@ class Custom_Status extends Module {
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
 				'custom_statuses'    => $this->get_custom_statuses(),
-				'url_edit_status'    => EditStatus::get_crud_url(),
-				'url_reorder_status' => EditStatus::get_reorder_url(),
+				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
+				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
 			] );
 		}
 
@@ -880,13 +880,6 @@ class Custom_Status extends Module {
 		$status_slugs      = wp_list_pluck( $custom_statuses, 'slug' );
 
 		return in_array( $post->post_type, $custom_post_types ) && in_array( $post->post_status, $status_slugs );
-	}
-
-	/**
-	 * Register REST API endpoints for custom statuses
-	 */
-	public function register_rest_endpoints() {
-		EditStatus::init();
 	}
 
 	// Hacks for custom statuses to work with core
