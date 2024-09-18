@@ -1,5 +1,6 @@
 import './editor.scss';
 
+import { PanelBody } from '@wordpress/components';
 import { compose, useViewportMatch } from '@wordpress/compose';
 import { dispatch, withDispatch, withSelect } from '@wordpress/data';
 import { PluginSidebar } from '@wordpress/edit-post';
@@ -25,12 +26,18 @@ const CustomSaveButtonSidebar = ( {
 	isSavingPost,
 	onUpdateStatus,
 } ) => {
-	const isTinyViewport = useViewportMatch( 'small', '<' );
+	const savedStatusTerm = useMemo( () => getStatusTermFromSlug( savedStatus ), [ savedStatus ] );
+	const nextStatusTerm = useMemo( () => getNextStatusTerm( savedStatus ), [ savedStatus ] );
 	const isWideViewport = useViewportMatch( 'wide', '>=' );
 
 	const isCustomSaveButtonVisible = useMemo(
 		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, savedStatus ),
 		[ isUnsavedPost, postType, savedStatus ]
+	);
+
+	const isSidebarActionRequired = useMemo(
+		() => isSidebarActionEnabled( savedStatusTerm, nextStatusTerm ),
+		[ savedStatusTerm, nextStatusTerm ]
 	);
 
 	const isCustomSaveButtonDisabled = isSavingPost;
@@ -50,16 +57,17 @@ const CustomSaveButtonSidebar = ( {
 		}
 	}, [ isCustomSaveButtonVisible ] );
 
-	const nextStatusTerm = useMemo( () => getNextStatusTerm( savedStatus ), [ savedStatus ] );
-
 	useInterceptPluginSidebar(
 		`${ pluginName }/${ sidebarName }`,
-		( _isSidebarActive, _toggleSidebar ) => {
+		( isSidebarActive, toggleSidebar ) => {
 			if ( isCustomSaveButtonDisabled ) {
-				return;
-			}
-
-			if ( nextStatusTerm ) {
+				// Don't do anything
+			} else if ( isSidebarActionRequired ) {
+				// Open the sidebar if it's not already open
+				// if ( ! isSidebarActive ) {
+				toggleSidebar();
+				// }
+			} else if ( nextStatusTerm ) {
 				onUpdateStatus( nextStatusTerm.slug );
 				dispatch( editorStore ).savePost();
 			}
@@ -73,7 +81,6 @@ const CustomSaveButtonSidebar = ( {
 			buttonText={ buttonText }
 			isSavingPost={ isSavingPost }
 			isDisabled={ isCustomSaveButtonDisabled }
-			isTinyViewport={ isTinyViewport }
 		/>
 	);
 
@@ -89,8 +96,7 @@ const CustomSaveButtonSidebar = ( {
 			{ /* Custom save button in the toolbar */ }
 			{ isCustomSaveButtonVisible && (
 				<PluginSidebar name={ sidebarName } title={ buttonText } icon={ InnerSaveButton }>
-					{ /* ToDo: Use this space to show approve/reject UI or other sidebar controls */ }
-					{ null }
+					<SidebarContent savedStatusTerm={ savedStatusTerm } nextStatusTerm={ nextStatusTerm } />
 				</PluginSidebar>
 			) }
 		</>
@@ -148,7 +154,9 @@ registerPlugin( pluginName, {
 
 // Components
 
-const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled, isTinyViewport } ) => {
+const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled } ) => {
+	const isTinyViewport = useViewportMatch( 'small', '<' );
+
 	const classNames = clsx( 'vip-workflow-save-button', {
 		'is-busy': isSavingPost,
 		'is-disabled': isDisabled,
@@ -156,6 +164,22 @@ const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled, isTinyVi
 	} );
 
 	return <div className={ classNames }>{ buttonText }</div>;
+};
+
+const isSidebarActionEnabled = ( savedStatusTerm, nextStatusTerm ) => {
+	console.log( 'isSidebarActionEnabled:', { savedStatusTerm, nextStatusTerm } );
+
+	return true;
+};
+
+const SidebarContent = ( { savedStatusTerm, nextStatusTerm } ) => {
+	return (
+		<PanelBody>
+			<p>
+				{ savedStatusTerm.name } is current, { nextStatusTerm.name } is next
+			</p>
+		</PanelBody>
+	);
 };
 
 // Utility methods
@@ -193,6 +217,10 @@ const getCustomSaveButtonText = ( nextStatusTerm, isWideViewport ) => {
 	}
 
 	return buttonText;
+};
+
+const getStatusTermFromSlug = statusSlug => {
+	return VW_CUSTOM_STATUSES.status_terms.find( term => term.slug === statusSlug ) || false;
 };
 
 const getNextStatusTerm = currentStatus => {
