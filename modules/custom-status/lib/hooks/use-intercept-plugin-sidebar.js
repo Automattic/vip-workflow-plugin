@@ -38,4 +38,14 @@ export default function useInterceptPluginSidebar( sidebarName, onButtonClick ) 
 			}
 		}
 	);
+
+	// Disable unpinning the sidebar
+	useInterceptActionDispatch( interfaceStore.name, 'unpinItem', ( originalAction, args ) => {
+		if ( args?.[ 0 ] === 'core' && args?.[ 1 ] === sidebarName ) {
+			// Do nothing
+		} else {
+			// Otherwise, delegate to the original action
+			originalAction( ...args );
+		}
+	} );
 }
