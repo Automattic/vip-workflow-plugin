@@ -6,11 +6,11 @@
 
 namespace VIPWorkflow\Modules;
 
-require_once __DIR__ . '/rest/custom-status.php';
+require_once __DIR__ . '/rest/custom-status-endpoint.php';
 
+use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
-use VIPWorkflow\Modules\CustomStatus\REST\EditStatus;
 use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
 use WP_Error;
 use WP_Query;
@@ -35,9 +35,9 @@ class Custom_Status extends Module {
 		$this->module_url = $this->get_module_url( __FILE__ );
 		// Register the module with VIP Workflow
 		$args         = [
-			'module_url'           => $this->module_url,
-			'slug'                 => 'custom-status',
-			'configure_page_cb'    => 'print_configure_view',
+			'module_url'        => $this->module_url,
+			'slug'              => 'custom-status',
+			'configure_page_cb' => 'print_configure_view',
 		];
 		$this->module = VIP_Workflow::instance()->register_module( 'custom_status', $args );
 	}
@@ -88,7 +88,7 @@ class Custom_Status extends Module {
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
 
 		// REST endpoints
-		EditStatus::init();
+		CustomStatusEndpoint::init();
 
 		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
 	}
@@ -134,9 +134,10 @@ class Custom_Status extends Module {
 			[
 				'term' => __( 'Pending Review' ),
 				'args' => [
-					'slug'        => 'pending',
-					'description' => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
-					'position'    => 5,
+					'slug'               => 'pending',
+					'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
+					'position'           => 5,
+					'is_review_required' => true,
 				],
 			],
 		];
@@ -227,7 +228,7 @@ class Custom_Status extends Module {
 	}
 
 	public function add_admin_menu() {
-		$menu_title  = __( 'VIP Workflow', 'vip-workflow' );
+		$menu_title = __( 'VIP Workflow', 'vip-workflow' );
 
 		add_menu_page( $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ] );
 	}
@@ -248,8 +249,8 @@ class Custom_Status extends Module {
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
 				'custom_statuses'    => $this->get_custom_statuses(),
-				'url_edit_status'    => EditStatus::get_crud_url(),
-				'url_reorder_status' => EditStatus::get_reorder_url(),
+				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
+				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
 			] );
 		}
 
@@ -456,10 +457,12 @@ class Custom_Status extends Module {
 	 * The arguments decide how the term is handled based on the $args parameter.
 	 * The following is a list of the available overrides and the defaults.
 	 *
+	 * 'slug'. Expected to be a string. There is no default.
+	 *
 	 * 'description'. There is no default. If exists, will be added to the database
 	 * along with the term. Expected to be a string.
 	 *
-	 * 'slug'. Expected to be a string. There is no default.
+	 * 'is_review_required'. Expected to be a boolean. Default is false.
 	 *
 	 * @param int|string $term The status to add or update
 	 * @param array|string $args Change the values of the inserted term
@@ -538,11 +541,13 @@ class Custom_Status extends Module {
 			}
 		}
 		// We're encoding metadata that isn't supported by default in the term's description field
-		$args_to_encode                = [];
-		$args_to_encode['description'] = ( isset( $args['description'] ) ) ? $args['description'] : $old_status->description;
-		$args_to_encode['position']    = ( isset( $args['position'] ) ) ? $args['position'] : $old_status->position;
-		$encoded_description           = TaxonomyUtilities::get_encoded_description( $args_to_encode );
-		$args['description']           = $encoded_description;
+		$args_to_encode                       = [];
+		$args_to_encode['description']        = $args['description'] ?? $old_status->description;
+		$args_to_encode['position']           = $args['position'] ?? $old_status->position;
+		$args_to_encode['is_review_required'] = $args['is_review_required'] ?? $old_status->is_review_required ?? false;
+
+		$encoded_description = TaxonomyUtilities::get_encoded_description( $args_to_encode );
+		$args['description'] = $encoded_description;
 
 		$updated_status = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
 
@@ -614,7 +619,7 @@ class Custom_Status extends Module {
 		foreach ( $custom_statuses as $status ) {
 			$this->update_custom_status( $status->term_id, [ 'position' => $current_postition ] );
 
-			$current_postition++;
+			++$current_postition;
 		}
 
 		return $result;
@@ -875,13 +880,6 @@ class Custom_Status extends Module {
 		$status_slugs      = wp_list_pluck( $custom_statuses, 'slug' );
 
 		return in_array( $post->post_type, $custom_post_types ) && in_array( $post->post_status, $status_slugs );
-	}
-
-	/**
-	 * Register REST API endpoints for custom statuses
-	 */
-	public function register_rest_endpoints() {
-		EditStatus::init();
 	}
 
 	// Hacks for custom statuses to work with core
