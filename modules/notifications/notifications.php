@@ -28,7 +28,7 @@ class Notifications {
 	/**
 	 * Set up and send post status change notification email
 	 */
-	public static function notification_status_change( $new_status, $old_status, $post ) {
+	public static function notification_status_change( string $new_status, string $old_status, \WP_Post $post ): void {
 		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
@@ -140,9 +140,15 @@ class Notifications {
 
 			$body .= self::get_notification_footer( $post );
 
-			self::schedule_emails( 'status-change', $post, $subject, $body );
+			$action = 'status-change';
 
-			self::schedule_webhook_notification( $current_user->display_name, $post_type, $post_id, $edit_link, $post_title, $old_status_friendly_name, $new_status_friendly_name, $post->post_modified_gmt );
+			self::schedule_emails( $action, $post, $subject, $body );
+
+			/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
+			$webhook_format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
+			$webhook_message   = sprintf( $webhook_format, $current_user_display_name, $post_type, $post_id, $edit_link, $post_title, $old_status, $new_status );
+
+			self::schedule_webhook_notification( $webhook_message, $action, $post->post_modified_gmt );
 		}
 	}
 
@@ -151,7 +157,7 @@ class Notifications {
 	 *
 	 * @return string Footer for the email notification
 	 */
-	public static function get_notification_footer() {
+	public static function get_notification_footer(): string {
 		$body  = '';
 		$body .= "\r\n--------------------\r\n";
 		/* translators: 1: post title */
@@ -168,7 +174,7 @@ class Notifications {
 	 * @param string $message Body of the email
 	 * @param string $message_headers. (optional) Message headers
 	 */
-	public static function schedule_emails( $action, $post, $subject, $message, $message_headers = '' ) {
+	public static function schedule_emails( string $action, \WP_Post $post, string $subject, string $message, string $message_headers = '' ): void {
 		// Ensure the email address is set from settings.
 		if ( empty( VIP_Workflow::instance()->settings->module->options->email_address ) ) {
 			return;
@@ -220,12 +226,12 @@ class Notifications {
 	/**
 	 * Sends emails
 	 *
-	 * @param mixed $to Emails to send to
+	 * @param array $recipients Emails to send to
 	 * @param string $subject Subject of the email
 	 * @param string $message Body of the email
 	 * @param string $message_headers. (optional) Message headers
 	 */
-	public static function send_emails( $recipients, $subject, $message, $message_headers = '' ) {
+	public static function send_emails( array $recipients, string $subject, string $message, string $message_headers = '' ): void {
 		$response = wp_mail( $recipients, $subject, $message, $message_headers );
 
 		// ToDo: Switch to using log2logstash instead of error_log.
@@ -238,29 +244,19 @@ class Notifications {
 	/**
 	 * Schedule a webhook notification
 	 *
-	 * @param string $current_user Current user's name
-	 * @param string $post_type Post type
-	 * @param int $post_id Post ID
-	 * @param string $edit_link Edit link for the post
-	 * @param string $post_title Post title
-	 * @param string $old_status Old status of the post
-	 * @param string $new_status New status of the post
-	 * @param string $post_timestamp Timestamp of the post's last update
+	 * @param string $webhook_message Message to be sent to webhook
+	 * @param string $action Action being taken, eg. status-change
+	 * @param string $timestamp Timestamp of the message, eg. the time at which the post was updated
 	 */
-	public static function schedule_webhook_notification( $current_user, $post_type, $post_id, $edit_link, $post_title, $old_status, $new_status, $post_timestamp ) {
+	public static function schedule_webhook_notification( string $webhook_message, string $action, string $timestamp ): void {
 		// Ensure the webhook URL is set from settings.
 		if ( empty( VIP_Workflow::instance()->settings->module->options->webhook_url ) ) {
 			return;
 		}
 
-		/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
-		$format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
-		$message   = sprintf( $format, $current_user, $post_type, $post_id, $edit_link, $post_title, $old_status, $new_status );
+		$message_type = 'plugin:vip-workflow:' . $action;
 
-		$message_type = 'plugin:vip-workflow:post-update';
-		$timestamp    = $post_timestamp;
-
-		wp_schedule_single_event( time(), 'vw_send_scheduled_webhook', [ $message, $message_type, $timestamp ] );
+		wp_schedule_single_event( time(), 'vw_send_scheduled_webhook', [ $webhook_message, $message_type, $timestamp ] );
 	}
 
 	/**
@@ -270,7 +266,7 @@ class Notifications {
 	 * @param string $message_type Type of message being sent
 	 * @param string $timestamp Timestamp of the message that corresponds to the time at which the post was updated
 	 */
-	public static function send_to_webhook( $message, $message_type, $timestamp ) {
+	public static function send_to_webhook( string $message, string $message_type, string $timestamp ): void {
 		$webhook_url = VIP_Workflow::instance()->settings->module->options->webhook_url;
 
 		// Set up the payload
@@ -306,18 +302,17 @@ class Notifications {
 	/**
 	* Gets a simple phrase containing the formatted date and time that the post is scheduled for.
 	*
-	* @param  obj    $post               Post object
-	* @return str    $scheduled_datetime The scheduled datetime in human-readable format
+	* @param WP_Post $post The post object
+	* @return string The formatted date and time that the post is scheduled for
 	*/
-	private static function get_scheduled_datetime( $post ) {
+	private static function get_scheduled_datetime( \WP_Post $post ): string {
+		$scheduled_ts = strtotime( $post->post_date );
 
-			$scheduled_ts = strtotime( $post->post_date );
+		$date = date_i18n( get_option( 'date_format' ), $scheduled_ts );
+		$time = date_i18n( get_option( 'time_format' ), $scheduled_ts );
 
-			$date = date_i18n( get_option( 'date_format' ), $scheduled_ts );
-			$time = date_i18n( get_option( 'time_format' ), $scheduled_ts );
-
-			/* translators: 1: date, 2: time */
-			return sprintf( __( '%1$s at %2$s', 'vip-workflow' ), $date, $time );
+		/* translators: 1: date, 2: time */
+		return sprintf( __( '%1$s at %2$s', 'vip-workflow' ), $date, $time );
 	}
 }
 
