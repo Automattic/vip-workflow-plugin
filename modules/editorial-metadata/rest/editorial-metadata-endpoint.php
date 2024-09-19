@@ -7,7 +7,6 @@
 namespace VIPWorkflow\Modules\EditorialMetadata\REST;
 
 use VIPWorkflow\Modules\EditorialMetadata;
-use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_REST_Request;
 use WP_Term;
@@ -137,8 +136,6 @@ class EditorialMetadataEndpoint {
 		$editorial_metadata_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$editorial_metadata_description = $request->get_param( 'description' );
 		$editorial_metadata_type         = $request->get_param( 'type' );
-
-		$editorial_metadata_module = VIP_Workflow::instance()->editorial_metadata;
 
 		// Check that the name isn't numeric
 		if ( is_numeric( $editorial_metadata_name ) ) {
