@@ -82,7 +82,7 @@ class NotificationsTest extends WP_UnitTestCase {
 		VIP_Workflow::instance()->settings->module->options->webhook_url = '';
 	}
 
-	public function test_status_change_triggers_notification() {
+	public function test_status_change_triggers_notification_events() {
 		// Hook in and return a known response
 		add_filter( 'pre_http_request', function() {
 			return array(
@@ -107,13 +107,12 @@ class NotificationsTest extends WP_UnitTestCase {
 
 		wp_insert_post( $post );
 
-	    $email = tests_retrieve_phpmailer_instance()->get_sent();
+		$cron_events = reset(_get_cron_array());
 
-		$this->assertNotFalse( $email );
-		$this->assertNotEmpty( $email );
-		$this->assertSame( 1, count( $email->to ) );
+		$this->assertArrayHasKey( 'vw_send_scheduled_emails', $cron_events );
+		$this->assertArrayHasKey( 'vw_send_scheduled_webhook', $cron_events );
 
 		VIP_Workflow::instance()->settings->module->options->webhook_url = '';
-		VIP_Workflow::instance()->settings->module->options->email_address = [];
+		VIP_Workflow::instance()->settings->module->options->email_address = [ ];
 	}
 }
