@@ -16,9 +16,9 @@ use WP_UnitTestCase;
 class NotificationsTest extends WP_UnitTestCase {
 
 	protected function tearDown(): void {
-    	parent::tearDown();
+		parent::tearDown();
 
-    	reset_phpmailer_instance();
+		reset_phpmailer_instance();
 	}
 
 	public function test_validate_get_notification_footer() {
@@ -40,13 +40,13 @@ class NotificationsTest extends WP_UnitTestCase {
 		$this->assertNotFalse( $email );
 		$this->assertNotEmpty( $email );
 		$this->assertSame( 3, count( $email->to ) );
-		$this->assertSame($subject, $email->subject );
+		$this->assertSame( $subject, $email->subject );
 		$this->assertDiscardWhitespace( $body, $email->body );
 	}
 
 	public function test_send_to_webhook_happy_path() {
 		// Hook in and return a known response
-		add_filter( 'pre_http_request', function() {
+		add_filter( 'pre_http_request', function () {
 			return array(
 				'headers'     => array(),
 				'cookies'     => array(),
@@ -69,7 +69,7 @@ class NotificationsTest extends WP_UnitTestCase {
 
 	public function test_send_to_webhook_error_path() {
 		// Hook in and return a known response
-		add_filter( 'pre_http_request', function() {
+		add_filter( 'pre_http_request', function () {
 			return new WP_Error( 'http_request_failed', 'Error Message' );
 		}, 10, 3 );
 
@@ -84,7 +84,7 @@ class NotificationsTest extends WP_UnitTestCase {
 
 	public function test_status_change_triggers_notification_events() {
 		// Hook in and return a known response
-		add_filter( 'pre_http_request', function() {
+		add_filter( 'pre_http_request', function () {
 			return array(
 				'headers'     => array(),
 				'cookies'     => array(),
@@ -107,12 +107,12 @@ class NotificationsTest extends WP_UnitTestCase {
 
 		wp_insert_post( $post );
 
-		$cron_events = reset(_get_cron_array());
+		$cron_events = reset( _get_cron_array() );
 
 		$this->assertArrayHasKey( 'vw_send_scheduled_emails', $cron_events );
 		$this->assertArrayHasKey( 'vw_send_scheduled_webhook', $cron_events );
 
 		VIP_Workflow::instance()->settings->module->options->webhook_url = '';
-		VIP_Workflow::instance()->settings->module->options->email_address = [ ];
+		VIP_Workflow::instance()->settings->module->options->email_address = [];
 	}
 }
