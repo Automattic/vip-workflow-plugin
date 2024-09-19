@@ -1,6 +1,9 @@
 name: PHP tests
 
-on: pull_request
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

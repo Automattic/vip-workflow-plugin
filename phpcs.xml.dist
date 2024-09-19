@@ -29,6 +29,7 @@
 		https://github.com/PHPCompatibility/PHPCompatibility#sniffing-your-code-for-compatibility-with-specific-php-versions -->
 	<config name="testVersion" value="8.0-"/>
 
+	<rule ref="VariableAnalysis"/>
 	<rule ref="WordPress-Extra"/>
 	<rule ref="WordPress-VIP-Go">
 		<!-- These disallow anonymous functions as action callbacks -->

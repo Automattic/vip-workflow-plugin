@@ -107,12 +107,10 @@ class NotificationsTest extends WP_UnitTestCase {
 
 		wp_insert_post( $post );
 
+		// Haven't quite been able to get the cron to run in the test environment, so testing if its scheduled or not instead.
 		$cron_events = reset( _get_cron_array() );
 
 		$this->assertArrayHasKey( 'vw_send_scheduled_emails', $cron_events );
 		$this->assertArrayHasKey( 'vw_send_scheduled_webhook', $cron_events );
-
-		VIP_Workflow::instance()->settings->module->options->webhook_url = '';
-		VIP_Workflow::instance()->settings->module->options->email_address = [];
 	}
 }
