@@ -21,6 +21,7 @@ class EditorialMetadata {
 	const SUPPORTED_METADATA_TYPES = [
 		'checkbox',
 		'text',
+		'date',
 	];
 	const METADATA_TAXONOMY        = 'vw_editorial_meta';
 	const METADATA_POSTMETA_KEY    = 'vw_editorial_meta';
@@ -63,10 +64,6 @@ class EditorialMetadata {
 			$post_meta_key  = self::get_postmeta_key( $term );
 			$post_meta_args = self::get_postmeta_args( $term );
 
-			// ToDo: If a post type was supported, a post was opened and saved, and then the post type was removed from the supported list,
-			// the post meta will still exist for new posts of that post type for a short duration.
-			// It works fine otherwise. This is a limitation of the current implementation.
-			// Working around this is quite expensive, and is fine for now.
 			foreach ( VIP_Workflow::instance()->get_supported_post_types() as $post_type ) {
 				register_post_meta( $post_type, $post_meta_key, $post_meta_args );
 			}
@@ -108,25 +105,24 @@ class EditorialMetadata {
 	 */
 	public static function setup_install(): void {
 		InstallUtilities::install_if_first_run( self::SETTINGS_SLUG, function () {
-			// ToDo: Review the default metadata fields we provide OOB
 			$default_terms = [
 				[
-					'name'        => __( 'Assignment', 'vip-workflow' ),
-					'slug'        => 'assignment',
-					'type'        => 'text',
-					'description' => __( 'What the post needs to cover.', 'vip-workflow' ),
+					'name'        => __( 'Embargo Date', 'vip-workflow' ),
+					'slug'        => 'embargo-date',
+					'type'        => 'date',
+					'description' => __( 'The date a post can be published.', 'vip-workflow' ),
 				],
 				[
-					'name'        => __( 'Needs Photo', 'vip-workflow' ),
-					'slug'        => 'needs-photo',
+					'name'        => __( 'Expiry Date', 'vip-workflow' ),
+					'slug'        => 'expiry-date',
+					'type'        => 'date',
+					'description' => __( 'The date the content of a post would be marked as expired.', 'vip-workflow' ),
+				],
+				[
+					'name'        => __( 'Legal Review', 'vip-workflow' ),
+					'slug'        => 'legal-review',
 					'type'        => 'checkbox',
-					'description' => __( 'Checked if this post needs a photo.', 'vip-workflow' ),
-				],
-				[
-					'name'        => __( 'Word Count', 'vip-workflow' ),
-					'slug'        => 'word-count',
-					'type'        => 'text',
-					'description' => __( 'Required post length in words.', 'vip-workflow' ),
+					'description' => __( 'This is to be checked once legal has reviewed this post.', 'vip-workflow' ),
 				],
 			];
 
@@ -457,6 +453,7 @@ class EditorialMetadata {
 			case 'checkbox':
 				$arg_type = 'boolean';
 				break;
+			case 'date':
 			case 'text':
 				$arg_type = 'string';
 				break;

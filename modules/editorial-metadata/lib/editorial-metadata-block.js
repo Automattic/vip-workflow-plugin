@@ -1,4 +1,4 @@
-import { __experimentalText as Text, TextControl, ToggleControl } from '@wordpress/components';
+import { BaseControl, DatePicker, Flex, __experimentalText as Text, TextControl, ToggleControl } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { withDispatch, withSelect } from '@wordpress/data';
 import { PluginDocumentSettingPanel } from '@wordpress/edit-post';
@@ -50,7 +50,29 @@ function getComponentByType( editorialMetadata, metaFields, setMetaFields ) {
 				}
 			/>
 		);
+	} else if (editorialMetadata.type === 'date') {
+		return (
+			<Flex direction={['column']} justify={'start'} align={'start'}>
+				<BaseControl
+					label={ editorialMetadata.label }
+				></BaseControl>
+				<DatePicker
+					key={ editorialMetadata.key }
+					value={ metaFields?.[ editorialMetadata.key ] }
+					onChange={ value =>
+						setMetaFields( {
+							...metaFields,
+							[ editorialMetadata.key ]: value,
+						} )
+					}
+				/>
+				<BaseControl
+					help={ editorialMetadata.description }
+				></BaseControl>
+			</Flex>
+		)
 	}
+	// Default to text input
 	return (
 		<TextControl
 			key={ editorialMetadata.key }
