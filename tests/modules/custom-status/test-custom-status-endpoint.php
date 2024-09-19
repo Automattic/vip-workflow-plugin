@@ -1,8 +1,8 @@
 <?php
 /**
- * Class RestApiTest
+ * Class CustomStatusRestApiTest
  *
- * @package vip-block-data-api
+ * @package vip-workflow-plugin
  */
 
 namespace VIPWorkflow\Tests;
@@ -11,9 +11,9 @@ use VIPWorkflow\VIP_Workflow;
 use WP_REST_Request;
 
 /**
- * e2e tests to ensure that the REST API endpoint is available.
+ * e2e tests to ensure that the Custom Status REST API endpoint is available.
  */
-class RestApiTest extends RestTestCase {
+class CustomStatusRestApiTest extends RestTestCase {
 
 	/**
 	 * Before each test, ensure default custom statuses are available.
