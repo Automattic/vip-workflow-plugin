@@ -6,9 +6,10 @@
  */
 namespace VIPWorkflow\Modules;
 
+use WP_Post;
+
 use VIPWorkflow\VIP_Workflow;
 use function VIPWorkflow\Modules\Shared\PHP\vw_draft_or_post_title;
-use WP_Post;
 
 class Notifications {
 
