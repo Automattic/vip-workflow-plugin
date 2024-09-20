@@ -49,46 +49,26 @@ const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
 	switch ( editorialMetadata.type ) {
 		case 'checkbox':
 			return (
-				<VStack __nextHasNoMarginBottom>
-					<HStack __nextHasNoMarginBottom>
-						<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
-						<ToggleControl
-							__nextHasNoMarginBottom
-							key={ editorialMetadata.key }
-							checked={ metaFields?.[ editorialMetadata.key ] }
-							onChange={ value =>
-								setMetaFields( {
-									...metaFields,
-									[ editorialMetadata.key ]: value,
-								} )
-							}
-						/>
-					</HStack>
-					<BaseControl help={ editorialMetadata.description } />
-				</VStack>
+				<CheckboxComponent
+					key={ editorialMetadata.key }
+					editorialMetadata={ editorialMetadata }
+					metaFields={ metaFields }
+					setMetaFields={ setMetaFields }
+				/>
 			);
 		case 'text':
 			return (
-				<VStack __nextHasNoMarginBottom>
-					<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
-					<TextControl
-						__nextHasNoMarginBottom
-						key={ editorialMetadata.key }
-						value={ metaFields?.[ editorialMetadata.key ] }
-						className={ editorialMetadata.key }
-						onChange={ value =>
-							setMetaFields( {
-								...metaFields,
-								[ editorialMetadata.key ]: value,
-							} )
-						}
-					/>
-					<BaseControl help={ editorialMetadata.description } />
-				</VStack>
+				<TextComponent
+					key={ editorialMetadata.key }
+					editorialMetadata={ editorialMetadata }
+					metaFields={ metaFields }
+					setMetaFields={ setMetaFields }
+				/>
 			);
 		case 'date':
 			return (
 				<DateComponent
+					key={ editorialMetadata.key }
 					editorialMetadata={ editorialMetadata }
 					metaFields={ metaFields }
 					setMetaFields={ setMetaFields }
@@ -97,6 +77,47 @@ const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
 		default:
 			return null;
 	}
+};
+
+const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
+	return (
+		<VStack __nextHasNoMarginBottom>
+			<HStack __nextHasNoMarginBottom>
+				<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
+				<ToggleControl
+					__nextHasNoMarginBottom
+					checked={ metaFields?.[ editorialMetadata.key ] }
+					onChange={ value =>
+						setMetaFields( {
+							...metaFields,
+							[ editorialMetadata.key ]: value,
+						} )
+					}
+				/>
+			</HStack>
+			<BaseControl help={ editorialMetadata.description } />
+		</VStack>
+	);
+};
+
+const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
+	return (
+		<VStack __nextHasNoMarginBottom>
+			<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
+			<TextControl
+				__nextHasNoMarginBottom
+				value={ metaFields?.[ editorialMetadata.key ] }
+				className={ editorialMetadata.key }
+				onChange={ value =>
+					setMetaFields( {
+						...metaFields,
+						[ editorialMetadata.key ]: value,
+					} )
+				}
+			/>
+			<BaseControl help={ editorialMetadata.description } />
+		</VStack>
+	);
 };
 
 const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
@@ -127,7 +148,6 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 
 	return (
 		<Dropdown
-			key={ editorialMetadata.key }
 			ref={ setPopoverAnchor }
 			popoverProps={ popoverProps }
 			focusOnMount
