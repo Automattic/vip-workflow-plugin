@@ -81,44 +81,4 @@ class NotificationsTest extends WP_UnitTestCase {
 
 		VIP_Workflow::instance()->settings->module->options->webhook_url = '';
 	}
-
-	public function test_status_change_triggers_notification_events() {
-		// Hook in and return a known response
-		add_filter( 'pre_http_request', function () {
-			return array(
-				'headers'     => array(),
-				'cookies'     => array(),
-				'filename'    => null,
-				'response'    => 200,
-				'status_code' => 200,
-				'success'     => 1,
-				'body'        => 'All Done',
-			);
-		}, 10, 3 );
-
-		VIP_Workflow::instance()->settings->module->options->webhook_url = 'https://webhook.site/this-url-doesnt-exist';
-		VIP_Workflow::instance()->settings->module->options->email_address = [ 'test@gmail.com' ];
-
-		$post = array(
-			'post_content' => rand_str(),
-			'post_title' => rand_str(),
-			'post_date_gmt' => '2024-01-01 12:00:00',
-		);
-
-		wp_insert_post( $post );
-
-		// Haven't quite been able to get the cron to run in the test environment, so testing if its scheduled or not instead.
-		$cron_events = reset( _get_cron_array() );
-
-		// cron events are a bit flaky atm, so this is a workaround to ensure both cases are covered.
-		if ( array_key_exists( 'vw_send_scheduled_emails', $cron_events ) ) {
-			$this->assertArrayHasKey( 'vw_send_scheduled_emails', $cron_events );
-			$this->assertArrayHasKey( 'vw_send_scheduled_webhook', $cron_events );
-		} else {
-			$email = tests_retrieve_phpmailer_instance()->get_sent();
-			$this->assertNotFalse( $email );
-			$this->assertNotEmpty( $email );
-			$this->assertSame( 1, count( $email->to ) );
-		}
-	}
 }

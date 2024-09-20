@@ -39,7 +39,7 @@ class EditorialMetadataRestApiTest extends RestTestCase {
 		$response = $this->server->dispatch( $request );
 		wp_set_current_user( null );
 
-		$this->assertEquals( 200, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status(), sprintf( 'Unexpected REST output: %s', wp_json_encode( $response ) )  );
 
 		$result = $response->get_data();
 
