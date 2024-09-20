@@ -1,7 +1,18 @@
-import { BaseControl, DatePicker, Flex, __experimentalText as Text, TextControl, ToggleControl } from '@wordpress/components';
+import {
+	BaseControl,
+	Button,
+	DateTimePicker,
+	Dropdown,
+	Flex,
+	__experimentalText as Text,
+	TextControl,
+	ToggleControl,
+	Tooltip,
+} from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { withDispatch, withSelect } from '@wordpress/data';
 import { PluginDocumentSettingPanel } from '@wordpress/edit-post';
+import { useMemo, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { registerPlugin } from '@wordpress/plugins';
 import './editor.scss';
@@ -34,30 +45,118 @@ const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
 	</PluginDocumentSettingPanel>
 );
 
-function getComponentByType( editorialMetadata, metaFields, setMetaFields ) {
+const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
 	if ( editorialMetadata.type === 'checkbox' ) {
 		return (
-			<ToggleControl
-				key={ editorialMetadata.key }
-				help={ editorialMetadata.description }
-				label={ editorialMetadata.label }
-				checked={ metaFields?.[ editorialMetadata.key ] }
-				onChange={ value =>
-					setMetaFields( {
-						...metaFields,
-						[ editorialMetadata.key ]: value,
-					} )
-				}
+			<CheckboxComponent
+				editorialMetadata={ editorialMetadata }
+				metaFields={ metaFields }
+				setMetaFields={ setMetaFields }
 			/>
 		);
-	} else if (editorialMetadata.type === 'date') {
+	} else if ( editorialMetadata.type === 'text' ) {
 		return (
-			<Flex direction={['column']} justify={'start'} align={'start'}>
-				<BaseControl
-					label={ editorialMetadata.label }
-				></BaseControl>
-				<DatePicker
+			<TextComponent
+				editorialMetadata={ editorialMetadata }
+				metaFields={ metaFields }
+				setMetaFields={ setMetaFields }
+			/>
+		);
+	} else {
+		return (
+			<DateComponent
+				editorialMetadata={ editorialMetadata }
+				metaFields={ metaFields }
+				setMetaFields={ setMetaFields }
+			/>
+		);
+	}
+};
+
+const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
+	return (
+		<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'start' }>
+			<BaseControl label={ editorialMetadata.label }></BaseControl>
+			<Tooltip text={ editorialMetadata.description }>
+				<ToggleControl
 					key={ editorialMetadata.key }
+					checked={ metaFields?.[ editorialMetadata.key ] }
+					onChange={ value =>
+						setMetaFields( {
+							...metaFields,
+							[ editorialMetadata.key ]: value,
+						} )
+					}
+				/>
+			</Tooltip>
+		</Flex>
+	);
+};
+
+const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
+	return (
+		<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'start' }>
+			<BaseControl label={ editorialMetadata.label }></BaseControl>
+			<Tooltip text={ editorialMetadata.description }>
+				<TextControl
+					key={ editorialMetadata.key }
+					value={ metaFields?.[ editorialMetadata.key ] }
+					className={ editorialMetadata.key }
+					onChange={ value =>
+						setMetaFields( {
+							...metaFields,
+							[ editorialMetadata.key ]: value,
+						} )
+					}
+				/>
+			</Tooltip>
+		</Flex>
+	);
+};
+
+const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
+	const [ popoverAnchor, setPopoverAnchor ] = useState( null );
+	// Memoize popoverProps to avoid returning a new object every time.
+	const popoverProps = useMemo(
+		() => ( {
+			// Anchor the popover to the middle of the entire row so that it doesn't
+			// move around when the label changes.
+			anchor: popoverAnchor,
+			'aria-label': __( 'Select date' ),
+			placement: 'left-start',
+			offset: 36,
+			shift: true,
+		} ),
+		[ popoverAnchor ]
+	);
+	const label = metaFields?.[ editorialMetadata.key ];
+
+	return (
+		<Dropdown
+			key={ editorialMetadata.key }
+			ref={ setPopoverAnchor }
+			popoverProps={ popoverProps }
+			focusOnMount
+			renderToggle={ ( { onToggle, isOpen } ) => (
+				<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'start' }>
+					<BaseControl label={ editorialMetadata.label }></BaseControl>
+					<Tooltip text={ editorialMetadata.description }>
+						<Button
+							size="compact"
+							variant="tertiary"
+							tooltipPosition="middle left"
+							onClick={ onToggle }
+							aria-label={ editorialMetadata.label }
+							aria-expanded={ isOpen }
+						>
+							{ label }
+						</Button>
+					</Tooltip>
+				</Flex>
+			) }
+			renderContent={ ( { onClose } ) => (
+				<DateTimePicker
+					onClose={ onClose }
 					value={ metaFields?.[ editorialMetadata.key ] }
 					onChange={ value =>
 						setMetaFields( {
@@ -66,29 +165,10 @@ function getComponentByType( editorialMetadata, metaFields, setMetaFields ) {
 						} )
 					}
 				/>
-				<BaseControl
-					help={ editorialMetadata.description }
-				></BaseControl>
-			</Flex>
-		)
-	}
-	// Default to text input
-	return (
-		<TextControl
-			key={ editorialMetadata.key }
-			help={ editorialMetadata.description }
-			label={ editorialMetadata.label }
-			value={ metaFields?.[ editorialMetadata.key ] }
-			className={ editorialMetadata.key }
-			onChange={ value =>
-				setMetaFields( {
-					...metaFields,
-					[ editorialMetadata.key ]: value,
-				} )
-			}
+			) }
 		/>
 	);
-}
+};
 
 const applyWithSelect = select => {
 	return {
