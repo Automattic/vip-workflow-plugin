@@ -268,8 +268,9 @@ class Notifications {
 	 * @param string $message Message to be sent to webhook
 	 * @param string $message_type Type of message being sent
 	 * @param string $timestamp Timestamp of the message that corresponds to the time at which the post was updated
+	 * @return bool True if the notification was sent successfully, false otherwise
 	 */
-	public static function send_to_webhook( string $message, string $message_type, string $timestamp ): void {
+	public static function send_to_webhook( string $message, string $message_type, string $timestamp ): bool {
 		$webhook_url = VIP_Workflow::instance()->settings->module->options->webhook_url;
 
 		// Set up the payload
@@ -299,7 +300,10 @@ class Notifications {
 		if ( is_wp_error( $response ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( 'Unable to send notification to webhook provided.' );
+			return false;
 		}
+
+		return true;
 	}
 
 	/**

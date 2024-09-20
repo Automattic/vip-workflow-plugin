@@ -15,7 +15,8 @@
     "phpcompatibility/phpcompatibility-wp": "2.1.4",
     "phpunit/phpunit": "9.6.13",
     "yoast/phpunit-polyfills": "2.0.0",
-    "automattic/vipwpcs": "^3.0"
+    "automattic/vipwpcs": "^3.0",
+    "sirbrillig/phpcs-variable-analysis": "^2.11"
   },
   "scripts": {
     "cs": "@php ./vendor/bin/phpcs -p -s -v -n . --standard=\"phpcs.xml.dist\" --extensions=php --ignore=\"/vendor/*,/node_modules/*\"",
