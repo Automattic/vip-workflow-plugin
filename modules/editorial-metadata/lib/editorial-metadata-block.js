@@ -3,11 +3,11 @@ import {
 	Button,
 	DateTimePicker,
 	Dropdown,
-	Flex,
+	__experimentalHStack as HStack,
 	__experimentalText as Text,
 	TextControl,
 	ToggleControl,
-	Tooltip,
+	__experimentalVStack as VStack,
 } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { withDispatch, withSelect } from '@wordpress/data';
@@ -46,72 +46,57 @@ const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
 );
 
 const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
-	if ( editorialMetadata.type === 'checkbox' ) {
-		return (
-			<CheckboxComponent
-				editorialMetadata={ editorialMetadata }
-				metaFields={ metaFields }
-				setMetaFields={ setMetaFields }
-			/>
-		);
-	} else if ( editorialMetadata.type === 'text' ) {
-		return (
-			<TextComponent
-				editorialMetadata={ editorialMetadata }
-				metaFields={ metaFields }
-				setMetaFields={ setMetaFields }
-			/>
-		);
-	} else {
-		return (
-			<DateComponent
-				editorialMetadata={ editorialMetadata }
-				metaFields={ metaFields }
-				setMetaFields={ setMetaFields }
-			/>
-		);
+	switch ( editorialMetadata.type ) {
+		case 'checkbox':
+			return (
+				<VStack __nextHasNoMarginBottom>
+					<HStack __nextHasNoMarginBottom>
+						<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
+						<ToggleControl
+							__nextHasNoMarginBottom
+							key={ editorialMetadata.key }
+							checked={ metaFields?.[ editorialMetadata.key ] }
+							onChange={ value =>
+								setMetaFields( {
+									...metaFields,
+									[ editorialMetadata.key ]: value,
+								} )
+							}
+						/>
+					</HStack>
+					<BaseControl help={ editorialMetadata.description } />
+				</VStack>
+			);
+		case 'text':
+			return (
+				<VStack __nextHasNoMarginBottom>
+					<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
+					<TextControl
+						__nextHasNoMarginBottom
+						key={ editorialMetadata.key }
+						value={ metaFields?.[ editorialMetadata.key ] }
+						className={ editorialMetadata.key }
+						onChange={ value =>
+							setMetaFields( {
+								...metaFields,
+								[ editorialMetadata.key ]: value,
+							} )
+						}
+					/>
+					<BaseControl help={ editorialMetadata.description } />
+				</VStack>
+			);
+		case 'date':
+			return (
+				<DateComponent
+					editorialMetadata={ editorialMetadata }
+					metaFields={ metaFields }
+					setMetaFields={ setMetaFields }
+				/>
+			);
+		default:
+			return null;
 	}
-};
-
-const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
-	return (
-		<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'start' }>
-			<BaseControl label={ editorialMetadata.label }></BaseControl>
-			<Tooltip text={ editorialMetadata.description }>
-				<ToggleControl
-					key={ editorialMetadata.key }
-					checked={ metaFields?.[ editorialMetadata.key ] }
-					onChange={ value =>
-						setMetaFields( {
-							...metaFields,
-							[ editorialMetadata.key ]: value,
-						} )
-					}
-				/>
-			</Tooltip>
-		</Flex>
-	);
-};
-
-const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
-	return (
-		<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'start' }>
-			<BaseControl label={ editorialMetadata.label }></BaseControl>
-			<Tooltip text={ editorialMetadata.description }>
-				<TextControl
-					key={ editorialMetadata.key }
-					value={ metaFields?.[ editorialMetadata.key ] }
-					className={ editorialMetadata.key }
-					onChange={ value =>
-						setMetaFields( {
-							...metaFields,
-							[ editorialMetadata.key ]: value,
-						} )
-					}
-				/>
-			</Tooltip>
-		</Flex>
-	);
 };
 
 const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
@@ -129,7 +114,16 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 		} ),
 		[ popoverAnchor ]
 	);
-	const label = metaFields?.[ editorialMetadata.key ];
+
+	let label = metaFields?.[ editorialMetadata.key ];
+
+	// format the datetime string in a human-readable format
+	if ( label ) {
+		const date = new Date( label );
+		label = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+	} else {
+		label = __( 'Select date' );
+	}
 
 	return (
 		<Dropdown
@@ -138,24 +132,25 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 			popoverProps={ popoverProps }
 			focusOnMount
 			renderToggle={ ( { onToggle, isOpen } ) => (
-				<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'start' }>
-					<BaseControl label={ editorialMetadata.label }></BaseControl>
-					<Tooltip text={ editorialMetadata.description }>
+				<VStack __nextHasNoMarginBottom>
+					<HStack __nextHasNoMarginBottom>
+						<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
 						<Button
 							size="compact"
 							variant="tertiary"
-							tooltipPosition="middle left"
 							onClick={ onToggle }
 							aria-label={ editorialMetadata.label }
 							aria-expanded={ isOpen }
 						>
 							{ label }
 						</Button>
-					</Tooltip>
-				</Flex>
+					</HStack>
+					<BaseControl help={ editorialMetadata.description } />
+				</VStack>
 			) }
 			renderContent={ ( { onClose } ) => (
 				<DateTimePicker
+					currentDate={ metaFields?.[ editorialMetadata.key ] ?? undefined }
 					onClose={ onClose }
 					value={ metaFields?.[ editorialMetadata.key ] }
 					onChange={ value =>
