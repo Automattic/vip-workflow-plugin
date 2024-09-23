@@ -3,6 +3,7 @@ import {
 	Button,
 	DateTimePicker,
 	Dropdown,
+	__experimentalHeading as Heading,
 	__experimentalHStack as HStack,
 	__experimentalText as Text,
 	TextControl,
@@ -11,9 +12,11 @@ import {
 } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
 import { withDispatch, withSelect } from '@wordpress/data';
+import { dateI18n, getDate, getSettings } from '@wordpress/date';
 import { PluginDocumentSettingPanel } from '@wordpress/edit-post';
 import { useMemo, useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, _x, isRTL } from '@wordpress/i18n';
+import { closeSmall } from '@wordpress/icons';
 import { registerPlugin } from '@wordpress/plugins';
 import './editor.scss';
 
@@ -138,10 +141,22 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 
 	let label = metaFields?.[ editorialMetadata.key ];
 
+	const settings = getSettings();
+
+	// To know if the current timezone is a 12 hour time with look for "a" in the time format
+	// We also make sure this a is not escaped by a "/"
+	const is12HourTime = /a(?!\\)/i.test(
+		settings.formats.time
+			.toLowerCase() // Test only the lower case a.
+			.replace( /\\\\/g, '' ) // Replace "//" with empty strings.
+			.split( '' )
+			.reverse()
+			.join( '' ) // Reverse the string and test for "a" not followed by a slash.
+	);
+
 	// format the datetime string in a human-readable format
 	if ( label ) {
-		const date = new Date( label );
-		label = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+		label = getFormattedDate( { dateAttribute: label } );
 	} else {
 		label = __( 'Select date' );
 	}
@@ -156,6 +171,7 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 					<HStack __nextHasNoMarginBottom>
 						<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
 						<Button
+							style={ { whiteSpace: 'pre-wrap' } }
 							size="compact"
 							variant="tertiary"
 							onClick={ onToggle }
@@ -169,20 +185,67 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 				</VStack>
 			) }
 			renderContent={ ( { onClose } ) => (
-				<DateTimePicker
-					currentDate={ metaFields?.[ editorialMetadata.key ] ?? undefined }
-					onClose={ onClose }
-					value={ metaFields?.[ editorialMetadata.key ] }
-					onChange={ value =>
-						setMetaFields( {
-							...metaFields,
-							[ editorialMetadata.key ]: value,
-						} )
-					}
-				/>
+				<VStack>
+					<HStack>
+						<Heading level={ 2 } size={ 13 }>
+							{ editorialMetadata.label }
+						</Heading>
+						<Button label={ __( 'Close' ) } icon={ closeSmall } onClick={ onClose } />
+					</HStack>
+					<DateTimePicker
+						currentDate={ metaFields?.[ editorialMetadata.key ] ?? undefined }
+						value={ metaFields?.[ editorialMetadata.key ] }
+						is12Hour={ is12HourTime }
+						onChange={ value =>
+							setMetaFields( {
+								...metaFields,
+								[ editorialMetadata.key ]: value,
+							} )
+						}
+						onClose={ onClose }
+					/>
+					<Button
+						label={ __( 'Clear' ) }
+						variant="tertiary"
+						onClick={ () => {
+							setMetaFields( {
+								...metaFields,
+								[ editorialMetadata.key ]: undefined,
+							} );
+							onClose();
+						} }
+					>
+						{ __( 'Clear' ) }
+					</Button>
+				</VStack>
 			) }
 		/>
 	);
+};
+
+const getTimezoneAbbreviation = () => {
+	const { timezone } = getSettings();
+
+	if ( timezone.abbr && isNaN( Number( timezone.abbr ) ) ) {
+		return timezone.abbr;
+	}
+
+	const symbol = timezone.offset < 0 ? '' : '+';
+	return `UTC${ symbol }${ timezone.offsetFormatted }`;
+};
+
+const getFormattedDate = ( { dateAttribute } ) => {
+	const date = getDate( dateAttribute );
+
+	const timezoneAbbreviation = getTimezoneAbbreviation();
+	const formattedDate = dateI18n(
+		// translators: If using a space between 'g:i' and 'a', use a non-breaking space.
+		_x( 'F j, Y g:i\xa0a', 'post schedule full date format' ),
+		date
+	);
+	return isRTL()
+		? `${ timezoneAbbreviation } ${ formattedDate }`
+		: `${ formattedDate } ${ timezoneAbbreviation }`;
 };
 
 const applyWithSelect = select => {
