@@ -3,6 +3,7 @@ import {
 	Button,
 	DateTimePicker,
 	Dropdown,
+	Flex,
 	__experimentalHeading as Heading,
 	__experimentalHStack as HStack,
 	__experimentalText as Text,
@@ -163,6 +164,7 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 
 	return (
 		<Dropdown
+			style={ { display: 'unset' } }
 			ref={ setPopoverAnchor }
 			popoverProps={ popoverProps }
 			focusOnMount
@@ -185,13 +187,27 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 				</VStack>
 			) }
 			renderContent={ ( { onClose } ) => (
-				<VStack>
-					<HStack>
+				<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'start' }>
+					<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'start' }>
 						<Heading level={ 2 } size={ 13 }>
 							{ editorialMetadata.label }
 						</Heading>
-						<Button label={ __( 'Close' ) } icon={ closeSmall } onClick={ onClose } />
-					</HStack>
+						<Flex direction={ [ 'row' ] } justify={ 'end' } align={ 'end' }>
+							<Button
+								label={ __( 'Now' ) }
+								variant="tertiary"
+								onClick={ () => {
+									setMetaFields( {
+										...metaFields,
+										[ editorialMetadata.key ]: new Date(),
+									} );
+								} }
+							>
+								{ __( 'Now' ) }
+							</Button>
+							<Button label={ __( 'Close' ) } icon={ closeSmall } onClick={ onClose } />
+						</Flex>
+					</Flex>
 					<DateTimePicker
 						currentDate={ metaFields?.[ editorialMetadata.key ] ?? undefined }
 						value={ metaFields?.[ editorialMetadata.key ] }
@@ -204,25 +220,28 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 						}
 						onClose={ onClose }
 					/>
-					<Button
-						label={ __( 'Clear' ) }
-						variant="tertiary"
-						onClick={ () => {
-							setMetaFields( {
-								...metaFields,
-								[ editorialMetadata.key ]: undefined,
-							} );
-							onClose();
-						} }
-					>
-						{ __( 'Clear' ) }
-					</Button>
-				</VStack>
+					<Flex direction={ [ 'row' ] } justify={ 'end' } align={ 'end' }>
+						<Button
+							label={ __( 'Clear' ) }
+							variant="tertiary"
+							onClick={ () => {
+								setMetaFields( {
+									...metaFields,
+									[ editorialMetadata.key ]: undefined,
+								} );
+								onClose();
+							} }
+						>
+							{ __( 'Clear' ) }
+						</Button>
+					</Flex>
+				</Flex>
 			) }
 		/>
 	);
 };
 
+// Taken from https://github.com/WordPress/gutenberg/blob/cbcc28c5511dc87b81bca515b2e88fc1ec55e7e9/packages/editor/src/components/post-schedule/label.js
 const getTimezoneAbbreviation = () => {
 	const { timezone } = getSettings();
 
@@ -234,13 +253,14 @@ const getTimezoneAbbreviation = () => {
 	return `UTC${ symbol }${ timezone.offsetFormatted }`;
 };
 
+// Taken from https://github.com/WordPress/gutenberg/blob/cbcc28c5511dc87b81bca515b2e88fc1ec55e7e9/packages/editor/src/components/post-schedule/label.js
 const getFormattedDate = ( { dateAttribute } ) => {
 	const date = getDate( dateAttribute );
 
 	const timezoneAbbreviation = getTimezoneAbbreviation();
 	const formattedDate = dateI18n(
 		// translators: If using a space between 'g:i' and 'a', use a non-breaking space.
-		_x( 'F j, Y g:i\xa0a', 'post schedule full date format' ),
+		_x( 'F j, Y g:i\xa0a', 'full date format' ),
 		date
 	);
 	return isRTL()
