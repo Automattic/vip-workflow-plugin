@@ -31,8 +31,12 @@ const editorialMetadatas = window.VW_EDITORIAL_METADATA.editorial_metadata_terms
 	} )
 );
 
+// Check if there are any editorial metadatas to show
 const editorialMetadatasToShow = editorialMetadatas.length !== 0;
 
+/**
+ * This component is the main component that renders the custom meta panel in the post summary sidebar.
+ */
 const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
 	<PluginPostStatusInfo className="vip-workflow-editorial-metadata">
 		<div className="vip-workflow-editorial-metadata-row">
@@ -47,6 +51,14 @@ const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
 	</PluginPostStatusInfo>
 );
 
+/**
+ * Get the component based on the type of the editorial metadata.
+ *
+ * Currently supported types are:
+ * - checkbox
+ * - text
+ * - date
+ */
 const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
 	switch ( editorialMetadata.type ) {
 		case 'checkbox':
@@ -81,6 +93,9 @@ const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
 	}
 };
 
+/**
+ * This component renders a checkbox component.
+ */
 const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 	return (
 		<HStack __nextHasNoMarginBottom>
@@ -99,45 +114,72 @@ const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) =
 	);
 };
 
-const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
-	const [ popoverAnchor, setPopoverAnchor ] = useState( null );
-	// Memoize popoverProps to avoid returning a new object every time.
-	const popoverProps = useMemo(
+/**
+ * Get the popover props for the dropdown component. It's been memoized to avoid re-rendering the popover.
+ */
+const getMemoizedPopoverProps = ( { popoverAnchor, text } ) => {
+	return useMemo(
 		() => ( {
 			// Anchor the popover to the middle of the entire row so that it doesn't
 			// move around when the label changes.
 			anchor: popoverAnchor,
-			'aria-label': __( 'Enter Text' ),
+			'aria-label': text,
 			placement: 'left-start',
 			offset: 36,
 			shift: true,
 		} ),
 		[ popoverAnchor ]
 	);
+};
 
-	let label = metaFields?.[ editorialMetadata.key ] || __( 'None' );
+/**
+ * Get the dropdown button component, which is the button that triggers the popover. The button text is truncated if it's too long.
+ */
+const getDropdownButton = ( { editorialMetadata, label, onToggle, isOpen, shouldTruncate } ) => {
+	return (
+		<HStack __nextHasNoMarginBottom>
+			<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
+			<Button
+				// Gutenberg uses whiteSpace: nowrap, but we need to wrap the text so it has to be set here so as to not be overriden
+				style={ { whiteSpace: 'normal' } }
+				size="compact"
+				variant="tertiary"
+				onClick={ onToggle }
+				aria-label={ editorialMetadata.label }
+				aria-expanded={ isOpen }
+			>
+				{ shouldTruncate ? (
+					<Truncate limit={ 15 } ellipsizeMode="tail">
+						{ label }
+					</Truncate>
+				) : (
+					label
+				) }
+			</Button>
+		</HStack>
+	);
+};
+
+/**
+ * This component renders a dropdown component, that is a button. When clicked, it shows a popover with a textarea.
+ */
+const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
+	const [ popoverAnchor, setPopoverAnchor ] = useState( null );
+
+	const popoverProps = getMemoizedPopoverProps( { popoverAnchor, text: __( 'Enter Text' ) } );
+
+	const label = metaFields?.[ editorialMetadata.key ] || __( 'None' );
+
+	const shouldTruncate = true;
 
 	return (
 		<Dropdown
 			ref={ setPopoverAnchor }
 			popoverProps={ popoverProps }
 			focusOnMount
-			renderToggle={ ( { onToggle, isOpen } ) => (
-				<HStack __nextHasNoMarginBottom>
-					<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
-					<Button
-						size="compact"
-						variant="tertiary"
-						onClick={ onToggle }
-						aria-label={ editorialMetadata.label }
-						aria-expanded={ isOpen }
-					>
-						<Truncate limit={ 15 } ellipsizeMode="tail">
-							{ label }
-						</Truncate>
-					</Button>
-				</HStack>
-			) }
+			renderToggle={ ( { onToggle, isOpen } ) =>
+				getDropdownButton( { editorialMetadata, label, onToggle, isOpen, shouldTruncate } )
+			}
 			renderContent={ ( { onClose } ) => (
 				<Flex
 					direction={ [ 'column' ] }
@@ -184,23 +226,17 @@ const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 	);
 };
 
+/**
+ * This component renders a dropdown component, that is a button. When clicked, it shows a popover with a datetime selector.
+ */
 const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 	const [ popoverAnchor, setPopoverAnchor ] = useState( null );
-	// Memoize popoverProps to avoid returning a new object every time.
-	const popoverProps = useMemo(
-		() => ( {
-			// Anchor the popover to the middle of the entire row so that it doesn't
-			// move around when the label changes.
-			anchor: popoverAnchor,
-			'aria-label': __( 'Select date' ),
-			placement: 'left-start',
-			offset: 36,
-			shift: true,
-		} ),
-		[ popoverAnchor ]
-	);
+
+	const popoverProps = getMemoizedPopoverProps( { popoverAnchor, text: __( 'Select date' ) } );
 
 	let label = metaFields?.[ editorialMetadata.key ];
+
+	const shouldTruncate = false;
 
 	const settings = getSettings();
 
@@ -227,22 +263,9 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 			ref={ setPopoverAnchor }
 			popoverProps={ popoverProps }
 			focusOnMount
-			renderToggle={ ( { onToggle, isOpen } ) => (
-				<HStack __nextHasNoMarginBottom>
-					<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
-					<Button
-						// Gutenberg uses whiteSpace: nowrap, but we need to wrap the text so it has to be set here so as to not be overriden
-						style={ { whiteSpace: 'normal' } }
-						size="compact"
-						variant="tertiary"
-						onClick={ onToggle }
-						aria-label={ editorialMetadata.label }
-						aria-expanded={ isOpen }
-					>
-						{ label }
-					</Button>
-				</HStack>
-			) }
+			renderToggle={ ( { onToggle, isOpen } ) =>
+				getDropdownButton( { editorialMetadata, label, onToggle, isOpen, shouldTruncate } )
+			}
 			renderContent={ ( { onClose } ) => (
 				<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'centre' }>
 					<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'end' }>
