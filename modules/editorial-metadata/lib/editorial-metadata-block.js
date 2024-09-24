@@ -6,8 +6,9 @@ import {
 	Flex,
 	__experimentalHeading as Heading,
 	__experimentalHStack as HStack,
-	__experimentalInputControl as InputControl,
+	TextareaControl,
 	ToggleControl,
+	__experimentalTruncate as Truncate,
 	__experimentalVStack as VStack,
 } from '@wordpress/components';
 import { compose } from '@wordpress/compose';
@@ -99,21 +100,87 @@ const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) =
 };
 
 const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
+	const [ popoverAnchor, setPopoverAnchor ] = useState( null );
+	// Memoize popoverProps to avoid returning a new object every time.
+	const popoverProps = useMemo(
+		() => ( {
+			// Anchor the popover to the middle of the entire row so that it doesn't
+			// move around when the label changes.
+			anchor: popoverAnchor,
+			'aria-label': __( 'Enter Text' ),
+			placement: 'left-start',
+			offset: 36,
+			shift: true,
+		} ),
+		[ popoverAnchor ]
+	);
+
+	let label = metaFields?.[ editorialMetadata.key ] || __( 'None' );
+
 	return (
-		<VStack __nextHasNoMarginBottom>
-			<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
-			<InputControl
-				__nextHasNoMarginBottom
-				value={ metaFields?.[ editorialMetadata.key ] }
-				className={ editorialMetadata.key }
-				onChange={ value =>
-					setMetaFields( {
-						...metaFields,
-						[ editorialMetadata.key ]: value,
-					} )
-				}
-			/>
-		</VStack>
+		<Dropdown
+			ref={ setPopoverAnchor }
+			popoverProps={ popoverProps }
+			focusOnMount
+			renderToggle={ ( { onToggle, isOpen } ) => (
+				<HStack __nextHasNoMarginBottom>
+					<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
+					<Button
+						size="compact"
+						variant="tertiary"
+						onClick={ onToggle }
+						aria-label={ editorialMetadata.label }
+						aria-expanded={ isOpen }
+					>
+						<Truncate limit={ 15 } ellipsizeMode="tail">
+							{ label }
+						</Truncate>
+					</Button>
+				</HStack>
+			) }
+			renderContent={ ( { onClose } ) => (
+				<Flex
+					direction={ [ 'column' ] }
+					justify={ 'start' }
+					align={ 'centre' }
+					className={ 'vip-workflow-text-popover' }
+				>
+					<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'end' }>
+						<Heading level={ 2 } size={ 13 }>
+							{ editorialMetadata.label }
+						</Heading>
+						<Flex direction={ [ 'row' ] } justify={ 'end' } align={ 'end' }>
+							<Button label={ __( 'Close' ) } icon={ closeSmall } onClick={ onClose } />
+						</Flex>
+					</Flex>
+					<TextareaControl
+						__nextHasNoMarginBottom
+						value={ metaFields?.[ editorialMetadata.key ] }
+						onChange={ value => {
+							setMetaFields( {
+								...metaFields,
+								[ editorialMetadata.key ]: value,
+							} );
+						} }
+					/>
+					<Flex direction={ [ 'row' ] } justify={ 'end' } align={ 'end' }>
+						<Button
+							label={ __( 'Clear' ) }
+							variant="tertiary"
+							onClick={ () => {
+								setMetaFields( {
+									...metaFields,
+									[ editorialMetadata.key ]: '',
+								} );
+								onClose();
+							} }
+						>
+							{ __( 'Clear' ) }
+						</Button>
+					</Flex>
+				</Flex>
+			) }
+		/>
 	);
 };
 
@@ -164,6 +231,7 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 				<HStack __nextHasNoMarginBottom>
 					<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
 					<Button
+						// Gutenberg uses whiteSpace: nowrap, but we need to wrap the text so it has to be set here so as to not be overriden
 						style={ { whiteSpace: 'normal' } }
 						size="compact"
 						variant="tertiary"
