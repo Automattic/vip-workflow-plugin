@@ -2,11 +2,11 @@ import {
 	BaseControl,
 	Button,
 	DateTimePicker,
+	__experimentalDivider as Divider,
 	Dropdown,
 	Flex,
 	__experimentalHeading as Heading,
 	__experimentalHStack as HStack,
-	__experimentalText as Text,
 	TextControl,
 	ToggleControl,
 	__experimentalVStack as VStack,
@@ -14,7 +14,7 @@ import {
 import { compose } from '@wordpress/compose';
 import { withDispatch, withSelect } from '@wordpress/data';
 import { dateI18n, getDate, getSettings } from '@wordpress/date';
-import { PluginDocumentSettingPanel } from '@wordpress/edit-post';
+import { PluginPostStatusInfo } from '@wordpress/edit-post';
 import { useMemo, useState } from '@wordpress/element';
 import { __, _x, isRTL } from '@wordpress/i18n';
 import { closeSmall } from '@wordpress/icons';
@@ -31,22 +31,20 @@ const editorialMetadatas = window.VW_EDITORIAL_METADATA.editorial_metadata_terms
 	} )
 );
 
-const noEditorialMetadatasToShow = editorialMetadatas.length === 0;
+const editorialMetadatasToShow = editorialMetadatas.length !== 0;
 
 const CustomMetaPanel = ( { metaFields, setMetaFields } ) => (
-	<PluginDocumentSettingPanel name="editorialMetadataPanel" title="Editorial Metadata">
-		{ noEditorialMetadatasToShow && (
-			<Text>
-				{ __(
-					'Configure your editorial metadata, within the VIP Workflow Plugin Settings.',
-					'vip-workflow'
-				) }
-			</Text>
-		) }
-		{ editorialMetadatas.map( editorialMetadata =>
-			getComponentByType( editorialMetadata, metaFields, setMetaFields )
-		) }
-	</PluginDocumentSettingPanel>
+	<PluginPostStatusInfo className="vip-workflow-editorial-metadata">
+		<div className="vip-workflow-editorial-metadata-row">
+			<Divider />
+			<VStack spacing={ 4 }>
+				{ editorialMetadatasToShow &&
+					editorialMetadatas.map( editorialMetadata =>
+						getComponentByType( editorialMetadata, metaFields, setMetaFields )
+					) }
+			</VStack>
+		</div>
+	</PluginPostStatusInfo>
 );
 
 const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
@@ -85,33 +83,11 @@ const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
 
 const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 	return (
-		<VStack __nextHasNoMarginBottom>
-			<HStack __nextHasNoMarginBottom>
-				<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
-				<ToggleControl
-					__nextHasNoMarginBottom
-					checked={ metaFields?.[ editorialMetadata.key ] }
-					onChange={ value =>
-						setMetaFields( {
-							...metaFields,
-							[ editorialMetadata.key ]: value,
-						} )
-					}
-				/>
-			</HStack>
-			<BaseControl help={ editorialMetadata.description } />
-		</VStack>
-	);
-};
-
-const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
-	return (
-		<VStack __nextHasNoMarginBottom>
-			<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
-			<TextControl
+		<HStack __nextHasNoMarginBottom>
+			<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
+			<ToggleControl
 				__nextHasNoMarginBottom
-				value={ metaFields?.[ editorialMetadata.key ] }
-				className={ editorialMetadata.key }
+				checked={ metaFields?.[ editorialMetadata.key ] }
 				onChange={ value =>
 					setMetaFields( {
 						...metaFields,
@@ -119,8 +95,73 @@ const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 					} )
 				}
 			/>
-			<BaseControl help={ editorialMetadata.description } />
-		</VStack>
+		</HStack>
+	);
+};
+
+const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
+	const [ popoverAnchor, setPopoverAnchor ] = useState( null );
+	// Memoize popoverProps to avoid returning a new object every time.
+	const popoverProps = useMemo(
+		() => ( {
+			// Anchor the popover to the middle of the entire row so that it doesn't
+			// move around when the label changes.
+			anchor: popoverAnchor,
+			'aria-label': __( 'Select date' ),
+			placement: 'left-start',
+			offset: 36,
+			shift: true,
+		} ),
+		[ popoverAnchor ]
+	);
+
+	// if metaFields?.[ editorialMetadata.key ] is set, use it, otherwise use 'None'
+	const label = metaFields?.[ editorialMetadata.key ] || __( 'None' );
+
+	return (
+		<Dropdown
+			style={ { display: 'unset' } }
+			ref={ setPopoverAnchor }
+			popoverProps={ popoverProps }
+			focusOnMount
+			renderToggle={ ( { onToggle, isOpen } ) => (
+				<HStack __nextHasNoMarginBottom>
+					<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
+					<Button
+						size="compact"
+						variant="tertiary"
+						onClick={ onToggle }
+						aria-label={ editorialMetadata.label }
+						aria-expanded={ isOpen }
+					>
+						{ label }
+					</Button>
+				</HStack>
+			) }
+			renderContent={ ( { onClose } ) => (
+				<VStack __nextHasNoMarginBottom>
+					<HStack __nextHasNoMarginBottom>
+						<Heading level={ 2 } size={ 13 }>
+							{ editorialMetadata.label }
+						</Heading>
+						<Button label={ __( 'Close' ) } icon={ closeSmall } onClick={ onClose } />
+					</HStack>
+					<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
+					<TextControl
+						__nextHasNoMarginBottom
+						value={ metaFields?.[ editorialMetadata.key ] }
+						className={ editorialMetadata.key }
+						onChange={ value =>
+							setMetaFields( {
+								...metaFields,
+								[ editorialMetadata.key ]: value,
+							} )
+						}
+					/>
+					<BaseControl help={ editorialMetadata.description } />
+				</VStack>
+			) }
+		/>
 	);
 };
 
@@ -169,26 +210,23 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 			popoverProps={ popoverProps }
 			focusOnMount
 			renderToggle={ ( { onToggle, isOpen } ) => (
-				<VStack __nextHasNoMarginBottom>
-					<HStack __nextHasNoMarginBottom>
-						<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
-						<Button
-							style={ { whiteSpace: 'pre-wrap' } }
-							size="compact"
-							variant="tertiary"
-							onClick={ onToggle }
-							aria-label={ editorialMetadata.label }
-							aria-expanded={ isOpen }
-						>
-							{ label }
-						</Button>
-					</HStack>
-					<BaseControl help={ editorialMetadata.description } />
-				</VStack>
+				<HStack __nextHasNoMarginBottom>
+					<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
+					<Button
+						style={ { whiteSpace: 'normal' } }
+						size="compact"
+						variant="tertiary"
+						onClick={ onToggle }
+						aria-label={ editorialMetadata.label }
+						aria-expanded={ isOpen }
+					>
+						{ label }
+					</Button>
+				</HStack>
 			) }
 			renderContent={ ( { onClose } ) => (
-				<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'start' }>
-					<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'start' }>
+				<Flex direction={ [ 'column' ] } justify={ 'start' } align={ 'centre' }>
+					<Flex direction={ [ 'row' ] } justify={ 'start' } align={ 'end' }>
 						<Heading level={ 2 } size={ 13 }>
 							{ editorialMetadata.label }
 						</Heading>
@@ -227,7 +265,7 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 							onClick={ () => {
 								setMetaFields( {
 									...metaFields,
-									[ editorialMetadata.key ]: undefined,
+									[ editorialMetadata.key ]: '',
 								} );
 								onClose();
 							} }
