@@ -7,26 +7,34 @@ import {
 	TextareaControl,
 	Tooltip,
 	ToggleControl,
-	FormTokenField,
 	__experimentalDivider as Divider,
 	__experimentalHStack as HStack,
-	BaseControl,
 	CardBody,
-	CardDivider,
 } from '@wordpress/components';
-import { useState } from '@wordpress/element';
+import { useMemo, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import ErrorNotice from '../../../../shared/js/components/error-notice';
+import UserSelectFormTokenField from '../user-select-form-token-field';
 
 export default function CreateEditCustomStatusModal( { customStatus, onCancel, onSuccess } ) {
-	const [ error, setError ] = useState( null );
+	// Custom status properties
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
-	const [ isReviewRequired, setIsReviewRequired ] = useState(
-		customStatus?.is_review_required || false
+	const [ requiredUserLoginToIdMap, setRequiredUserLoginToIdMap ] = useState(
+		customStatus?.required_user_login_to_id_map || {}
 	);
+
+	// Computed properties
+	const isReviewRequired = useMemo( () => {
+		const requiredUserIds = Object.values( requiredUserLoginToIdMap );
+		return requiredUserIds.length > 0;
+	}, [ requiredUserLoginToIdMap ] );
+
+	// Modal properties
+	const [ error, setError ] = useState( null );
 	const [ isRequesting, setIsRequesting ] = useState( false );
+	const [ isReviewSectionVisible, setIsReviewSectionVisible ] = useState( isReviewRequired );
 
 	let titleText;
 	if ( customStatus ) {
@@ -39,8 +47,12 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 		const data = {
 			name,
 			description,
-			is_review_required: isReviewRequired,
 		};
+
+		const requiredUserIds = Object.values( requiredUsers );
+		if ( requiredUserIds.length > 0 ) {
+			data.required_user_ids = requiredUserIds;
+		}
 
 		try {
 			setIsRequesting( true );
@@ -64,21 +76,6 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 
 		setIsRequesting( false );
 	};
-
-	const [ allowedUserTokens, setAllowedUserTokens ] = useState( [] );
-	const userSuggestions = VW_CUSTOM_STATUS_CONFIGURE.users.map( user => {
-		return `${ user.display_name } (${ user.user_login })`;
-	} );
-	const convertUserStringToToken = tokenString => {
-		const tokenTitle = tokenString.split( '(' )[ 1 ].split( ')' )[ 0 ];
-		return {
-			value: tokenTitle,
-			title: tokenTitle,
-		};
-	};
-
-	const [ allowedRoles, setAllowedRoles ] = useState( [] );
-	const roleSuggestions = VW_CUSTOM_STATUS_CONFIGURE.roles.map( user => user.name );
 
 	return (
 		<Modal
@@ -111,79 +108,26 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 					'Require a specific user or role to advance to the next status.',
 					'vip-workflow'
 				) }
-				checked={ isReviewRequired }
-				onChange={ value => setIsReviewRequired( value ) }
+				checked={ isReviewSectionVisible }
+				onChange={ setIsReviewSectionVisible }
 			/>
 
-			{ isReviewRequired && (
+			{ ( isReviewRequired || isReviewSectionVisible ) && (
 				<>
 					<Card>
 						<CardBody>
-							<FormTokenField
+							<UserSelectFormTokenField
 								label={ __( 'Allowed users', 'vip-workflow' ) }
-								onChange={ selectedTokens => {
-									const tokenItems = selectedTokens.map( token => {
-										if ( typeof token === 'string' || token instanceof String ) {
-											return convertUserStringToToken( token );
-										}
-
-										return token;
-									} );
-
-									setAllowedUserTokens( tokenItems );
-								} }
-								suggestions={ userSuggestions }
-								value={ allowedUserTokens }
-								__experimentalShowHowTo={ false }
-								__experimentalAutoSelectFirstMatch={ true }
-								// displayTransform={ token => {
-								// 	console.log( 'displayTransform for token:', token );
-								// 	return token;
-								// } }
-								// saveTransform={ token => {
-								// 	console.log( 'saveTransform for token:', token );
-								// 	return token;
-								// } }
-							/>
-
-							<BaseControl
 								help={ __( 'These users are allowed to advance this status.', 'vip-workflow' ) }
-							></BaseControl>
-
-							<CardDivider />
-
-							<div style={ { marginTop: '16px' } }></div>
-
-							<FormTokenField
-								label={ __( 'Allowed roles', 'vip-workflow' ) }
-								onChange={ selectedTokens => {
-									setAllowedRoles( selectedTokens );
-								} }
-								suggestions={ roleSuggestions }
-								value={ allowedRoles }
-								__experimentalShowHowTo={ false }
-								__experimentalAutoSelectFirstMatch={ true }
-								// displayTransform={ token => {
-								// 	console.log( 'displayTransform for token:', token );
-								// 	return token;
-								// } }
-								// saveTransform={ token => {
-								// 	console.log( 'saveTransform for token:', token );
-								// 	return token;
-								// } }
+								requiredUserLoginToIdMap={ requiredUserLoginToIdMap }
+								onUserIdSelectionChange={ setRequiredUserLoginToIdMap }
 							/>
-
-							<BaseControl
-								help={ __( 'These roles are allowed to advance this status.', 'vip-workflow' ) }
-							></BaseControl>
 						</CardBody>
 					</Card>
 				</>
 			) }
 
-			<div style={ { marginTop: '16px' } }></div>
-
-			<HStack justify="right">
+			<HStack justify="right" style={ { marginTop: '16px' } }>
 				<Tooltip
 					text={
 						customStatus
