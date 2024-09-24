@@ -6,7 +6,7 @@ import {
 	Flex,
 	__experimentalHeading as Heading,
 	__experimentalHStack as HStack,
-	TextareaControl,
+	TextControl,
 	ToggleControl,
 	__experimentalTruncate as Truncate,
 	__experimentalVStack as VStack,
@@ -195,7 +195,7 @@ const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 							<Button label={ __( 'Close' ) } icon={ closeSmall } onClick={ onClose } />
 						</Flex>
 					</Flex>
-					<TextareaControl
+					<TextControl
 						__nextHasNoMarginBottom
 						value={ metaFields?.[ editorialMetadata.key ] }
 						onChange={ value => {
