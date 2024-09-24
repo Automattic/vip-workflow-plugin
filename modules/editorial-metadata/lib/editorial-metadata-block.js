@@ -120,7 +120,6 @@ const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 
 	return (
 		<Dropdown
-			style={ { display: 'unset' } }
 			ref={ setPopoverAnchor }
 			popoverProps={ popoverProps }
 			focusOnMount
@@ -159,6 +158,21 @@ const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 						}
 					/>
 					<BaseControl help={ editorialMetadata.description } />
+					<Flex direction={ [ 'row' ] } justify={ 'end' } align={ 'end' }>
+						<Button
+							label={ __( 'Clear' ) }
+							variant="tertiary"
+							onClick={ () => {
+								setMetaFields( {
+									...metaFields,
+									[ editorialMetadata.key ]: '',
+								} );
+								onClose();
+							} }
+						>
+							{ __( 'Clear' ) }
+						</Button>
+					</Flex>
 				</VStack>
 			) }
 		/>
@@ -200,12 +214,11 @@ const DateComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 	if ( label ) {
 		label = getFormattedDate( { dateAttribute: label } );
 	} else {
-		label = __( 'Select date' );
+		label = __( 'None' );
 	}
 
 	return (
 		<Dropdown
-			style={ { display: 'unset' } }
 			ref={ setPopoverAnchor }
 			popoverProps={ popoverProps }
 			focusOnMount
