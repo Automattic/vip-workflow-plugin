@@ -1,5 +1,4 @@
 import {
-	BaseControl,
 	Button,
 	DateTimePicker,
 	__experimentalDivider as Divider,
@@ -7,7 +6,7 @@ import {
 	Flex,
 	__experimentalHeading as Heading,
 	__experimentalHStack as HStack,
-	TextControl,
+	__experimentalInputControl as InputControl,
 	ToggleControl,
 	__experimentalVStack as VStack,
 } from '@wordpress/components';
@@ -100,82 +99,21 @@ const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) =
 };
 
 const TextComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
-	const [ popoverAnchor, setPopoverAnchor ] = useState( null );
-	// Memoize popoverProps to avoid returning a new object every time.
-	const popoverProps = useMemo(
-		() => ( {
-			// Anchor the popover to the middle of the entire row so that it doesn't
-			// move around when the label changes.
-			anchor: popoverAnchor,
-			'aria-label': __( 'Select date' ),
-			placement: 'left-start',
-			offset: 36,
-			shift: true,
-		} ),
-		[ popoverAnchor ]
-	);
-
-	// if metaFields?.[ editorialMetadata.key ] is set, use it, otherwise use 'None'
-	const label = metaFields?.[ editorialMetadata.key ] || __( 'None' );
-
 	return (
-		<Dropdown
-			ref={ setPopoverAnchor }
-			popoverProps={ popoverProps }
-			focusOnMount
-			renderToggle={ ( { onToggle, isOpen } ) => (
-				<HStack __nextHasNoMarginBottom>
-					<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
-					<Button
-						size="compact"
-						variant="tertiary"
-						onClick={ onToggle }
-						aria-label={ editorialMetadata.label }
-						aria-expanded={ isOpen }
-					>
-						{ label }
-					</Button>
-				</HStack>
-			) }
-			renderContent={ ( { onClose } ) => (
-				<VStack __nextHasNoMarginBottom>
-					<HStack __nextHasNoMarginBottom>
-						<Heading level={ 2 } size={ 13 }>
-							{ editorialMetadata.label }
-						</Heading>
-						<Button label={ __( 'Close' ) } icon={ closeSmall } onClick={ onClose } />
-					</HStack>
-					<BaseControl __nextHasNoMarginBottom label={ editorialMetadata.label } />
-					<TextControl
-						__nextHasNoMarginBottom
-						value={ metaFields?.[ editorialMetadata.key ] }
-						className={ editorialMetadata.key }
-						onChange={ value =>
-							setMetaFields( {
-								...metaFields,
-								[ editorialMetadata.key ]: value,
-							} )
-						}
-					/>
-					<BaseControl help={ editorialMetadata.description } />
-					<Flex direction={ [ 'row' ] } justify={ 'end' } align={ 'end' }>
-						<Button
-							label={ __( 'Clear' ) }
-							variant="tertiary"
-							onClick={ () => {
-								setMetaFields( {
-									...metaFields,
-									[ editorialMetadata.key ]: '',
-								} );
-								onClose();
-							} }
-						>
-							{ __( 'Clear' ) }
-						</Button>
-					</Flex>
-				</VStack>
-			) }
-		/>
+		<VStack __nextHasNoMarginBottom>
+			<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
+			<InputControl
+				__nextHasNoMarginBottom
+				value={ metaFields?.[ editorialMetadata.key ] }
+				className={ editorialMetadata.key }
+				onChange={ value =>
+					setMetaFields( {
+						...metaFields,
+						[ editorialMetadata.key ]: value,
+					} )
+				}
+			/>
+		</VStack>
 	);
 };
 
