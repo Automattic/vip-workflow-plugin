@@ -10,7 +10,6 @@ require_once __DIR__ . '/rest/editorial-metadata-endpoint.php';
 
 use VIPWorkflow\Modules\EditorialMetadata\REST\EditorialMetadataEndpoint;
 use VIPWorkflow\Modules\Shared\PHP\InstallUtilities;
-use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
 use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_Term;
