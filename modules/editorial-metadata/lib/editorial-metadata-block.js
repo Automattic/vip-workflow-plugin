@@ -23,9 +23,9 @@ import './editor.scss';
 
 const editorialMetadatas = window.VW_EDITORIAL_METADATA.editorial_metadata_terms.map(
 	editorialMetadata => ( {
-		key: editorialMetadata.meta_key,
+		key: editorialMetadata.meta.postmeta_key,
 		label: editorialMetadata.name,
-		type: editorialMetadata.type,
+		type: editorialMetadata.meta.type,
 		term_id: editorialMetadata.term_id,
 		description: editorialMetadata.description,
 	} )

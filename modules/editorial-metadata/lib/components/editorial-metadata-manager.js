@@ -12,10 +12,10 @@ import {
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
-import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
 import ErrorNotice from '../../../shared/js/components/error-notice';
 import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
+import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
 
 export default function EditorialMetadataManager( {
 	supportedMetadataTypes,
@@ -136,7 +136,7 @@ export default function EditorialMetadataManager( {
 											<Text>
 												<i>{ eMetadataTerm.description }</i>
 											</Text>
-											<Text>{ convertMetadataTypeToLabel( eMetadataTerm.type ) }</Text>
+											<Text>{ convertMetadataTypeToLabel( eMetadataTerm.meta.type ) }</Text>
 										</Flex>
 									</CardHeader>
 									<CardFooter>

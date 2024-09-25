@@ -14,7 +14,7 @@ export default function CreateEditEditorialMetadataModal( {
 	const [ error, setError ] = useState( null );
 	const [ name, setName ] = useState( metadata?.name || '' );
 	const [ description, setDescription ] = useState( metadata?.description || '' );
-	const [ type, setType ] = useState( metadata?.type || availableMetadataTypes[ 0 ].value );
+	const [ type, setType ] = useState( metadata?.meta?.type || availableMetadataTypes[ 0 ].value );
 	const [ isRequesting, setIsRequesting ] = useState( false );
 
 	let titleText;
