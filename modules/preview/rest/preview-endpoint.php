@@ -160,3 +160,5 @@ class PreviewEndpoint {
 		return $expiration_seconds;
 	}
 }
+
+PreviewEndpoint::init();
