@@ -28,11 +28,13 @@ class RestApiTest extends RestTestCase {
 	}
 
 	public function test_create_custom_status() {
+		$admin_user = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
+
 		$request = new WP_REST_Request( 'POST', sprintf( '/%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status' ) );
 		$request->set_body_params( [
-			'name'               => 'test-status',
-			'description'        => 'A test status for testing',
-			'is_review_required' => true,
+			'name'                 => 'test-status',
+			'description'          => 'A test status for testing',
+			'required_user_logins' => [ $admin_user->user_login ],
 		] );
 
 		wp_set_current_user( self::$administrator_user_id );
@@ -51,26 +53,29 @@ class RestApiTest extends RestTestCase {
 
 		$this->assertEquals( 'test-status', $created_term->name );
 		$this->assertEquals( 'A test status for testing', $created_term->description );
-		$this->assertEquals( true, $created_term->is_review_required );
+		$this->assertCount( 1, $created_term->required_user_ids );
+		$this->assertEquals( $admin_user->ID, $created_term->required_user_ids[0] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
+		wp_delete_user( $admin_user->ID );
 	}
 
 	public function test_update_custom_status() {
+
 		$custom_status_term = VIP_Workflow::instance()->custom_status->add_custom_status( 'Test Custom Status', [
-			'slug'               => 'test-custom-status',
-			'description'        => 'Test Description.',
-			'is_review_required' => true,
+			'slug'        => 'test-custom-status',
+			'description' => 'Test Description.',
 		] );
 
-		$term_id = $custom_status_term->term_id;
+		$term_id     = $custom_status_term->term_id;
+		$editor_user = self::create_user( 'test-editor', [ 'role' => 'editor' ] );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( '/%s/%s/%d', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status', $term_id ) );
 		$request->set_body_params( [
-			'id'                 => $term_id,
-			'name'               => 'Test Custom Status 2',
-			'description'        => 'Test Description 2!',
-			'is_review_required' => false,
+			'id'                   => $term_id,
+			'name'                 => 'Test Custom Status 2',
+			'description'          => 'Test Description 2!',
+			'required_user_logins' => [ $editor_user->user_login ],
 		] );
 
 		wp_set_current_user( self::$administrator_user_id );
@@ -84,7 +89,8 @@ class RestApiTest extends RestTestCase {
 
 		$this->assertEquals( 'Test Custom Status 2', $updated_term->name );
 		$this->assertEquals( 'Test Description 2!', $updated_term->description );
-		$this->assertEquals( false, $updated_term->is_review_required );
+		$this->assertCount( 1, $updated_term->required_user_ids );
+		$this->assertEquals( $editor_user->ID, $updated_term->required_user_ids[0] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 	}
@@ -149,5 +155,18 @@ class RestApiTest extends RestTestCase {
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term1->term_id );
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term2->term_id );
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term3->term_id );
+	}
+
+	private static function create_user( $username, $args = [] ) {
+		$default_args = [
+			'user_login'   => $username,
+			'user_pass'    => 'password',
+			'display_name' => $username,
+			'user_email'   => sprintf( '%s@example.com', $username ),
+			'role'         => 'editor',
+		];
+
+		$user_id = wp_insert_user( [ ...$default_args, ...$args ] );
+		return get_user_by( 'id', $user_id );
 	}
 }
