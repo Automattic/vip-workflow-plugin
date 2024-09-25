@@ -166,7 +166,7 @@ class RestApiTest extends RestTestCase {
 			'role'         => 'editor',
 		];
 
-		$user_id = wp_insert_user( [ ...$default_args, ...$args ] );
+		$user_id = wp_insert_user( array_merge( $default_args, $args ) );
 		return get_user_by( 'id', $user_id );
 	}
 }
