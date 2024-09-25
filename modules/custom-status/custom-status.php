@@ -27,7 +27,7 @@ class Custom_Status extends Module {
 	private $custom_statuses_cache = [];
 
 	// This is taxonomy name used to store all our custom statuses
-	const TAXONOMY_KEY = 'vw-post-status';
+	const TAXONOMY_KEY = 'post_status';
 
 	const SETTINGS_SLUG = 'vw-custom-status';
 
@@ -249,12 +249,6 @@ class Custom_Status extends Module {
 			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
-			$roles = get_editable_roles();
-			$roles = array_filter( array_values( get_editable_roles() ), function ( $role ) {
-				$has_edit_posts = $role['capabilities']['edit_posts'] ?? false;
-				return $has_edit_posts;
-			} );
-
 			$custom_statuses = array_map( function ( $custom_status ) {
 				/*
 				* Add additional data to status terms used in the UI
@@ -270,8 +264,6 @@ class Custom_Status extends Module {
 				'custom_statuses'    => $custom_statuses,
 				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
 				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
-
-				'roles'              => $roles,
 				'url_search_user'    => UserLookupEndpoint::get_url(),
 			] );
 		}
