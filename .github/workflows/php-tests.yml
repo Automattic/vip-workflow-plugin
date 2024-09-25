@@ -60,6 +60,5 @@ jobs:
       - name: PHPUnit
         run: composer test --no-interaction
 
-      # This has been disabled as it's causing 401 issues for some of the rest api tests.
-      # - name: PHPUnit multisite
-      #   run: composer run-script test-multisite --no-interaction
+      - name: PHPUnit multisite
+        run: composer run-script test-multisite --no-interaction

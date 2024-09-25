@@ -18,12 +18,12 @@ class EditorialMetadataRestApiTest extends RestTestCase {
 	public function test_create_editorial_metadata() {
 		$request = new WP_REST_Request( 'POST', sprintf( '/%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'editorial-metadata' ) );
 		$request->set_body_params( [
-			'name'               => 'test-metadata',
-			'description'        => 'A test metadata for testing',
-			'type'               => 'text',
+			'name'        => 'test-metadata',
+			'description' => 'A test metadata for testing',
+			'type'        => 'text',
 		] );
 
-		wp_set_current_user( self::$administrator_user_id );
+		wp_set_current_user( $this->administrator_user_id );
 		$this->add_rest_nonce( $request );
 		$response = $this->server->dispatch( $request );
 		wp_set_current_user( null );
@@ -56,12 +56,12 @@ class EditorialMetadataRestApiTest extends RestTestCase {
 
 		$request = new WP_REST_Request( 'PUT', sprintf( '/%s/%s/%d', VIP_WORKFLOW_REST_NAMESPACE, 'editorial-metadata', $term_id ) );
 		$request->set_body_params( [
-			'id'                 => $term_id,
-			'name'               => 'Test Metadata 2',
-			'description'        => 'Test Description 2!',
+			'id'          => $term_id,
+			'name'        => 'Test Metadata 2',
+			'description' => 'Test Description 2!',
 		] );
 
-		wp_set_current_user( self::$administrator_user_id );
+		wp_set_current_user( $this->administrator_user_id );
 		$this->add_rest_nonce( $request );
 		$response = $this->server->dispatch( $request );
 		wp_set_current_user( null );
@@ -89,14 +89,14 @@ class EditorialMetadataRestApiTest extends RestTestCase {
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( '/%s/%s/%d', VIP_WORKFLOW_REST_NAMESPACE, 'editorial-metadata', $term_to_delete_id ) );
 
-		wp_set_current_user( self::$administrator_user_id );
+		wp_set_current_user( $this->administrator_user_id );
 		$this->add_rest_nonce( $request );
 		$response = $this->server->dispatch( $request );
 		wp_set_current_user( null );
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_terms = EditorialMetadata::get_editorial_metadata_terms();
+		$all_terms      = EditorialMetadata::get_editorial_metadata_terms();
 		$all_term_slugs = wp_list_pluck( $all_terms, 'slug' );
 		$this->assertNotContains( 'metadata-to-delete', $all_term_slugs );
 	}

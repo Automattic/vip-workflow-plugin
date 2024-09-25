@@ -15,33 +15,22 @@ use WP_REST_Server;
  * e2e tests to ensure that the REST API endpoint is available.
  */
 class RestTestCase extends TestCase {
-	protected static $administrator_user_id;
+	protected $administrator_user_id;
 	protected $server;
-
-	/**
-	 * Create an administrator user for REST testing. Runs once.
-	 */
-	public static function setUpBeforeClass(): void {
-		self::$administrator_user_id = wp_insert_user([
-			'user_login' => 'admin-rest-user',
-			'user_pass'  => wp_generate_password(),
-			'user_email' => 'admin-rest-user@example.com',
-			'role'       => 'administrator',
-		]);
-	}
-
-	/**
-	 * Remove test user. Runs once.
-	 */
-	public static function tearDownAfterClass(): void {
-		wp_delete_user( self::$administrator_user_id );
-	}
 
 	/**
 	 * Before each test, register REST endpoints.
 	 */
 	protected function setUp(): void {
 		parent::setUp();
+
+		// Create an administrative user for tests to use
+		$this->administrator_user_id = wp_insert_user([
+			'user_login' => 'admin-rest-user',
+			'user_pass'  => wp_generate_password(),
+			'user_email' => 'admin-rest-user@example.com',
+			'role'       => 'administrator',
+		]);
 
 		// Create a new REST server
 		$this->server = new WP_REST_Server();
@@ -58,6 +47,13 @@ class RestTestCase extends TestCase {
 	protected function tearDown(): void {
 		global $wp_rest_server;
 		$wp_rest_server = null;
+
+		if ( is_multisite() ) {
+			// Ensure user is fully deleted in multisite tests
+			wpmu_delete_user( $this->administrator_user_id );
+		} else {
+			wp_delete_user( $this->administrator_user_id );
+		}
 
 		parent::tearDown();
 	}
