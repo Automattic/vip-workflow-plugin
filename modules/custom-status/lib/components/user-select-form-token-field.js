@@ -2,29 +2,24 @@ import apiFetch from '@wordpress/api-fetch';
 import { FormTokenField, BaseControl } from '@wordpress/components';
 import { debounce } from '@wordpress/compose';
 import { useEffect, useMemo, useState } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { sprintf } from '@wordpress/i18n';
 /**
  * Custom status component
  * @param object props
  */
 export default function UserSelectFormTokenField( {
-	requiredUserLoginToIdMap,
-	onUserIdSelectionChange,
+	requiredUserLogins,
+	onSelectionChange,
 	help,
 	...formTokenFieldProps
 } ) {
 	const [ userSearch, setUserSearch ] = useState( '' );
 	const debouncedSetUserSearch = debounce( setUserSearch, 200 );
 	const [ searchedUsers, setSearchedUsers ] = useState( [] );
-	const [ userLoginToUserIdMap, setUserLoginToUserIdMap ] = useState( requiredUserLoginToIdMap );
 
 	const [ selectedUserTokens, setSelectedUserTokens ] = useState(
-		Object.keys( requiredUserLoginToIdMap ).map( userLogin => {
-			return {
-				title: userLogin,
-				value: userLogin,
-			};
-		} )
+		// Map login strings to TokenItem objects
+		requiredUserLogins.map( userLogin => ( { title: userLogin, value: userLogin } ) )
 	);
 
 	useEffect( () => {
@@ -44,23 +39,28 @@ export default function UserSelectFormTokenField( {
 			} );
 
 			setSearchedUsers( result );
-
-			// Create a map of user_login to user ID, so we can easily pass user IDs back to the parent component
-			const userLoginMap = {};
-			for ( const user of result ) {
-				userLoginMap[ user.user_login ] = user.ID;
-			}
-			setUserLoginToUserIdMap( userLoginMap );
 		};
 
 		fetchUsers();
 	}, [ userSearch ] );
 
 	const suggestions = useMemo( () => {
-		return searchedUsers.map( user => {
+		let usersToSuggest = searchedUsers;
+
+		if ( searchedUsers.length > 0 && selectedUserTokens.length > 0 ) {
+			// Remove already-selected users from suggestions
+			const selectedUserMap = {};
+			selectedUserTokens.forEach( token => {
+				selectedUserMap[ token.value ] = true;
+			} );
+
+			usersToSuggest = searchedUsers.filter( user => ! ( user.user_login in selectedUserMap ) );
+		}
+
+		return usersToSuggest.map( user => {
 			return `${ user.display_name } (${ user.user_login })`;
 		} );
-	}, [ searchedUsers ] );
+	}, [ searchedUsers, selectedUserTokens ] );
 
 	const handleOnChange = selectedTokens => {
 		// When a user is selected from the dropdown, it's a string. Convert to a TokenItem object.
@@ -73,8 +73,8 @@ export default function UserSelectFormTokenField( {
 
 		setSelectedUserTokens( tokenItems );
 
-		const userIds = tokenItems.map( token => userLoginToUserIdMap[ token.value ] );
-		onUserIdSelectionChange( userIds );
+		const userLogins = tokenItems.map( token => token.value );
+		onSelectionChange( userLogins );
 	};
 
 	return (

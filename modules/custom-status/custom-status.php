@@ -16,6 +16,8 @@ use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
 use WP_Error;
 use WP_Query;
+use WP_User;
+
 use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
 
 class Custom_Status extends Module {
@@ -90,6 +92,8 @@ class Custom_Status extends Module {
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
 
 		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
+
+		add_filter( 'vw_custom_status_ui_additions', [ $this, 'add_custom_status_ui_properties' ] );
 	}
 
 	/**
@@ -251,20 +255,13 @@ class Custom_Status extends Module {
 				return $has_edit_posts;
 			} );
 
-			$custom_statuses = array_map( function ( $status ) {
-				// Add 'required_users' data with display names
-				$required_user_ids = $status->required_user_ids ?? [];
-
-				$status->required_user_login_to_id_map = array_reduce( $required_user_ids, function ( $carry, $user_id ) {
-					$user = get_user_by( 'ID', $user_id );
-					if ( $user ) {
-						$carry[ $user->user_login ] = $user_id;
-					}
-
-					return $carry;
-				}, [] );
-
-				return $status;
+			$custom_statuses = array_map( function ( $custom_status ) {
+				/*
+				* Add additional data to status terms used in the UI
+				*
+				* @param WP_Term $updated_status An updated status term.
+				*/
+				return apply_filters( 'vw_custom_status_ui_additions', $custom_status );
 			}, $this->get_custom_statuses() );
 
 			// Add extra data for UI
@@ -703,8 +700,8 @@ class Custom_Status extends Module {
 			}
 
 			// Add term meta
-			$requried_user_ids = get_term_meta( $status->term_id, 'required_user_ids', true );
-			$requried_user_ids = '' === $requried_user_ids ? [] : $requried_user_ids;
+			$required_user_ids         = get_term_meta( $status->term_id, 'required_user_ids', true );
+			$status->required_user_ids = '' === $required_user_ids ? [] : $required_user_ids;
 
 			// We require the position key later on (e.g. management table)
 			if ( ! isset( $status->position ) ) {
@@ -1357,6 +1354,18 @@ class Custom_Status extends Module {
 		/* translators: %s: post title */
 		$actions['view'] = '<a href="' . esc_url( $preview_link ) . '" title="' . esc_attr( sprintf( __( 'Preview &#8220;%s&#8221;' ), $post->post_title ) ) . '" rel="permalink">' . __( 'Preview' ) . '</a>';
 		return $actions;
+	}
+
+	public function add_custom_status_ui_properties( $custom_status ) {
+		// Add 'required_user_logins' data with display names for status restrictions UI
+		$required_user_ids = $custom_status->required_user_ids ?? [];
+
+		$custom_status->required_user_logins = array_filter(array_map( function ( $user_id ) {
+			$user = get_user_by( 'ID', $user_id );
+			return $user instanceof WP_User ? $user->user_login : false;
+		}, $required_user_ids ));
+
+		return $custom_status;
 	}
 }
 

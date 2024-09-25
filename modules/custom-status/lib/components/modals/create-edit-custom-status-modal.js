@@ -21,15 +21,14 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	// Custom status properties
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
-	const [ requiredUserLoginToIdMap, setRequiredUserLoginToIdMap ] = useState(
-		customStatus?.required_user_login_to_id_map || {}
+	const [ requiredUserLogins, setRequiredUserLogins ] = useState(
+		customStatus?.required_user_logins || []
 	);
 
 	// Computed properties
 	const isReviewRequired = useMemo( () => {
-		const requiredUserIds = Object.values( requiredUserLoginToIdMap );
-		return requiredUserIds.length > 0;
-	}, [ requiredUserLoginToIdMap ] );
+		return requiredUserLogins.length > 0;
+	}, [ requiredUserLogins ] );
 
 	// Modal properties
 	const [ error, setError ] = useState( null );
@@ -47,12 +46,8 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 		const data = {
 			name,
 			description,
+			required_user_logins: requiredUserLogins,
 		};
-
-		const requiredUserIds = Object.values( requiredUsers );
-		if ( requiredUserIds.length > 0 ) {
-			data.required_user_ids = requiredUserIds;
-		}
 
 		try {
 			setIsRequesting( true );
@@ -119,8 +114,8 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 							<UserSelectFormTokenField
 								label={ __( 'Allowed users', 'vip-workflow' ) }
 								help={ __( 'These users are allowed to advance this status.', 'vip-workflow' ) }
-								requiredUserLoginToIdMap={ requiredUserLoginToIdMap }
-								onUserIdSelectionChange={ setRequiredUserLoginToIdMap }
+								requiredUserLogins={ requiredUserLogins }
+								onSelectionChange={ setRequiredUserLogins }
 							/>
 						</CardBody>
 					</Card>
