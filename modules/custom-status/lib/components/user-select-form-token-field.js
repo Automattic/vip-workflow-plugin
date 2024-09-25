@@ -103,7 +103,11 @@ export default function UserSelectFormTokenField( {
  */
 const convertUserStringToToken = tokenString => {
 	// From a selection of "Display Name (user_login)", extract the user_login
-	const userLogin = tokenString.split( '(' )[ 1 ].split( ')' )[ 0 ];
+
+	// Grab last ' (' in string
+	const userLoginPart = tokenString.split( ' (' ).pop();
+	// Remove trailing ')'
+	const userLogin = userLoginPart.split( ')' )[ 0 ];
 
 	return {
 		// In a TokenItem, the "title" is an HTML title displayed on hover
