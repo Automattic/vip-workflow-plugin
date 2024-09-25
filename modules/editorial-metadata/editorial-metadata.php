@@ -257,11 +257,7 @@ class EditorialMetadata {
 		if ( 'id' === $field ) {
 			$term = get_term( $value, self::METADATA_TAXONOMY );
 		} else {
-			// ToDo: This is inefficient as we are fetching all the terms, and then finding the one that matches.
-			$terms = self::get_editorial_metadata_terms();
-			$term  = wp_filter_object_list( $terms, [ $field => $value ] );
-
-			$term = array_shift( $term );
+			$term = get_term_by( $field, $value, self::METADATA_TAXONOMY );
 		}
 
 		return null !== $term ? $term : false;
@@ -274,7 +270,7 @@ class EditorialMetadata {
 	 * @return WP_Term $term The term with metadata added
 	 */
 	public static function add_metadata_to_term( WP_Term $term ): WP_Term {
-		if ( ! isset( $term->taxonomy ) || self::METADATA_TAXONOMY !== $term->taxonomy  ) {
+		if ( ! isset( $term->taxonomy ) || self::METADATA_TAXONOMY !== $term->taxonomy ) {
 			return $term;
 		}
 
