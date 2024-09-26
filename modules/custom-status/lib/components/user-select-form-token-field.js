@@ -2,7 +2,6 @@ import apiFetch from '@wordpress/api-fetch';
 import { FormTokenField, BaseControl } from '@wordpress/components';
 import { debounce } from '@wordpress/compose';
 import { useEffect, useMemo, useState } from '@wordpress/element';
-import { sprintf } from '@wordpress/i18n';
 /**
  * Custom status component
  * @param object props
@@ -57,17 +56,26 @@ export default function UserSelectFormTokenField( {
 	}, [ searchedUsers, requiredUsers ] );
 
 	const handleOnChange = selectedTokens => {
-		// When a user is selected from the dropdown, it's a string. Convert to a TokenItem object.
-		const tokenItems = selectedTokens.map( token => {
+		const proccessedTokens = [];
+		selectedTokens.forEach( token => {
 			if ( typeof token === 'string' || token instanceof String ) {
-				return convertSearchedUserToToken( token, searchedUsers );
+				// This is an unprocessed token that represents a string representation of
+				// a user selected from the dropdown. Convert it to a TokenItem object.
+				const user = getUserFromSuggestionString( token, searchedUsers );
+
+				if ( user !== undefined ) {
+					proccessedTokens.push( convertUserToToken( user ) );
+				}
+			} else {
+				// This token has already been processed into a TokenItem.
+				proccessedTokens.push( token );
 			}
 			return token;
 		} );
 
-		setSelectedUserTokens( tokenItems );
+		setSelectedUserTokens( proccessedTokens );
 
-		const users = tokenItems.map( token => token.user );
+		const users = proccessedTokens.map( token => token.user );
 		onUsersChanged( users );
 	};
 
@@ -92,28 +100,36 @@ export default function UserSelectFormTokenField( {
 }
 
 /**
- * Given a tokenString like "Display Name (user_login)", convert it to a TokenItem object.
- * @param string tokenString
+ * Given a suggestion string like "Display Name (user_login)", return the associated user object from a set of users.
+ * @param string suggestionString
+ * @param object[] users
+ * @return object|undefined
  */
-const convertSearchedUserToToken = ( tokenString, searchedUsers ) => {
+const getUserFromSuggestionString = ( suggestionString, users ) => {
 	// From a selection of "Display Name (user_login)", extract the user_login
 
 	// Grab last ' (' in string
-	const userLoginPart = tokenString.split( ' (' ).pop();
+	const userLoginPart = suggestionString.split( ' (' ).pop();
 	// Remove trailing ')'
 	const userLogin = userLoginPart.split( ')' )[ 0 ];
 
 	// Find the full user object that matches the user_login
-	const matchingUser = searchedUsers.find( user => user.slug === userLogin );
+	return users.find( user => user.slug === userLogin );
+};
 
+/**
+ * Given a user object, convert it to a TokenItem object.
+ * @param object user
+ */
+const convertUserToToken = user => {
 	return {
 		// In a TokenItem, the "title" is an HTML title displayed on hover
-		title: userLogin,
+		title: user.slug,
 
 		// The "value" is what's shown in the UI
-		value: userLogin,
+		value: user.slug,
 
 		// Store metadata about the user with this token so we can pass it to the parent component easily
-		user: matchingUser,
+		user,
 	};
 };
