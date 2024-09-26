@@ -11,7 +11,7 @@ import {
 	__experimentalHStack as HStack,
 	CardBody,
 } from '@wordpress/components';
-import { useMemo, useState } from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import ErrorNotice from '../../../../shared/js/components/error-notice';
@@ -23,15 +23,12 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
 	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.required_users || [] );
 
-	// Computed properties
-	const isReviewRequired = useMemo( () => {
-		return requiredUsers.length > 0;
-	}, [ requiredUsers ] );
-
 	// Modal properties
 	const [ error, setError ] = useState( null );
 	const [ isRequesting, setIsRequesting ] = useState( false );
-	const [ isReviewSectionToggled, setIsReviewSectionToggled ] = useState( isReviewRequired );
+	const [ isRestrictedSectionVisible, setIsRestrictedSectionVisible ] = useState(
+		requiredUsers.length > 0
+	);
 
 	let titleText;
 	if ( customStatus ) {
@@ -41,13 +38,12 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	}
 
 	const handleSave = async () => {
-		const userIds = requiredUsers.map( user => user.id );
+		const data = { name, description };
 
-		const data = {
-			name,
-			description,
-			required_user_ids: userIds,
-		};
+		if ( isRestrictedSectionVisible ) {
+			const userIds = requiredUsers.map( user => user.id );
+			data.required_user_ids = userIds;
+		}
 
 		try {
 			setIsRequesting( true );
@@ -103,11 +99,11 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 					'Require a specific user or role to advance to the next status.',
 					'vip-workflow'
 				) }
-				checked={ isReviewSectionToggled }
-				onChange={ setIsReviewSectionToggled }
+				checked={ isRestrictedSectionVisible }
+				onChange={ setIsRestrictedSectionVisible }
 			/>
 
-			{ ( isReviewRequired || isReviewSectionToggled ) && (
+			{ isRestrictedSectionVisible && (
 				<>
 					<Card>
 						<CardBody>
