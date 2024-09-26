@@ -15,7 +15,7 @@ class RequiredUserIds {
 		add_action( 'delete_user', [ __CLASS__, 'remove_deleted_user_from_required_users' ], 10, 2 );
 	}
 
-	public static function remove_deleted_user_from_required_users( int $deleted_user_id, int $reassigned_user_id ): void {
+	public static function remove_deleted_user_from_required_users( int $deleted_user_id, int|null $reassigned_user_id ): void {
 		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
 
 		foreach ( $custom_statuses as $custom_status ) {
@@ -27,13 +27,13 @@ class RequiredUserIds {
 				continue;
 			}
 
-			if ( $reassigned_user_id ) {
-				// Replace the deleted user with the reassigned user
-				$required_user_ids[ $deleted_user_index ] = $reassigned_user_id;
-			} else {
+			if ( null === $reassigned_user_id ) {
 				// Remove the deleted user
 				unset( $required_user_ids[ $deleted_user_index ] );
 				$required_user_ids = array_values( $required_user_ids );
+			} else {
+				// Replace the deleted user with the reassigned user
+				$required_user_ids[ $deleted_user_index ] = $reassigned_user_id;
 			}
 
 			self::update( $custom_status->term_id, $required_user_ids );
