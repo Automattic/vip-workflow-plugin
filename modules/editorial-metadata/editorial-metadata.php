@@ -254,7 +254,11 @@ class EditorialMetadata {
 			$term = get_term_by( $field, $value, self::METADATA_TAXONOMY );
 		}
 
-		$term = null !== $term ? self::add_metadata_to_term( $term ) : false;
+		if ( is_wp_error( $term ) || ! $$term ) {
+			$term = false;
+		} else {
+			$term = self::add_metadata_to_term( $term );
+		}
 
 		return $term;
 	}

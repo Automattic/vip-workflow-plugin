@@ -772,7 +772,11 @@ class Custom_Status extends Module {
 			$custom_status = get_term_by( $field, $value, self::TAXONOMY_KEY );
 		}
 
-		$custom_status = null !== $custom_status ? $this->add_metadata_to_term( $custom_status ) : false;
+		if ( is_wp_error( $custom_status ) || ! $custom_status ) {
+			$custom_status = false;
+		} else {
+			$custom_status = $this->add_metadata_to_term( $custom_status );
+		}
 
 		return $custom_status;
 	}
