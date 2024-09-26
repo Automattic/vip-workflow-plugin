@@ -531,7 +531,7 @@ class Custom_Status extends Module {
 		}
 
 		$term_to_save = [
-			'slug'        => $args['slug'],
+			'slug'        => $args['slug'] ?? sanitize_title( $args['name'] ),
 			'description' => $args['description'] ?? '',
 		];
 

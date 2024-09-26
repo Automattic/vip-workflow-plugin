@@ -319,7 +319,7 @@ class EditorialMetadata {
 	 */
 	public static function insert_editorial_metadata_term( array $args ): WP_Term|WP_Error {
 		$term_to_save = [
-			'slug'        => $args['slug'],
+			'slug'        => $args['slug'] ?? sanitize_title( $args['name'] ),
 			'description' => $args['description'] ?? '',
 		];
 		$term_name = $args['name'];
