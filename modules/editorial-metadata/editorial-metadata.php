@@ -278,15 +278,15 @@ class EditorialMetadata {
 			return $term;
 		}
 
-		$term->meta = get_term_meta( $term->term_id );
+		$term_meta = [];
+		$term_meta[ self::METADATA_TYPE_KEY ] = get_term_meta( $term->term_id, self::METADATA_TYPE_KEY, true );
+		$term_meta[ self::METADATA_POSTMETA_KEY ] = get_term_meta( $term->term_id, self::METADATA_POSTMETA_KEY, true );
 
-		if ( ! isset( $term->meta[ self::METADATA_TYPE_KEY ] ) || ! isset( $term->meta[ self::METADATA_POSTMETA_KEY ] ) ) {
+		if ( '' === $term_meta[ self::METADATA_TYPE_KEY ] || '' === $term_meta[ self::METADATA_POSTMETA_KEY ] ) {
 			return $term;
 		}
 
-		// Correct the types of the metadata fields that are returned as arrays.
-		$term->meta[ self::METADATA_TYPE_KEY ] = array_shift( $term->meta[ self::METADATA_TYPE_KEY ] );
-		$term->meta[ self::METADATA_POSTMETA_KEY ] = array_shift( $term->meta[ self::METADATA_POSTMETA_KEY ] );
+		$term->meta = $term_meta;
 
 		return $term;
 	}
