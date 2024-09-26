@@ -690,7 +690,7 @@ class Custom_Status extends Module {
 				} else {
 					return false;
 				}
-			}, $required_user_ids ) );
+			}, $status->required_user_ids ) );
 
 			// We require the position key later on (e.g. management table)
 			if ( ! isset( $status->position ) ) {

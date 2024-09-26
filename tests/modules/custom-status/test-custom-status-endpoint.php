@@ -32,9 +32,9 @@ class RestApiTest extends RestTestCase {
 
 		$request = new WP_REST_Request( 'POST', sprintf( '/%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status' ) );
 		$request->set_body_params( [
-			'name'                 => 'test-status',
-			'description'          => 'A test status for testing',
-			'required_user_logins' => [ $admin_user->user_login ],
+			'name'              => 'test-status',
+			'description'       => 'A test status for testing',
+			'required_user_ids' => [ $admin_user->ID ],
 		] );
 
 		wp_set_current_user( self::$administrator_user_id );
@@ -61,7 +61,6 @@ class RestApiTest extends RestTestCase {
 	}
 
 	public function test_update_custom_status() {
-
 		$custom_status_term = VIP_Workflow::instance()->custom_status->add_custom_status( 'Test Custom Status', [
 			'slug'        => 'test-custom-status',
 			'description' => 'Test Description.',
@@ -72,10 +71,10 @@ class RestApiTest extends RestTestCase {
 
 		$request = new WP_REST_Request( 'PUT', sprintf( '/%s/%s/%d', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status', $term_id ) );
 		$request->set_body_params( [
-			'id'                   => $term_id,
-			'name'                 => 'Test Custom Status 2',
-			'description'          => 'Test Description 2!',
-			'required_user_logins' => [ $editor_user->user_login ],
+			'id'                => $term_id,
+			'name'              => 'Test Custom Status 2',
+			'description'       => 'Test Description 2!',
+			'required_user_ids' => [ $editor_user->ID ],
 		] );
 
 		wp_set_current_user( self::$administrator_user_id );
