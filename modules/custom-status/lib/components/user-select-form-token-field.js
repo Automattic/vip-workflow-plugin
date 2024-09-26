@@ -28,14 +28,8 @@ export default function UserSelectFormTokenField( {
 		}
 
 		const fetchUsers = async () => {
-			const userSearchUrl = sprintf(
-				'%s%s',
-				VW_CUSTOM_STATUS_CONFIGURE.url_search_user,
-				userSearch
-			);
-
 			const result = await apiFetch( {
-				url: userSearchUrl,
+				path: `/wp/v2/users?search=${ encodeURIComponent( userSearch ) }`,
 			} );
 
 			setSearchedUsers( result );
@@ -58,7 +52,7 @@ export default function UserSelectFormTokenField( {
 		}
 
 		return usersToSuggest.map( user => {
-			return `${ user.display_name } (${ user.user_login })`;
+			return `${ user.name } (${ user.slug })`;
 		} );
 	}, [ searchedUsers, selectedUserTokens ] );
 

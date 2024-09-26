@@ -7,10 +7,8 @@
 namespace VIPWorkflow\Modules;
 
 require_once __DIR__ . '/rest/custom-status-endpoint.php';
-require_once __DIR__ . '/rest/user-lookup-endpoint.php';
 
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
-use VIPWorkflow\Modules\CustomStatus\REST\UserLookupEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
@@ -264,7 +262,6 @@ class Custom_Status extends Module {
 				'custom_statuses'    => $custom_statuses,
 				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
 				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
-				'url_search_user'    => UserLookupEndpoint::get_url(),
 			] );
 		}
 
