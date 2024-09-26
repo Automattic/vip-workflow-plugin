@@ -242,12 +242,13 @@ class CustomStatusEndpoint {
 
 		// get status_slug & status_description
 		$args = [
+			'name'               => $status_name,
 			'description'        => $status_description,
 			'slug'               => $status_slug,
 			'required_metadata_fields' => $status_required_metadata_fields,
 		];
 
-		$add_status_result = $custom_status_module->add_custom_status( $status_name, $args );
+		$add_status_result = $custom_status_module->add_custom_status( $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $add_status_result );

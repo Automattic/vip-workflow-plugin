@@ -519,11 +519,6 @@ class Custom_Status extends Module {
 	 * @return object|WP_Error $inserted_term The newly inserted term object or a WP_Error object
 	 */
 	public function add_custom_status( array $args ): WP_Term|WP_Error {
-		// ToDo: Once we make this function protected, we can remove this check
-		if ( ! isset( $args['name'] ) || ! isset( $args['slug'] ) ) {
-			return new WP_Error( 'invalid', __( 'Name/Slug is required.', 'vip-workflow' ) );
-		}
-
 		if ( ! isset( $args['position'] ) ) {
 			// get the existing statuses, ordered by position
 			$custom_statuses = $this->get_custom_statuses();
@@ -754,7 +749,7 @@ class Custom_Status extends Module {
 			$statuses = [];
 		}
 
-		$$tatuses = array_values( $statuses );
+		$statuses = array_values( $statuses );
 
 		// Set the internal object cache
 		$this->custom_statuses_cache = $statuses;

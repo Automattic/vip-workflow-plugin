@@ -318,11 +318,6 @@ class EditorialMetadata {
 	 * @return WP_Term|WP_Error $term The new term or a WP_Error object if something disastrous happened
 	 */
 	public static function insert_editorial_metadata_term( array $args ): WP_Term|WP_Error {
-		// ToDo: Once we make this function protected, we can remove this check
-		if ( ! isset( $args['name'] ) || ! isset( $args['slug'] ) || ! isset( $args['type'] ) ) {
-			return new WP_Error( 'invalid', __( 'Name/Slug/Type is required.', 'vip-workflow' ) );
-		}
-
 		$term_to_save = [
 			'slug'        => $args['slug'],
 			'description' => $args['description'] ?? '',
