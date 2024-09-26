@@ -8,6 +8,7 @@ namespace VIPWorkflow\Modules;
 
 require_once __DIR__ . '/rest/custom-status-endpoint.php';
 
+use VIPWorkflow\Modules\CustomStatus\RequiredUserIds;
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
@@ -500,7 +501,7 @@ class Custom_Status extends Module {
 
 		// Add term meta
 		if ( [] !== $required_user_ids ) {
-			update_term_meta( $inserted_term['term_id'], 'required_user_ids', $required_user_ids );
+			RequiredUserIds::update( $inserted_term['term_id'], $required_user_ids );
 		}
 
 		// Populate the inserted term with the new values, or else only the term_taxonomy_id and term_id are returned.
@@ -567,7 +568,7 @@ class Custom_Status extends Module {
 
 		// Add term meta
 		$required_user_ids = $args['required_user_ids'] ?? $old_status->required_user_ids ?? [];
-		update_term_meta( $status_id, 'required_user_ids', $required_user_ids );
+		RequiredUserIds::update( $status_id, $required_user_ids );
 
 		// Reset status cache again, as get_custom_status_by() will recache statuses
 		$this->custom_statuses_cache = [];
@@ -676,8 +677,7 @@ class Custom_Status extends Module {
 			}
 
 			// Add term meta
-			$required_user_ids         = get_term_meta( $status->term_id, 'required_user_ids', true );
-			$status->required_user_ids = '' === $required_user_ids ? [] : $required_user_ids;
+			$status->required_user_ids = RequiredUserIds::get( $status->term_id );
 
 			// Add 'required_users' computed property with additional metadata about users (for UI purporses)
 			$status->required_users = array_filter( array_map( function ( $user_id ) {
