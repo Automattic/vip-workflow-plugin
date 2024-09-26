@@ -49,12 +49,6 @@ class EditorialMetadata {
 
 		// Load block editor CSS
 		add_action( 'enqueue_block_editor_assets', [ __CLASS__, 'load_styles_for_block_editor' ] );
-
-		// Add metadata fields to term
-		add_filter( 'get_term', [ __CLASS__, 'add_metadata_to_term' ], 10, 1 );
-
-		// Add metadata fields to all terms
-		add_filter( 'get_terms', [ __CLASS__, 'add_metadata_to_terms' ], 10, 2 );
 	}
 
 	/**
@@ -231,7 +225,7 @@ class EditorialMetadata {
 			$terms = [];
 		}
 
-		$terms = array_values( $terms );
+		$terms = array_map( [ __CLASS__, 'add_metadata_to_term' ], $terms );
 
 		// Set the internal object cache
 		self::$editorial_metadata_terms_cache = $terms;
@@ -260,7 +254,9 @@ class EditorialMetadata {
 			$term = get_term_by( $field, $value, self::METADATA_TAXONOMY );
 		}
 
-		return null !== $term ? $term : false;
+		$term = null !== $term ? self::add_metadata_to_term( $term ) : false;
+
+		return $term;
 	}
 
 	/**
@@ -290,25 +286,6 @@ class EditorialMetadata {
 		$term->meta = $term_meta;
 
 		return $term;
-	}
-
-	/**
-	 * Add all the metadata fields to all terms in a list
-	 *
-	 * @param array $terms The terms to add metadata to
-	 * @param array $taxonomies The taxonomies to add metadata to
-	 * @return array $terms The terms with metadata added
-	 */
-	public static function add_metadata_to_terms( array $terms, array $taxonomies ): array {
-		if ( ! in_array( self::METADATA_TAXONOMY, $taxonomies ) ) {
-			return $terms;
-		}
-
-		foreach ( $terms as $term ) {
-			$term = self::add_metadata_to_term( $term );
-		}
-
-		return $terms;
 	}
 
 	/**

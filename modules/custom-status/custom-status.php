@@ -96,12 +96,6 @@ class Custom_Status extends Module {
 		CustomStatusEndpoint::init();
 
 		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
-
-		// Add metadata fields to term
-		add_filter( 'get_term', [ $this, 'add_metadata_to_term' ], 10, 1 );
-
-		// Add metadata fields to all terms
-		add_filter( 'get_terms', [ $this, 'add_metadata_to_terms' ], 10, 2 );
 	}
 
 	/**
@@ -749,7 +743,7 @@ class Custom_Status extends Module {
 			$statuses = [];
 		}
 
-		$statuses = array_values( $statuses );
+		$statuses = array_map( [ $this, 'add_metadata_to_term' ], $statuses );
 
 		// Set the internal object cache
 		$this->custom_statuses_cache = $statuses;
@@ -778,7 +772,9 @@ class Custom_Status extends Module {
 			$custom_status = get_term_by( $field, $value, self::TAXONOMY_KEY );
 		}
 
-		return null !== $custom_status ? $custom_status : false;
+		$custom_status = null !== $custom_status ? $this->add_metadata_to_term( $custom_status ) : false;
+
+		return $custom_status;
 	}
 
 	/**
