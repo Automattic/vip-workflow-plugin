@@ -6,9 +6,13 @@
 
 namespace VIPWorkflow\Modules;
 
+// REST endpoints
 require_once __DIR__ . '/rest/custom-status-endpoint.php';
 
-use VIPWorkflow\Modules\CustomStatus\RequiredUserIds;
+// Term meta
+require_once __DIR__ . '/meta/required-user-ids.php';
+
+use VIPWorkflow\Modules\CustomStatus\Meta\RequiredUserIds;
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
