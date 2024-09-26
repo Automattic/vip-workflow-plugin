@@ -7,6 +7,7 @@
 namespace VIPWorkflow\Modules\CustomStatus\REST;
 
 use VIPWorkflow\Modules\Custom_Status;
+use VIPWorkflow\Modules\EditorialMetadata;
 use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_REST_Request;
@@ -49,10 +50,24 @@ class CustomStatusEndpoint {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
-				'is_review_required' => [
-					'default'           => false,
+				'required_metadata_fields' => [
+					'default'           => [],
+					'validate_callback' => function ( $param ) {
+						$metadata_fields = array_map( [ __CLASS__, 'sanitize_each_array_item' ], $param );
+
+						// iterate over each field and check if it exists
+						foreach ( $metadata_fields as $metadata_field ) {
+							$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_field );
+
+							if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
+								return false;
+							}
+						}
+
+						return true;
+					},
 					'sanitize_callback' => function ( $param ) {
-						return boolval( $param );
+						return array_map( [ __CLASS__, 'sanitize_each_array_item' ], $param );
 					},
 				],
 			],
@@ -77,6 +92,7 @@ class CustomStatusEndpoint {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
+						// ToDo: Switch this to our own method once Custom Status module has been refactored.
 						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
 						return ( $term instanceof WP_Term );
 					},
@@ -92,10 +108,24 @@ class CustomStatusEndpoint {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
-				'is_review_required' => [
-					'default'           => false,
+				'required_metadata_fields' => [
+					'default'           => [],
+					'validate_callback' => function ( $param ) {
+						$metadata_fields = array_map( [ __CLASS__, 'sanitize_each_array_item' ], $param );
+
+						// iterate over each field and check if it exists
+						foreach ( $metadata_fields as $metadata_field ) {
+							$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_field );
+
+							if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
+								return false;
+							}
+						}
+
+						return true;
+					},
 					'sanitize_callback' => function ( $param ) {
-						return boolval( $param );
+						return array_map( [ __CLASS__, 'sanitize_each_array_item' ], $param );
 					},
 				],
 			],
@@ -111,6 +141,7 @@ class CustomStatusEndpoint {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
+						// ToDo: Switch this to our own method once Custom Status module has been refactored.
 						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
 						return ( $term instanceof WP_Term );
 					},
@@ -137,6 +168,7 @@ class CustomStatusEndpoint {
 						// validate each item in the array.
 						foreach ( $param as $position => $term_id ) {
 							$term_id = absint( $term_id );
+							// ToDo: Switch this to our own method once Custom Status module has been refactored.
 							$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
 							if ( ! $term instanceof WP_Term ) {
 								return false;
@@ -173,7 +205,7 @@ class CustomStatusEndpoint {
 		$status_name               = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
 		$status_description        = $request->get_param( 'description' );
-		$status_is_review_required = $request->get_param( 'is_review_required' );
+		$status_required_metadata_fields = $request->get_param( 'required_metadata_fields' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -199,11 +231,20 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Status name conflicts with existing term. Please choose another.' );
 		}
 
+		// Check to make sure the required_metadata_fields are valid
+		foreach ( $status_required_metadata_fields as $metadata_field ) {
+			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_field );
+
+			if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
+				return new WP_Error( 'invalid', 'Required metadata field does not exist. Please choose another.' );
+			}
+		}
+
 		// get status_slug & status_description
 		$args = [
 			'description'        => $status_description,
 			'slug'               => $status_slug,
-			'is_review_required' => $status_is_review_required,
+			'required_metadata_fields' => $status_required_metadata_fields,
 		];
 
 		$add_status_result = $custom_status_module->add_custom_status( $status_name, $args );
@@ -222,7 +263,7 @@ class CustomStatusEndpoint {
 		$status_name               = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
 		$status_description        = $request->get_param( 'description' );
-		$status_is_review_required = $request->get_param( 'is_review_required' );
+		$status_required_metadata_fields = $request->get_param( 'required_metadata_fields' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -258,12 +299,21 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Status name conflicts with existing term. Please choose another.' );
 		}
 
+		// Check to make sure the required_metadata_fields are valid
+		foreach ( $status_required_metadata_fields as $metadata_field ) {
+			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_field );
+
+			if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
+				return new WP_Error( 'invalid', 'Required metadata field does not exist. Please choose another.' );
+			}
+		}
+
 		// get status_name & status_description
 		$args = [
 			'name'               => $status_name,
 			'description'        => $status_description,
 			'slug'               => $status_slug,
-			'is_review_required' => $status_is_review_required,
+			'required_metadata_fields' => $status_required_metadata_fields,
 		];
 
 		// ToDo: Ensure that we don't do an update when the name and description are the same as the current status
@@ -327,6 +377,20 @@ class CustomStatusEndpoint {
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $custom_status_module->get_custom_statuses() );
+	}
+
+	// Helper Function
+
+	/**
+	 * Sanitize each array item and covert it to an integer
+	 *
+	 * @param string $param
+	 * @return integer The sanitized and converted parameter
+	 */
+	public static function sanitize_each_array_item( string $param ): int {
+		$sanitized_param = sanitize_text_field( $param );
+
+		return absint( $sanitized_param );
 	}
 
 	// Public API

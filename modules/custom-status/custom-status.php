@@ -11,10 +11,11 @@ require_once __DIR__ . '/rest/custom-status-endpoint.php';
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
-use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
 use WP_Error;
 use WP_Query;
 use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
+use WP_Term;
+use WP_Post;
 
 class Custom_Status extends Module {
 
@@ -23,9 +24,13 @@ class Custom_Status extends Module {
 	private $custom_statuses_cache = [];
 
 	// This is taxonomy name used to store all our custom statuses
-	const TAXONOMY_KEY = 'post_status';
+	const TAXONOMY_KEY = 'vw_post_status';
 
 	const SETTINGS_SLUG = 'vw-custom-status';
+
+	// The metadata keys for the custom status term
+	const METADATA_POSITION_KEY = 'position';
+	const METADATA_REQ_EDITORIAL_FIELDS_KEY = 'required_metadata_fields';
 
 	/**
 	 * Register the module with VIP Workflow but don't do anything else
@@ -91,6 +96,12 @@ class Custom_Status extends Module {
 		CustomStatusEndpoint::init();
 
 		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
+
+		// Add metadata fields to term
+		add_filter( 'get_term', [ $this, 'add_metadata_to_term' ], 10, 1 );
+
+		// Add metadata fields to all terms
+		add_filter( 'get_terms', [ $this, 'add_metadata_to_terms' ], 10, 2 );
 	}
 
 	/**
@@ -100,52 +111,41 @@ class Custom_Status extends Module {
 
 		$default_terms = [
 			[
-				'term' => __( 'Pitch', 'vip-workflow' ),
-				'args' => [
-					'slug'        => 'pitch',
-					'description' => __( 'Idea proposed; waiting for acceptance.', 'vip-workflow' ),
-					'position'    => 1,
-				],
+				'name'        => __( 'Pitch', 'vip-workflow' ),
+				'slug'        => 'pitch',
+				'description' => __( 'Idea proposed; waiting for acceptance.', 'vip-workflow' ),
+				'position'    => 1,
 			],
 			[
-				'term' => __( 'Assigned', 'vip-workflow' ),
-				'args' => [
-					'slug'        => 'assigned',
-					'description' => __( 'Post idea assigned to writer.', 'vip-workflow' ),
-					'position'    => 2,
-				],
+				'name'        => __( 'Assigned', 'vip-workflow' ),
+				'slug'        => 'assigned',
+				'description' => __( 'Post idea assigned to writer.', 'vip-workflow' ),
+				'position'    => 2,
 			],
 			[
-				'term' => __( 'In Progress', 'vip-workflow' ),
-				'args' => [
-					'slug'        => 'in-progress',
-					'description' => __( 'Writer is working on the post.', 'vip-workflow' ),
-					'position'    => 3,
-				],
+				'name'        => __( 'In Progress', 'vip-workflow' ),
+				'slug'        => 'in-progress',
+				'description' => __( 'Writer is working on the post.', 'vip-workflow' ),
+				'position'    => 3,
 			],
 			[
-				'term' => __( 'Draft', 'vip-workflow' ),
-				'args' => [
-					'slug'        => 'draft',
-					'description' => __( 'Post is a draft; not ready for review or publication.', 'vip-workflow' ),
-					'position'    => 4,
-				],
+				'name'        => __( 'Draft', 'vip-workflow' ),
+				'slug'        => 'draft',
+				'description' => __( 'Post is a draft; not ready for review or publication.', 'vip-workflow' ),
+				'position'    => 4,
 			],
 			[
-				'term' => __( 'Pending Review' ),
-				'args' => [
-					'slug'               => 'pending',
-					'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
-					'position'           => 5,
-					'is_review_required' => true,
-				],
+				'name'               => __( 'Pending Review' ),
+				'slug'               => 'pending',
+				'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
+				'position'           => 5,
 			],
 		];
 
 		// Okay, now add the default statuses to the db if they don't already exist
 		foreach ( $default_terms as $term ) {
-			if ( ! term_exists( $term['term'], self::TAXONOMY_KEY ) ) {
-				$this->add_custom_status( $term['term'], $term['args'] );
+			if ( ! term_exists( $term['slug'], self::TAXONOMY_KEY ) ) {
+				$this->add_custom_status( $term );
 			}
 		}
 	}
@@ -175,8 +175,8 @@ class Custom_Status extends Module {
 		}
 
 		if ( function_exists( 'register_post_status' ) ) {
-			// Users can delete draft and pending statuses if they want, so let's get rid of them
-			// They'll get re-added if the user hasn't "deleted" them
+			// Users can delete the pending and draft status if they want, so let's get rid of that
+			// It'll get re-added if the user hasn't "deleted" them
 			unset( $wp_post_statuses['draft'] );
 			unset( $wp_post_statuses['pending'] );
 
@@ -451,6 +451,55 @@ class Custom_Status extends Module {
 	}
 
 	/**
+	 * Add all the metadata fields to a term
+	 *
+	 * @param WP_Term $term The term to add metadata to
+	 * @return WP_Term $term The term with metadata added
+	 */
+	public static function add_metadata_to_term( WP_Term $term ): WP_Term {
+		if ( ! isset( $term->taxonomy ) || self::TAXONOMY_KEY !== $term->taxonomy ) {
+			return $term;
+		}
+
+		// if metadata is already set, don't overwrite it
+		if ( isset( $term->meta ) && isset( $term->meta[ self::METADATA_POSITION_KEY ] ) && isset( $term->meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] ) ) {
+			return $term;
+		}
+
+		$term_meta = [];
+		$term_meta[ self::METADATA_POSITION_KEY ] = get_term_meta( $term->term_id, self::METADATA_POSITION_KEY, true );
+		$term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] = get_term_meta( $term->term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, true );
+
+		// Required postmeta fields is not required, so we set it to an empty array on purpose. The position is required however.
+		if ( '' === $term_meta[ self::METADATA_POSITION_KEY ] ) {
+			return $term;
+		}
+
+		$term->meta = $term_meta;
+
+		return $term;
+	}
+
+	/**
+	 * Add all the metadata fields to all terms in a list
+	 *
+	 * @param array $terms The terms to add metadata to
+	 * @param array $taxonomies The taxonomies to add metadata to
+	 * @return array $terms The terms with metadata added
+	 */
+	public static function add_metadata_to_terms( array $terms, array $taxonomies ): array {
+		if ( ! in_array( self::TAXONOMY_KEY, $taxonomies ) ) {
+			return $terms;
+		}
+
+		foreach ( $terms as $term ) {
+			$term = self::add_metadata_to_term( $term );
+		}
+
+		return $terms;
+	}
+
+	/**
 	 * Adds a new custom status as a term in the wp_terms table.
 	 * Basically a wrapper for the wp_insert_term class.
 	 *
@@ -469,35 +518,66 @@ class Custom_Status extends Module {
 	 *
 	 * @return object|WP_Error $inserted_term The newly inserted term object or a WP_Error object
 	 */
-	public function add_custom_status( $term, $args = [] ) {
-		// Term is always added to the end of the list
-		$default_position = count( $this->get_custom_statuses() ) + 1;
-
-		$slug = ( ! empty( $args['slug'] ) ) ? $args['slug'] : sanitize_title( $term );
-		unset( $args['slug'] );
-
-		if ( ! isset( $args['position'] ) ) {
-			$args['position'] = $default_position;
+	public function add_custom_status( array $args ): WP_Term|WP_Error {
+		// ToDo: Once we make this function protected, we can remove this check
+		if ( ! isset( $args['name'] ) || ! isset( $args['slug'] ) ) {
+			return new WP_Error( 'invalid', __( 'Name/Slug is required.', 'vip-workflow' ) );
 		}
 
-		$encoded_description = TaxonomyUtilities::get_encoded_description( $args );
+		if ( ! isset( $args['position'] ) ) {
+			// get the existing statuses, ordered by position
+			$custom_statuses = $this->get_custom_statuses();
 
-		$inserted_term = wp_insert_term( $term, self::TAXONOMY_KEY, [
-			'slug'        => $slug,
-			'description' => $encoded_description,
-		] );
+			// get the last status position
+			$last_position = $custom_statuses[ array_key_last( $custom_statuses ) ]->meta[ self::METADATA_POSITION_KEY ];
+
+			// set the new status position to be one more than the last status
+			$args['position'] = $last_position + 1;
+		}
+
+		$term_to_save = [
+			'slug'        => $args['slug'],
+			'description' => $args['description'] ?? '',
+		];
+
+		$term_name = $args['name'];
+
+		$inserted_term = wp_insert_term( $term_name, self::TAXONOMY_KEY, $term_to_save );
+
+		if ( is_wp_error( $inserted_term ) ) {
+			return $inserted_term;
+		}
 
 		// Reset our internal object cache
 		$this->custom_statuses_cache = [];
 
-		// Populate the inserted term with the new values, or else only the term_taxonomy_id and term_id are returned.
-		if ( is_wp_error( $inserted_term ) ) {
-			return $inserted_term;
-		} else {
-			$inserted_term = $this->get_custom_status_by( 'id', $inserted_term['term_id'] );
+		$term_id = $inserted_term['term_id'];
+
+		$position = $args['position'];
+		$required_metadata_fields = $args['required_metadata_fields'] ?? [];
+
+		$position_meta_result = add_term_meta( $term_id, self::METADATA_POSITION_KEY, $position );
+		if ( is_wp_error( $position_meta_result ) ) {
+			return $position_meta_result;
+		} else if ( ! $position_meta_result ) {
+			// If we can't save the type, we should delete the term
+			wp_delete_term( $term_id, self::TAXONOMY_KEY );
+			return new WP_Error( 'invalid', __( 'Unable to create custom status.', 'vip-workflow' ) );
 		}
 
-		return $inserted_term;
+		$req_postmeta_fields_meta_result = add_term_meta( $term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, $required_metadata_fields );
+		if ( is_wp_error( $req_postmeta_fields_meta_result ) ) {
+			return $req_postmeta_fields_meta_result;
+		} else if ( ! $req_postmeta_fields_meta_result ) {
+			// If we can't save the postmeta key, we should delete the term
+			delete_term_meta( $term_id, self::METADATA_POSITION_KEY );
+			wp_delete_term( $term_id, self::TAXONOMY_KEY );
+			return new WP_Error( 'invalid', __( 'Unable to create editorial metadata.', 'vip-workflow' ) );
+		}
+
+		$term_result = $this->get_custom_status_by( 'id', $term_id );
+
+		return $term_result;
 	}
 
 	/**
@@ -507,9 +587,11 @@ class Custom_Status extends Module {
 	 * @param array $args Any arguments to be updated
 	 * @return object $updated_status Newly updated status object
 	 */
-	public function update_custom_status( $status_id, $args = [] ) {
+	public function update_custom_status( int $status_id, array $args = [] ): WP_Term|WP_Error {
 		$old_status = $this->get_custom_status_by( 'id', $status_id );
-		if ( ! $old_status ) {
+		if ( is_wp_error( $old_status ) ) {
+			return $old_status;
+		} else if ( ! $old_status ) {
 			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
 		}
 
@@ -540,28 +622,41 @@ class Custom_Status extends Module {
 				return $reassigned_result;
 			}
 		}
-		// We're encoding metadata that isn't supported by default in the term's description field
-		$args_to_encode                       = [];
-		$args_to_encode['description']        = $args['description'] ?? $old_status->description;
-		$args_to_encode['position']           = $args['position'] ?? $old_status->position;
-		$args_to_encode['is_review_required'] = $args['is_review_required'] ?? $old_status->is_review_required ?? false;
 
-		$encoded_description = TaxonomyUtilities::get_encoded_description( $args_to_encode );
-		$args['description'] = $encoded_description;
+		$term_fields_to_update = [
+			'name'    => isset( $args['name'] ) ? $args['name'] : $old_status->name,
+			'slug'    => isset( $args['slug'] ) ? $args['slug'] : $old_status->slug,
+			'description' => isset( $args['description'] ) ? $args['description'] : $old_status->description,
+		];
 
-		$updated_status = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
+		// Update the metadata first, as if it fails we don't want to update the term
+
+		if ( isset( $args['position'] ) ) {
+			$position_meta_result = update_term_meta( $status_id, self::METADATA_POSITION_KEY, $args['position'] );
+			if ( is_wp_error( $position_meta_result ) ) {
+				return $position_meta_result;
+			}
+		}
+
+		if ( isset( $args['required_metadata_fields'] ) ) {
+			$req_postmeta_fields_meta_result = update_term_meta( $status_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, $args['required_metadata_fields'] );
+			if ( is_wp_error( $req_postmeta_fields_meta_result ) ) {
+				return $req_postmeta_fields_meta_result;
+			}
+		}
+
+		$updated_term = wp_update_term( $status_id, self::TAXONOMY_KEY, $term_fields_to_update );
 
 		// Reset status cache again, as reassign_post_status() will recache prior statuses
 		$this->custom_statuses_cache = [];
 
-		// Populate the updated term with the new values, or else only the term_taxonomy_id and term_id are returned.
-		if ( is_wp_error( $updated_status ) ) {
-			return $updated_status;
-		} else {
-			$updated_status = $this->get_custom_status_by( 'id', $status_id );
+		if ( is_wp_error( $updated_term ) ) {
+			return $updated_term;
 		}
 
-		return $updated_status;
+		$status_result = $this->get_custom_status_by( 'id', $status_id );
+
+		return $status_result;
 	}
 
 	/**
@@ -570,10 +665,12 @@ class Custom_Status extends Module {
 	 * Partly a wrapper for the wp_delete_term function.
 	 * BUT, also reassigns posts that currently have the deleted status assigned.
 	 */
-	public function delete_custom_status( $status_id, $args = [] ) {
+	public function delete_custom_status( int $status_id ): bool|WP_Error {
 		// Get slug for the old status
 		$old_status = $this->get_custom_status_by( 'id', $status_id );
 		if ( ! $old_status ) {
+			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
+		} else if ( ! $old_status ) {
 			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
 		}
 
@@ -601,7 +698,11 @@ class Custom_Status extends Module {
 			return $reassigned_result;
 		}
 
-		$result = wp_delete_term( $status_id, self::TAXONOMY_KEY, $args );
+		delete_term_meta( $status_id, self::METADATA_POSITION_KEY );
+
+		delete_term_meta( $status_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY );
+
+		$result = wp_delete_term( $status_id, self::TAXONOMY_KEY );
 		if ( ! $result ) {
 			return new WP_Error( 'invalid', __( 'Unable to delete custom status.', 'vip-workflow' ) );
 		}
@@ -631,7 +732,7 @@ class Custom_Status extends Module {
 	 * @param array|string $statuses
 	 * @return array $statuses All of the statuses
 	 */
-	public function get_custom_statuses() {
+	public function get_custom_statuses(): array {
 		if ( $this->disable_custom_statuses_for_post_type() ) {
 			return $this->get_core_post_statuses();
 		}
@@ -641,76 +742,47 @@ class Custom_Status extends Module {
 			return $this->custom_statuses_cache;
 		}
 
-		// Handle if the requested taxonomy doesn't exist
 		$statuses = get_terms( [
 			'taxonomy'   => self::TAXONOMY_KEY,
 			'hide_empty' => false,
+			'orderby' => 'meta_value_num',
+			'order' => 'ASC',
+			'meta_key' => self::METADATA_POSITION_KEY,
 		]);
 
 		if ( is_wp_error( $statuses ) || empty( $statuses ) ) {
 			$statuses = [];
 		}
 
-		// Expand and order the statuses
-		$ordered_statuses = [];
-		$hold_to_end      = [];
-		foreach ( $statuses as $key => $status ) {
-			// Unencode and set all of our psuedo term meta because we need the position if it exists
-			$unencoded_description = TaxonomyUtilities::get_unencoded_description( $status->description );
-			if ( is_array( $unencoded_description ) ) {
-				foreach ( $unencoded_description as $key => $value ) {
-					$status->$key = $value;
-				}
-			}
-			// We require the position key later on (e.g. management table)
-			if ( ! isset( $status->position ) ) {
-				$status->position = false;
-			}
-			// Only add the status to the ordered array if it has a set position and doesn't conflict with another key
-			// Otherwise, hold it for later
-			if ( $status->position && ! array_key_exists( $status->position, $ordered_statuses ) ) {
-				$ordered_statuses[ (int) $status->position ] = $status;
-			} else {
-				$hold_to_end[] = $status;
-			}
-		}
-		// Sort the items numerically by key
-		ksort( $ordered_statuses, SORT_NUMERIC );
-		// Append all of the statuses that didn't have an existing position
-		foreach ( $hold_to_end as $unpositioned_status ) {
-			$ordered_statuses[] = $unpositioned_status;
-		}
+		$$tatuses = array_values( $statuses );
 
-		$ordered_statuses = array_values( $ordered_statuses );
+		// Set the internal object cache
+		$this->custom_statuses_cache = $statuses;
 
-		$this->custom_statuses_cache = $ordered_statuses;
-		return $ordered_statuses;
+		return $statuses;
 	}
 
 	/**
 	 * Returns the a single status object based on ID, title, or slug
 	 *
-	 * @param string|int $string_or_int The status to search for, either by slug, name or ID
+	 * @param string $field The field to search by
+	 * @param int|string $value The value to search for
 	 * @return WP_Term|false $status The object for the matching status
 	 */
-	public function get_custom_status_by( $field, $value ) {
+	public function get_custom_status_by( string $field, int|string $value ): WP_Term|false {
 		// We only support id, slug and name for lookup.
 		if ( ! in_array( $field, [ 'id', 'slug', 'name' ] ) ) {
 			return false;
 		}
 
+		$custom_status = false;
+
 		if ( 'id' === $field ) {
-			$field = 'term_id';
+			$custom_status = get_term( $value, self::TAXONOMY_KEY );
+		} else {
+			$custom_status = get_term_by( $field, $value, self::TAXONOMY_KEY );
 		}
 
-		// ToDo: This is inefficient as we are fetching all the terms, and then finding the one that matches.
-		$custom_statuses = $this->get_custom_statuses();
-		$custom_status   = wp_filter_object_list( $custom_statuses, [ $field => $value ] );
-
-		// array_shift will ensure to set the first one or null if the array is empty
-		$custom_status = array_shift( $custom_status );
-
-		// If $custom_status is null, return false or else return the status object
 		return null !== $custom_status ? $custom_status : false;
 	}
 
@@ -721,7 +793,7 @@ class Custom_Status extends Module {
 	 * @param string $new_status Slug for the new status
 	 * @return true|WP_Error
 	 */
-	public function reassign_post_status( $old_status, $new_status ) {
+	public function reassign_post_status( string $old_status, string $new_status ): bool|WP_Error {
 		$old_status_post_ids = ( new WP_Query( [
 			'post_type'      => VIP_Workflow::instance()->get_supported_post_types(),
 			'post_status'    => $old_status,
@@ -772,7 +844,7 @@ class Custom_Status extends Module {
 	 *
 	 * @return array $post_states
 	 */
-	public function add_status_to_post_states( $post_states, $post ) {
+	public function add_status_to_post_states( array $post_states, WP_Post $post ) {
 		if ( ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types(), true ) ) {
 			// Return early if this post type doesn't support custom statuses.
 			return $post_states;
