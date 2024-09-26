@@ -1,13 +1,12 @@
 import apiFetch from '@wordpress/api-fetch';
 import {
 	Button,
+	__experimentalDivider as Divider,
+	__experimentalHStack as HStack,
 	Modal,
 	TextControl,
 	TextareaControl,
 	Tooltip,
-	ToggleControl,
-	__experimentalDivider as Divider,
-	__experimentalHStack as HStack,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
@@ -18,9 +17,6 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	const [ error, setError ] = useState( null );
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
-	const [ isReviewRequired, setIsReviewRequired ] = useState(
-		customStatus?.is_review_required || false
-	);
 	const [ isRequesting, setIsRequesting ] = useState( false );
 
 	let titleText;
@@ -34,7 +30,6 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 		const data = {
 			name,
 			description,
-			is_review_required: isReviewRequired,
 		};
 
 		try {
@@ -84,13 +79,6 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 				value={ description }
 			/>
 			<Divider margin="1rem" />
-
-			<ToggleControl
-				label={ __( 'This status requires a review', 'vip-workflow' ) }
-				help={ __( 'Require a review from an editor to move to the next status.', 'vip-workflow' ) }
-				checked={ isReviewRequired }
-				onChange={ value => setIsReviewRequired( value ) }
-			/>
 
 			<HStack justify="right">
 				<Tooltip
