@@ -8,8 +8,8 @@ import { sprintf } from '@wordpress/i18n';
  * @param object props
  */
 export default function UserSelectFormTokenField( {
-	requiredUserLogins,
-	onSelectionChange,
+	requiredUsers,
+	onUsersChanged,
 	help,
 	...formTokenFieldProps
 } ) {
@@ -19,7 +19,7 @@ export default function UserSelectFormTokenField( {
 
 	const [ selectedUserTokens, setSelectedUserTokens ] = useState(
 		// Map login strings to TokenItem objects
-		requiredUserLogins.map( userLogin => ( { title: userLogin, value: userLogin } ) )
+		requiredUsers.map( user => ( { title: user.slug, value: user.slug, user } ) )
 	);
 
 	useEffect( () => {
@@ -41,34 +41,34 @@ export default function UserSelectFormTokenField( {
 	const suggestions = useMemo( () => {
 		let usersToSuggest = searchedUsers;
 
-		if ( searchedUsers.length > 0 && selectedUserTokens.length > 0 ) {
+		if ( searchedUsers.length > 0 && requiredUsers.length > 0 ) {
 			// Remove already-selected users from suggestions
 			const selectedUserMap = {};
-			selectedUserTokens.forEach( token => {
-				selectedUserMap[ token.value ] = true;
+			requiredUsers.forEach( user => {
+				selectedUserMap[ user.id ] = true;
 			} );
 
-			usersToSuggest = searchedUsers.filter( user => ! ( user.user_login in selectedUserMap ) );
+			usersToSuggest = searchedUsers.filter( user => ! ( user.id in selectedUserMap ) );
 		}
 
 		return usersToSuggest.map( user => {
 			return `${ user.name } (${ user.slug })`;
 		} );
-	}, [ searchedUsers, selectedUserTokens ] );
+	}, [ searchedUsers, requiredUsers ] );
 
 	const handleOnChange = selectedTokens => {
 		// When a user is selected from the dropdown, it's a string. Convert to a TokenItem object.
 		const tokenItems = selectedTokens.map( token => {
 			if ( typeof token === 'string' || token instanceof String ) {
-				return convertUserStringToToken( token );
+				return convertSearchedUserToToken( token, searchedUsers );
 			}
 			return token;
 		} );
 
 		setSelectedUserTokens( tokenItems );
 
-		const userLogins = tokenItems.map( token => token.value );
-		onSelectionChange( userLogins );
+		const users = tokenItems.map( token => token.user );
+		onUsersChanged( users );
 	};
 
 	return (
@@ -95,7 +95,7 @@ export default function UserSelectFormTokenField( {
  * Given a tokenString like "Display Name (user_login)", convert it to a TokenItem object.
  * @param string tokenString
  */
-const convertUserStringToToken = tokenString => {
+const convertSearchedUserToToken = ( tokenString, searchedUsers ) => {
 	// From a selection of "Display Name (user_login)", extract the user_login
 
 	// Grab last ' (' in string
@@ -103,11 +103,17 @@ const convertUserStringToToken = tokenString => {
 	// Remove trailing ')'
 	const userLogin = userLoginPart.split( ')' )[ 0 ];
 
+	// Find the full user object that matches the user_login
+	const matchingUser = searchedUsers.find( user => user.slug === userLogin );
+
 	return {
 		// In a TokenItem, the "title" is an HTML title displayed on hover
 		title: userLogin,
 
 		// The "value" is what's shown in the UI
 		value: userLogin,
+
+		// Store metadata about the user with this token so we can pass it to the parent component easily
+		user: matchingUser,
 	};
 };

@@ -21,19 +21,17 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	// Custom status properties
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
-	const [ requiredUserLogins, setRequiredUserLogins ] = useState(
-		customStatus?.required_user_logins || []
-	);
+	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.required_users || [] );
 
 	// Computed properties
 	const isReviewRequired = useMemo( () => {
-		return requiredUserLogins.length > 0;
-	}, [ requiredUserLogins ] );
+		return requiredUsers.length > 0;
+	}, [ requiredUsers ] );
 
 	// Modal properties
 	const [ error, setError ] = useState( null );
 	const [ isRequesting, setIsRequesting ] = useState( false );
-	const [ isReviewSectionVisible, setIsReviewSectionVisible ] = useState( isReviewRequired );
+	const [ isReviewSectionToggled, setIsReviewSectionToggled ] = useState( isReviewRequired );
 
 	let titleText;
 	if ( customStatus ) {
@@ -43,10 +41,12 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	}
 
 	const handleSave = async () => {
+		const userIds = requiredUsers.map( user => user.id );
+
 		const data = {
 			name,
 			description,
-			required_user_logins: requiredUserLogins,
+			required_user_ids: userIds,
 		};
 
 		try {
@@ -103,19 +103,19 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 					'Require a specific user or role to advance to the next status.',
 					'vip-workflow'
 				) }
-				checked={ isReviewSectionVisible }
-				onChange={ setIsReviewSectionVisible }
+				checked={ isReviewSectionToggled }
+				onChange={ setIsReviewSectionToggled }
 			/>
 
-			{ ( isReviewRequired || isReviewSectionVisible ) && (
+			{ ( isReviewRequired || isReviewSectionToggled ) && (
 				<>
 					<Card>
 						<CardBody>
 							<UserSelectFormTokenField
 								label={ __( 'Allowed users', 'vip-workflow' ) }
 								help={ __( 'These users are allowed to advance this status.', 'vip-workflow' ) }
-								requiredUserLogins={ requiredUserLogins }
-								onSelectionChange={ setRequiredUserLogins }
+								requiredUsers={ requiredUsers }
+								onUsersChanged={ setRequiredUsers }
 							/>
 						</CardBody>
 					</Card>

@@ -33,7 +33,7 @@ class CustomStatusEndpoint {
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
-				'name'                 => [
+				'name'              => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						return ! empty( trim( $param ) );
@@ -44,22 +44,20 @@ class CustomStatusEndpoint {
 				],
 
 				// Optional parameters
-				'description'          => [
+				'description'       => [
 					'default'           => '',
 					'sanitize_callback' => function ( $param ) {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
-				'required_user_logins' => [
+				'required_user_ids' => [
 					'default'           => [],
 					'validate_callback' => function ( $param ) {
-						$user_logins = array_map( 'sanitize_text_field', $param );
-						$user_ids    = self::convert_user_logins_to_user_ids( $user_logins );
-
-						return count( $user_ids ) === count( $user_logins );
+						$user_ids = array_map( 'absint', $param );
+						return self::is_valid_user_ids( $user_ids );
 					},
 					'sanitize_callback' => function ( $param ) {
-						return array_map( 'sanitize_text_field', $param );
+						return array_map( 'absint', $param );
 					},
 				],
 			],
@@ -71,7 +69,7 @@ class CustomStatusEndpoint {
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
-				'name'                 => [
+				'name'              => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						return ! empty( trim( $param ) );
@@ -80,7 +78,7 @@ class CustomStatusEndpoint {
 						return trim( $param );
 					},
 				],
-				'id'                   => [
+				'id'                => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
@@ -93,22 +91,20 @@ class CustomStatusEndpoint {
 				],
 
 				// Optional parameters
-				'description'          => [
+				'description'       => [
 					'default'           => '',
 					'sanitize_callback' => function ( $param ) {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
-				'required_user_logins' => [
+				'required_user_ids' => [
 					'default'           => [],
 					'validate_callback' => function ( $param ) {
-						$user_logins = array_map( 'sanitize_text_field', $param );
-						$user_ids    = self::convert_user_logins_to_user_ids( $user_logins );
-
-						return count( $user_ids ) === count( $user_logins );
+						$user_ids = array_map( 'absint', $param );
+						return self::is_valid_user_ids( $user_ids );
 					},
 					'sanitize_callback' => function ( $param ) {
-						return array_map( 'sanitize_text_field', $param );
+						return array_map( 'absint', $param );
 					},
 				],
 			],
@@ -183,12 +179,10 @@ class CustomStatusEndpoint {
 	 * @param WP_REST_Request $request
 	 */
 	public static function handle_create_status( WP_REST_Request $request ) {
-		$status_name        = sanitize_text_field( $request->get_param( 'name' ) );
-		$status_slug        = sanitize_title( $request->get_param( 'name' ) );
-		$status_description = $request->get_param( 'description' );
-
-		$required_user_logins     = $request->get_param( 'required_user_logins' );
-		$status_required_user_ids = self::convert_user_logins_to_user_ids( $required_user_logins );
+		$status_name              = sanitize_text_field( $request->get_param( 'name' ) );
+		$status_slug              = sanitize_title( $request->get_param( 'name' ) );
+		$status_description       = $request->get_param( 'description' );
+		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -233,13 +227,11 @@ class CustomStatusEndpoint {
 	 * @param WP_REST_Request $request
 	 */
 	public static function handle_update_status( WP_REST_Request $request ) {
-		$term_id            = $request->get_param( 'id' );
-		$status_name        = sanitize_text_field( $request->get_param( 'name' ) );
-		$status_slug        = sanitize_title( $request->get_param( 'name' ) );
-		$status_description = $request->get_param( 'description' );
-
-		$required_user_logins     = $request->get_param( 'required_user_logins' );
-		$status_required_user_ids = self::convert_user_logins_to_user_ids( $required_user_logins );
+		$term_id                  = $request->get_param( 'id' );
+		$status_name              = sanitize_text_field( $request->get_param( 'name' ) );
+		$status_slug              = sanitize_title( $request->get_param( 'name' ) );
+		$status_description       = $request->get_param( 'description' );
+		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -354,17 +346,15 @@ class CustomStatusEndpoint {
 
 	// Utility functions
 
-	private static function convert_user_logins_to_user_ids( $user_logins ) {
-		$user_ids = [];
-
-		foreach ( $user_logins as $user_login ) {
-			$user = get_user_by( 'login', $user_login );
-			if ( $user instanceof WP_User ) {
-				$user_ids[] = $user->ID;
+	private static function is_valid_user_ids( $user_ids ) {
+		foreach ( $user_ids as $user_id ) {
+			$user = get_user_by( 'id', $user_id );
+			if ( ! $user instanceof WP_User ) {
+				return false;
 			}
 		}
 
-		return $user_ids;
+		return true;
 	}
 
 	// Public API

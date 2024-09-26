@@ -1346,13 +1346,20 @@ class Custom_Status extends Module {
 	}
 
 	public function add_custom_status_ui_properties( $custom_status ) {
-		// Add 'required_user_logins' data with display names for status restrictions UI
+		// Add 'required_users' data with display names for status restrictions UI
 		$required_user_ids = $custom_status->required_user_ids ?? [];
 
-		$custom_status->required_user_logins = array_filter(array_map( function ( $user_id ) {
+		$custom_status->required_users = array_filter( array_map( function ( $user_id ) {
 			$user = get_user_by( 'ID', $user_id );
-			return $user instanceof WP_User ? $user->user_login : false;
-		}, $required_user_ids ));
+			if ( $user instanceof WP_User ) {
+				return [
+					'id'   => $user->ID,
+					'slug' => $user->user_login,
+				];
+			} else {
+				return false;
+			}
+		}, $required_user_ids ) );
 
 		return $custom_status;
 	}
