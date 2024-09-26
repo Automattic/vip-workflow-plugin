@@ -277,13 +277,6 @@ class CustomStatusEndpoint {
 		// ToDo: Ensure that we don't do an update when the name and description are the same as the current status
 		$updated_status = $custom_status_module->update_custom_status( $term_id, $args );
 
-		/**
-		* Add additional data to status terms used in the UI
-		*
-		* @param WP_Term $updated_status An updated status term.
-		*/
-		$updated_status = apply_filters( 'vw_custom_status_ui_additions', $updated_status );
-
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $updated_status );
 	}
