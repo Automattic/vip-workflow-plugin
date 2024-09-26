@@ -10,22 +10,21 @@ require_once __DIR__ . '/rest/editorial-metadata-endpoint.php';
 
 use VIPWorkflow\Modules\EditorialMetadata\REST\EditorialMetadataEndpoint;
 use VIPWorkflow\Modules\Shared\PHP\InstallUtilities;
-use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
 use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_Term;
 
 class EditorialMetadata {
 
-	// ToDo: Add date, and user as supported metadata types
 	const SUPPORTED_METADATA_TYPES = [
 		'checkbox',
 		'text',
 		'date',
 	];
 	const METADATA_TAXONOMY        = 'vw_editorial_meta';
-	const METADATA_POSTMETA_KEY    = 'vw_editorial_meta';
 	const SETTINGS_SLUG            = 'vw-editorial-metadata';
+	const METADATA_TYPE_KEY        = 'type';
+	const METADATA_POSTMETA_KEY    = 'postmeta_key';
 
 	private static $editorial_metadata_terms_cache = [];
 
@@ -50,6 +49,12 @@ class EditorialMetadata {
 
 		// Load block editor CSS
 		add_action( 'enqueue_block_editor_assets', [ __CLASS__, 'load_styles_for_block_editor' ] );
+
+		// Add metadata fields to term
+		add_filter( 'get_term', [ __CLASS__, 'add_metadata_to_term' ], 10, 1 );
+
+		// Add metadata fields to all terms
+		add_filter( 'get_terms', [ __CLASS__, 'add_metadata_to_terms' ], 10, 2 );
 	}
 
 	/**
@@ -61,7 +66,7 @@ class EditorialMetadata {
 		$editorial_metadata_terms = self::get_editorial_metadata_terms();
 
 		foreach ( $editorial_metadata_terms as $term ) {
-			$post_meta_key  = self::get_postmeta_key( $term );
+			$post_meta_key  = $term->meta[ self::METADATA_POSTMETA_KEY ];
 			$post_meta_args = self::get_postmeta_args( $term );
 
 			foreach ( VIP_Workflow::instance()->get_supported_post_types() as $post_type ) {
@@ -205,7 +210,7 @@ class EditorialMetadata {
 	// Public API
 
 	/**
-	 * Get all of the editorial metadata terms as objects and sort by position
+	 * Get all of the editorial metadata terms as objects
 	 *
 	 * @param array $filter_args Filter to specific arguments
 	 * @return array $ordered_terms The terms as they should be ordered
@@ -226,52 +231,12 @@ class EditorialMetadata {
 			$terms = [];
 		}
 
-		$ordered_terms = [];
-		$hold_to_end   = [];
-
-		// Order the terms
-		foreach ( $terms as $key => $term ) {
-			// Unencode and set all of our psuedo term meta because we need the position if it exists
-			$unencoded_description = TaxonomyUtilities::get_unencoded_description( $term->description );
-
-			if ( is_array( $unencoded_description ) ) {
-				foreach ( $unencoded_description as $key => $value ) {
-					$term->$key = $value;
-				}
-			}
-
-			// We require the position key later on
-			if ( ! isset( $term->position ) ) {
-				$term->position = false;
-			}
-
-			// Set the post meta key for the term, this is not set when the term is first created due to a lack of term_id.
-			if ( ! isset( $term->meta_key ) ) {
-				$term->meta_key = self::get_postmeta_key( $term );
-			}
-
-			// Only add the term to the ordered array if it has a set position and doesn't conflict with another key
-			// Otherwise, hold it for later
-			if ( $term->position && ! array_key_exists( $term->position, $ordered_terms ) ) {
-				$ordered_terms[ (int) $term->position ] = $term;
-			} else {
-				$hold_to_end[] = $term;
-			}
-		}
-		// Sort the items numerically by key
-		ksort( $ordered_terms, SORT_NUMERIC );
-
-		// Append all of the terms that didn't have an existing position
-		foreach ( $hold_to_end as $unpositioned_term ) {
-			$ordered_terms[] = $unpositioned_term;
-		}
-
-		$ordered_terms = array_values( $ordered_terms );
+		$terms = array_values( $terms );
 
 		// Set the internal object cache
-		self::$editorial_metadata_terms_cache = $ordered_terms;
+		self::$editorial_metadata_terms_cache = $terms;
 
-		return $ordered_terms;
+		return $terms;
 	}
 
 	/**
@@ -286,66 +251,114 @@ class EditorialMetadata {
 			return false;
 		}
 
+		$term = false;
+
 		if ( 'id' === $field ) {
-			$field = 'term_id';
+			$term = get_term( $value, self::METADATA_TAXONOMY );
+		} else {
+			$term = get_term_by( $field, $value, self::METADATA_TAXONOMY );
 		}
-
-		// ToDo: This is inefficient as we are fetching all the terms, and then finding the one that matches.
-		$terms = self::get_editorial_metadata_terms();
-		$term  = wp_filter_object_list( $terms, [ $field => $value ] );
-
-		$term = array_shift( $term );
 
 		return null !== $term ? $term : false;
 	}
 
 	/**
+	 * Add all the metadata fields to a term
+	 *
+	 * @param WP_Term $term The term to add metadata to
+	 * @return WP_Term $term The term with metadata added
+	 */
+	public static function add_metadata_to_term( WP_Term $term ): WP_Term {
+		if ( ! isset( $term->taxonomy ) || self::METADATA_TAXONOMY !== $term->taxonomy ) {
+			return $term;
+		}
+
+		// if metadata is already set, don't overwrite it
+		if ( isset( $term->meta ) && isset( $term->meta[ self::METADATA_TYPE_KEY ] ) && isset( $term->meta[ self::METADATA_POSTMETA_KEY ] ) ) {
+			return $term;
+		}
+
+		$term_meta = [];
+		$term_meta[ self::METADATA_TYPE_KEY ] = get_term_meta( $term->term_id, self::METADATA_TYPE_KEY, true );
+		$term_meta[ self::METADATA_POSTMETA_KEY ] = get_term_meta( $term->term_id, self::METADATA_POSTMETA_KEY, true );
+
+		if ( '' === $term_meta[ self::METADATA_TYPE_KEY ] || '' === $term_meta[ self::METADATA_POSTMETA_KEY ] ) {
+			return $term;
+		}
+
+		$term->meta = $term_meta;
+
+		return $term;
+	}
+
+	/**
+	 * Add all the metadata fields to all terms in a list
+	 *
+	 * @param array $terms The terms to add metadata to
+	 * @param array $taxonomies The taxonomies to add metadata to
+	 * @return array $terms The terms with metadata added
+	 */
+	public static function add_metadata_to_terms( array $terms, array $taxonomies ): array {
+		if ( ! in_array( self::METADATA_TAXONOMY, $taxonomies ) ) {
+			return $terms;
+		}
+
+		foreach ( $terms as $term ) {
+			$term = self::add_metadata_to_term( $term );
+		}
+
+		return $terms;
+	}
+
+	/**
 	 * Insert a new editorial metadata term
-	 * @todo Handle conflicts with existing terms at that position (if relevant)
+	 *
+	 * @param array $args The arguments for the new term
+	 * @return WP_Term|WP_Error $term The new term or a WP_Error object if something disastrous happened
 	 */
 	public static function insert_editorial_metadata_term( array $args ): WP_Term|WP_Error {
-		// Term is always added to the end of the list
-		$default_position = count( self::get_editorial_metadata_terms() ) + 1;
-
-		$defaults  = [
-			'position'    => $default_position,
-			'name'        => '',
-			'slug'        => '',
-			'description' => '',
-			'type'        => '',
+		$term_to_save = [
+			'slug'        => $args['slug'] ?? '',
+			'description' => $args['description'] ?? '',
 		];
-		$args      = array_merge( $defaults, $args );
-		$term_name = $args['name'];
-		unset( $args['name'] );
+		$term_name = $args['name'] ?? '';
 
-		// We're encoding metadata that isn't supported by default in the term's description field
-		$args_to_encode = [
-			'description' => $args['description'],
-			'position'    => $args['position'],
-			'type'        => $args['type'],
-		];
+		$inserted_term = wp_insert_term( $term_name, self::METADATA_TAXONOMY, $term_to_save );
 
-		$encoded_description = TaxonomyUtilities::get_encoded_description( $args_to_encode );
-		$args['description'] = $encoded_description;
-
-		unset( $args['position'] );
-		unset( $args['type'] );
-
-		$inserted_term = wp_insert_term( $term_name, self::METADATA_TAXONOMY, $args );
+		if ( is_wp_error( $inserted_term ) ) {
+			return $inserted_term;
+		}
 
 		// Reset the internal object cache
 		self::$editorial_metadata_terms_cache = [];
 
-		// Populate the inserted term with the new values, or else only the term_taxonomy_id and term_id are returned.
-		if ( is_wp_error( $inserted_term ) ) {
-			return $inserted_term;
-		} else {
-			// Update the term with the meta_key, as we use the term_id to generate it
-			self::update_editorial_metadata_term( $inserted_term['term_id'] );
-			$inserted_term = self::get_editorial_metadata_term_by( 'id', $inserted_term['term_id'] );
+		$term_id = $inserted_term['term_id'];
+
+		$metadata_type = $args['type'] ?? '';
+		$metadata_postmeta_key  = self::get_postmeta_key( $metadata_type, $term_id );
+
+		$type_meta_result = add_term_meta( $term_id, self::METADATA_TYPE_KEY, $metadata_type );
+		if ( is_wp_error( $type_meta_result ) ) {
+			return $type_meta_result;
+		} else if ( ! $type_meta_result ) {
+			// If we can't save the type, we should delete the term
+			wp_delete_term( $term_id, self::METADATA_TAXONOMY );
+			return new WP_Error( 'invalid', __( 'Unable to create editorial metadata.', 'vip-workflow' ) );
 		}
 
-		return $inserted_term;
+		$postmeta_meta_result = add_term_meta( $term_id, self::METADATA_POSTMETA_KEY, $metadata_postmeta_key );
+		if ( is_wp_error( $postmeta_meta_result ) ) {
+			return $postmeta_meta_result;
+		} else if ( ! $postmeta_meta_result ) {
+			// If we can't save the postmeta key, we should delete the term
+			delete_term_meta( $term_id, self::METADATA_TYPE_KEY );
+			wp_delete_term( $term_id, self::METADATA_TAXONOMY );
+			return new WP_Error( 'invalid', __( 'Unable to create editorial metadata.', 'vip-workflow' ) );
+		}
+
+		$term_result = self::get_editorial_metadata_term_by( 'id', $term_id );
+
+		return $term_result;
 	}
 
 	/**
@@ -357,53 +370,32 @@ class EditorialMetadata {
 	*/
 	public static function update_editorial_metadata_term( int $term_id, array $args = [] ): WP_Term|WP_Error {
 		$old_term = self::get_editorial_metadata_term_by( 'id', $term_id );
-		if ( ! $old_term ) {
+		if ( is_wp_error( $old_term ) ) {
+			return $old_term;
+		} else if ( ! $old_term ) {
 			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ) );
 		}
 
 		// Reset the internal object cache
 		self::$editorial_metadata_terms_cache = [];
 
-		$new_args = [];
-
-		$old_args = [
-			'position'    => $old_term->position,
-			'name'        => $old_term->name,
-			'slug'        => $old_term->slug,
-			'description' => $old_term->description,
-			'type'        => $old_term->type,
-			'meta_key'    => isset( $old_term->meta_key ) ? $old_term->meta_key : self::get_postmeta_key( $old_term ),
+		$term_fields_to_update = [
+			'name'    => isset( $args['name'] ) ? $args['name'] : $old_term->name,
+			'slug'    => isset( $args['slug'] ) ? $args['slug'] : $old_term->slug,
+			'description' => isset( $args['description'] ) ? $args['description'] : $old_term->description,
 		];
 
-		$new_args = array_merge( $old_args, $args );
+		$updated_term = wp_update_term( $term_id, self::METADATA_TAXONOMY, $term_fields_to_update );
 
-		// We're encoding metadata that isn't supported by default in the term's description field
-		$args_to_encode          = [
-			'description' => $new_args['description'],
-			'position'    => $new_args['position'],
-			'type'        => $new_args['type'],
-			'meta_key'    => $new_args['meta_key'],
-		];
-		$encoded_description     = TaxonomyUtilities::get_encoded_description( $args_to_encode );
-		$new_args['description'] = $encoded_description;
-
-		unset( $new_args['position'] );
-		unset( $new_args['type'] );
-		unset( $new_args['meta_key'] );
-
-		$updated_term = wp_update_term( $term_id, self::METADATA_TAXONOMY, $new_args );
-
-		// Reset the internal object cache
-		self::$editorial_metadata_terms_cache = [];
-
-		// Populate the updated term with the new values, or else only the term_taxonomy_id and term_id are returned.
 		if ( is_wp_error( $updated_term ) ) {
 			return $updated_term;
-		} else {
-			$updated_term = self::get_editorial_metadata_term_by( 'id', $term_id );
 		}
 
-		return $updated_term;
+		// No need to update the metadata as type can't be changed, and so neither can the postmeta key.
+
+		$term_result = self::get_editorial_metadata_term_by( 'id', $term_id );
+
+		return $term_result;
 	}
 
 	/**
@@ -413,31 +405,28 @@ class EditorialMetadata {
 	 * @return bool $result Whether or not the term was deleted
 	 */
 	public static function delete_editorial_metadata_term( int $term_id ): bool {
-		$term          = self::get_editorial_metadata_term_by( 'id', $term_id );
-		$post_meta_key = self::get_postmeta_key( $term );
+		$term = self::get_editorial_metadata_term_by( 'id', $term_id );
+		if ( is_wp_error( $term ) ) {
+			return $term;
+		} else if ( ! $term ) {
+			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ) );
+		}
+
+		// Delete the post meta for the term
+		$post_meta_key = self::get_postmeta_key( $term->meta[ self::METADATA_TYPE_KEY ], $term_id );
 		delete_post_meta_by_key( $post_meta_key );
 
-		$result = wp_delete_term( $term_id, self::METADATA_TAXONOMY );
+		delete_term_meta( $term_id, self::METADATA_TYPE_KEY );
 
+		delete_term_meta( $term_id, self::METADATA_POSTMETA_KEY );
+
+		$result = wp_delete_term( $term_id, self::METADATA_TAXONOMY );
 		if ( ! $result ) {
 			return new WP_Error( 'invalid', __( 'Unable to delete editorial metadata term.', 'vip-workflow' ) );
 		}
 
 		// Reset the internal object cache
 		self::$editorial_metadata_terms_cache = [];
-
-		// Re-order the positions after deletion
-		$editorial_metadata_terms = self::get_editorial_metadata_terms();
-
-		// ToDo: Optimize this to only work on the next or previous item.
-		$current_postition = 1;
-
-		// save each status with the new position
-		foreach ( $editorial_metadata_terms as $editorial_metadata_term ) {
-			self::update_editorial_metadata_term( $editorial_metadata_term->term_id, [ 'position' => $current_postition ] );
-
-			++$current_postition;
-		}
 
 		return $result;
 	}
@@ -449,7 +438,7 @@ class EditorialMetadata {
 	 */
 	public static function get_postmeta_args( WP_Term $term ): array {
 		$arg_type = '';
-		switch ( $term->type ) {
+		switch ( $term->meta[ self::METADATA_TYPE_KEY ] ) {
 			case 'checkbox':
 				$arg_type = 'boolean';
 				break;
@@ -482,13 +471,14 @@ class EditorialMetadata {
 	 *
 	 * Key is in the form of vw_editorial_meta_{type}_{term_id}
 	 *
-	 * @param WP_Term $term The term object
+	 * @param string $term_type The type of term
+	 * @param int $term_id The term's unique ID
 	 * @return string $postmeta_key Unique key
 	 */
-	public static function get_postmeta_key( WP_Term $term ): string {
-		$key          = self::METADATA_POSTMETA_KEY;
-		$prefix       = "{$key}_{$term->type}";
-		$postmeta_key = "{$prefix}_" . $term->term_id;
+	public static function get_postmeta_key( string $term_type, int $term_id ): string {
+		$key          = self::METADATA_TAXONOMY;
+		$prefix       = "{$key}_{$term_type}";
+		$postmeta_key = "{$prefix}_" . $term_id;
 		return $postmeta_key;
 	}
 }

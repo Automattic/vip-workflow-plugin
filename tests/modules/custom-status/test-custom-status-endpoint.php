@@ -35,7 +35,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 			'is_review_required' => true,
 		] );
 
-		wp_set_current_user( self::$administrator_user_id );
+		wp_set_current_user( $this->administrator_user_id );
 		$this->add_rest_nonce( $request );
 		$response = $this->server->dispatch( $request );
 		wp_set_current_user( null );
@@ -73,7 +73,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 			'is_review_required' => false,
 		] );
 
-		wp_set_current_user( self::$administrator_user_id );
+		wp_set_current_user( $this->administrator_user_id );
 		$this->add_rest_nonce( $request );
 		$response = $this->server->dispatch( $request );
 		wp_set_current_user( null );
@@ -98,7 +98,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( '/%s/%s/%d', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status', $term_to_delete_id ) );
 
-		wp_set_current_user( self::$administrator_user_id );
+		wp_set_current_user( $this->administrator_user_id );
 		$this->add_rest_nonce( $request );
 		$response = $this->server->dispatch( $request );
 		wp_set_current_user( null );
@@ -134,7 +134,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 			],
 		] );
 
-		wp_set_current_user( self::$administrator_user_id );
+		wp_set_current_user( $this->administrator_user_id );
 		$this->add_rest_nonce( $request );
 		$response = $this->server->dispatch( $request );
 		wp_set_current_user( null );

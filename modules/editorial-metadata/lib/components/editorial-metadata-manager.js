@@ -12,10 +12,10 @@ import {
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
-import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
 import ErrorNotice from '../../../shared/js/components/error-notice';
 import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
+import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
 
 export default function EditorialMetadataManager( {
 	supportedMetadataTypes,
@@ -42,21 +42,28 @@ export default function EditorialMetadataManager( {
 
 		if ( eMetadataTerm && ! isConfirmingDelete ) {
 			setEMetadataTerms(
-				eMetadataTerms.map( eMetadataTerm => {
-					if ( eMetadataTerm.term_id === eMetadataTermResult.term_id ) {
-						return eMetadataTermResult;
-					}
-					return eMetadataTerm;
-				} )
+				eMetadataTerms
+					.map( eMetadataTerm => {
+						if ( eMetadataTerm.term_id === eMetadataTermResult.term_id ) {
+							return eMetadataTermResult;
+						}
+						return eMetadataTerm;
+					} )
+					.sort( ( termA, termB ) => termA.name.localeCompare( termB.name ) )
 			);
 		} else if ( isConfirmingDelete ) {
 			setEMetadataTerms(
-				eMetadataTerms.filter(
-					eMetadataTerm => eMetadataTerm.term_id !== eMetadataTermResult.term_id
-				)
+				eMetadataTerms
+					.filter( eMetadataTerm => eMetadataTerm.term_id !== eMetadataTermResult.term_id )
+					.sort( ( termA, termB ) => termA.name.localeCompare( termB.name ) )
 			);
 		} else {
-			setEMetadataTerms( [ ...eMetadataTerms, eMetadataTermResult ] );
+			// Add new term to the list and sort it
+			setEMetadataTerms(
+				[ ...eMetadataTerms, eMetadataTermResult ].sort( ( termA, termB ) =>
+					termA.name.localeCompare( termB.name )
+				)
+			);
 		}
 
 		setIsCreateEditModalVisible( false );
@@ -136,7 +143,7 @@ export default function EditorialMetadataManager( {
 											<Text>
 												<i>{ eMetadataTerm.description }</i>
 											</Text>
-											<Text>{ convertMetadataTypeToLabel( eMetadataTerm.type ) }</Text>
+											<Text>{ convertMetadataTypeToLabel( eMetadataTerm.meta.type ) }</Text>
 										</Flex>
 									</CardHeader>
 									<CardFooter>
