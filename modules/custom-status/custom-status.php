@@ -6,14 +6,21 @@
 
 namespace VIPWorkflow\Modules;
 
+// REST endpoints
 require_once __DIR__ . '/rest/custom-status-endpoint.php';
 
+// Term meta
+require_once __DIR__ . '/meta/required-user-ids.php';
+
+use VIPWorkflow\Modules\CustomStatus\Meta\RequiredUserIds;
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\Shared\PHP\TaxonomyUtilities;
 use WP_Error;
 use WP_Query;
+use WP_User;
+
 use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
 
 class Custom_Status extends Module {
@@ -87,9 +94,6 @@ class Custom_Status extends Module {
 		// Pagination for custom post statuses when previewing posts
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
 
-		// REST endpoints
-		CustomStatusEndpoint::init();
-
 		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
 	}
 
@@ -134,10 +138,9 @@ class Custom_Status extends Module {
 			[
 				'term' => __( 'Pending Review' ),
 				'args' => [
-					'slug'               => 'pending',
-					'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
-					'position'           => 5,
-					'is_review_required' => true,
+					'slug'        => 'pending',
+					'description' => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
+					'position'    => 5,
 				],
 			],
 		];
@@ -462,7 +465,7 @@ class Custom_Status extends Module {
 	 * 'description'. There is no default. If exists, will be added to the database
 	 * along with the term. Expected to be a string.
 	 *
-	 * 'is_review_required'. Expected to be a boolean. Default is false.
+	 * 'required_user_ids'. An optional array of user IDs that are required to review the post in the current status.
 	 *
 	 * @param int|string $term The status to add or update
 	 * @param array|string $args Change the values of the inserted term
@@ -480,6 +483,12 @@ class Custom_Status extends Module {
 			$args['position'] = $default_position;
 		}
 
+		$required_user_ids = [];
+		if ( isset( $args['required_user_ids'] ) ) {
+			$required_user_ids = $args['required_user_ids'];
+			unset( $args['required_user_ids'] );
+		}
+
 		$encoded_description = TaxonomyUtilities::get_encoded_description( $args );
 
 		$inserted_term = wp_insert_term( $term, self::TAXONOMY_KEY, [
@@ -490,12 +499,18 @@ class Custom_Status extends Module {
 		// Reset our internal object cache
 		$this->custom_statuses_cache = [];
 
-		// Populate the inserted term with the new values, or else only the term_taxonomy_id and term_id are returned.
 		if ( is_wp_error( $inserted_term ) ) {
 			return $inserted_term;
-		} else {
-			$inserted_term = $this->get_custom_status_by( 'id', $inserted_term['term_id'] );
 		}
+
+		// Add term meta
+		if ( [] !== $required_user_ids ) {
+			RequiredUserIds::update( $inserted_term['term_id'], $required_user_ids );
+		}
+
+		// Populate the inserted term with the new values, or else only the term_taxonomy_id and term_id are returned.
+
+		$inserted_term = $this->get_custom_status_by( 'id', $inserted_term['term_id'] );
 
 		return $inserted_term;
 	}
@@ -541,26 +556,28 @@ class Custom_Status extends Module {
 			}
 		}
 		// We're encoding metadata that isn't supported by default in the term's description field
-		$args_to_encode                       = [];
-		$args_to_encode['description']        = $args['description'] ?? $old_status->description;
-		$args_to_encode['position']           = $args['position'] ?? $old_status->position;
-		$args_to_encode['is_review_required'] = $args['is_review_required'] ?? $old_status->is_review_required ?? false;
+		$args_to_encode                = [];
+		$args_to_encode['description'] = $args['description'] ?? $old_status->description;
+		$args_to_encode['position']    = $args['position'] ?? $old_status->position;
 
 		$encoded_description = TaxonomyUtilities::get_encoded_description( $args_to_encode );
 		$args['description'] = $encoded_description;
 
 		$updated_status = wp_update_term( $status_id, self::TAXONOMY_KEY, $args );
 
-		// Reset status cache again, as reassign_post_status() will recache prior statuses
-		$this->custom_statuses_cache = [];
-
 		// Populate the updated term with the new values, or else only the term_taxonomy_id and term_id are returned.
 		if ( is_wp_error( $updated_status ) ) {
 			return $updated_status;
-		} else {
-			$updated_status = $this->get_custom_status_by( 'id', $status_id );
 		}
 
+		// Add term meta
+		$required_user_ids = $args['required_user_ids'] ?? $old_status->required_user_ids ?? [];
+		RequiredUserIds::update( $status_id, $required_user_ids );
+
+		// Reset status cache again, as get_custom_status_by() will recache statuses
+		$this->custom_statuses_cache = [];
+
+		$updated_status = $this->get_custom_status_by( 'id', $status_id );
 		return $updated_status;
 	}
 
@@ -662,6 +679,23 @@ class Custom_Status extends Module {
 					$status->$key = $value;
 				}
 			}
+
+			// Add term meta
+			$status->required_user_ids = RequiredUserIds::get( $status->term_id );
+
+			// Add 'required_users' computed property with additional metadata about users (for UI purporses)
+			$status->required_users = array_filter( array_map( function ( $user_id ) {
+				$user = get_user_by( 'ID', $user_id );
+				if ( $user instanceof WP_User ) {
+					return [
+						'id'   => $user->ID,
+						'slug' => $user->user_login,
+					];
+				} else {
+					return false;
+				}
+			}, $status->required_user_ids ) );
+
 			// We require the position key later on (e.g. management table)
 			if ( ! isset( $status->position ) ) {
 				$status->position = false;

@@ -11,6 +11,7 @@ use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_REST_Request;
 use WP_Term;
+use WP_User;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -32,7 +33,7 @@ class CustomStatusEndpoint {
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
-				'name'               => [
+				'name'              => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						return ! empty( trim( $param ) );
@@ -43,16 +44,20 @@ class CustomStatusEndpoint {
 				],
 
 				// Optional parameters
-				'description'        => [
+				'description'       => [
 					'default'           => '',
 					'sanitize_callback' => function ( $param ) {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
-				'is_review_required' => [
-					'default'           => false,
+				'required_user_ids' => [
+					'default'           => [],
+					'validate_callback' => function ( $param ) {
+						$user_ids = array_map( 'absint', $param );
+						return self::is_valid_user_ids( $user_ids );
+					},
 					'sanitize_callback' => function ( $param ) {
-						return boolval( $param );
+						return array_map( 'absint', $param );
 					},
 				],
 			],
@@ -64,7 +69,7 @@ class CustomStatusEndpoint {
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
-				'name'               => [
+				'name'              => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						return ! empty( trim( $param ) );
@@ -73,7 +78,7 @@ class CustomStatusEndpoint {
 						return trim( $param );
 					},
 				],
-				'id'                 => [
+				'id'                => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
@@ -86,16 +91,20 @@ class CustomStatusEndpoint {
 				],
 
 				// Optional parameters
-				'description'        => [
+				'description'       => [
 					'default'           => '',
 					'sanitize_callback' => function ( $param ) {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
-				'is_review_required' => [
-					'default'           => false,
+				'required_user_ids' => [
+					'default'           => [],
+					'validate_callback' => function ( $param ) {
+						$user_ids = array_map( 'absint', $param );
+						return self::is_valid_user_ids( $user_ids );
+					},
 					'sanitize_callback' => function ( $param ) {
-						return boolval( $param );
+						return array_map( 'absint', $param );
 					},
 				],
 			],
@@ -170,10 +179,10 @@ class CustomStatusEndpoint {
 	 * @param WP_REST_Request $request
 	 */
 	public static function handle_create_status( WP_REST_Request $request ) {
-		$status_name               = sanitize_text_field( $request->get_param( 'name' ) );
-		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
-		$status_description        = $request->get_param( 'description' );
-		$status_is_review_required = $request->get_param( 'is_review_required' );
+		$status_name              = sanitize_text_field( $request->get_param( 'name' ) );
+		$status_slug              = sanitize_title( $request->get_param( 'name' ) );
+		$status_description       = $request->get_param( 'description' );
+		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -201,9 +210,9 @@ class CustomStatusEndpoint {
 
 		// get status_slug & status_description
 		$args = [
-			'description'        => $status_description,
-			'slug'               => $status_slug,
-			'is_review_required' => $status_is_review_required,
+			'description'       => $status_description,
+			'slug'              => $status_slug,
+			'required_user_ids' => $status_required_user_ids,
 		];
 
 		$add_status_result = $custom_status_module->add_custom_status( $status_name, $args );
@@ -218,11 +227,11 @@ class CustomStatusEndpoint {
 	 * @param WP_REST_Request $request
 	 */
 	public static function handle_update_status( WP_REST_Request $request ) {
-		$term_id                   = $request->get_param( 'id' );
-		$status_name               = sanitize_text_field( $request->get_param( 'name' ) );
-		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
-		$status_description        = $request->get_param( 'description' );
-		$status_is_review_required = $request->get_param( 'is_review_required' );
+		$term_id                  = $request->get_param( 'id' );
+		$status_name              = sanitize_text_field( $request->get_param( 'name' ) );
+		$status_slug              = sanitize_title( $request->get_param( 'name' ) );
+		$status_description       = $request->get_param( 'description' );
+		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -242,8 +251,7 @@ class CustomStatusEndpoint {
 		}
 
 		// Check to make sure the status doesn't already exist
-		$custom_status_by_id = $custom_status_module->get_custom_status_by( 'id', $term_id );
-
+		$custom_status_by_id   = $custom_status_module->get_custom_status_by( 'id', $term_id );
 		$custom_status_by_slug = $custom_status_module->get_custom_status_by( 'slug', $status_slug );
 
 		if ( $custom_status_by_slug && $custom_status_by_id && $custom_status_by_id->slug !== $status_slug ) {
@@ -260,17 +268,17 @@ class CustomStatusEndpoint {
 
 		// get status_name & status_description
 		$args = [
-			'name'               => $status_name,
-			'description'        => $status_description,
-			'slug'               => $status_slug,
-			'is_review_required' => $status_is_review_required,
+			'name'              => $status_name,
+			'description'       => $status_description,
+			'slug'              => $status_slug,
+			'required_user_ids' => $status_required_user_ids,
 		];
 
 		// ToDo: Ensure that we don't do an update when the name and description are the same as the current status
-		$update_status_result = $custom_status_module->update_custom_status( $term_id, $args );
+		$updated_status = $custom_status_module->update_custom_status( $term_id, $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
-		return rest_ensure_response( $update_status_result );
+		return rest_ensure_response( $updated_status );
 	}
 
 	/**
@@ -329,6 +337,19 @@ class CustomStatusEndpoint {
 		return rest_ensure_response( $custom_status_module->get_custom_statuses() );
 	}
 
+	// Utility functions
+
+	private static function is_valid_user_ids( $user_ids ) {
+		foreach ( $user_ids as $user_id ) {
+			$user = get_user_by( 'id', $user_id );
+			if ( ! $user instanceof WP_User ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	// Public API
 
 	/**
@@ -349,3 +370,5 @@ class CustomStatusEndpoint {
 		return rest_url( sprintf( '%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status/reorder' ) );
 	}
 }
+
+CustomStatusEndpoint::init();

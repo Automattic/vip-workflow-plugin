@@ -135,7 +135,7 @@ class EditorialMetadataEndpoint {
 		$editorial_metadata_name        = sanitize_text_field( $request->get_param( 'name' ) );
 		$editorial_metadata_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$editorial_metadata_description = $request->get_param( 'description' );
-		$editorial_metadata_type         = $request->get_param( 'type' );
+		$editorial_metadata_type        = $request->get_param( 'type' );
 
 		// Check that the name isn't numeric
 		if ( is_numeric( $editorial_metadata_name ) ) {

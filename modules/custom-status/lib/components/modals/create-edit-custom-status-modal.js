@@ -1,5 +1,6 @@
 import apiFetch from '@wordpress/api-fetch';
 import {
+	Card,
 	Button,
 	Modal,
 	TextControl,
@@ -8,20 +9,26 @@ import {
 	ToggleControl,
 	__experimentalDivider as Divider,
 	__experimentalHStack as HStack,
+	CardBody,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import ErrorNotice from '../../../../shared/js/components/error-notice';
+import UserSelectFormTokenField from '../user-select-form-token-field';
 
 export default function CreateEditCustomStatusModal( { customStatus, onCancel, onSuccess } ) {
-	const [ error, setError ] = useState( null );
+	// Custom status properties
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
-	const [ isReviewRequired, setIsReviewRequired ] = useState(
-		customStatus?.is_review_required || false
-	);
+	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.required_users || [] );
+
+	// Modal properties
+	const [ error, setError ] = useState( null );
 	const [ isRequesting, setIsRequesting ] = useState( false );
+	const [ isRestrictedSectionVisible, setIsRestrictedSectionVisible ] = useState(
+		requiredUsers.length > 0
+	);
 
 	let titleText;
 	if ( customStatus ) {
@@ -31,11 +38,12 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	}
 
 	const handleSave = async () => {
-		const data = {
-			name,
-			description,
-			is_review_required: isReviewRequired,
-		};
+		const data = { name, description };
+
+		if ( isRestrictedSectionVisible ) {
+			const userIds = requiredUsers.map( user => user.id );
+			data.required_user_ids = userIds;
+		}
 
 		try {
 			setIsRequesting( true );
@@ -86,13 +94,31 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 			<Divider margin="1rem" />
 
 			<ToggleControl
-				label={ __( 'This status requires a review', 'vip-workflow' ) }
-				help={ __( 'Require a review from an editor to move to the next status.', 'vip-workflow' ) }
-				checked={ isReviewRequired }
-				onChange={ value => setIsReviewRequired( value ) }
+				label={ __( 'This status is restricted', 'vip-workflow' ) }
+				help={ __(
+					'Require a specific user or role to advance to the next status.',
+					'vip-workflow'
+				) }
+				checked={ isRestrictedSectionVisible }
+				onChange={ setIsRestrictedSectionVisible }
 			/>
 
-			<HStack justify="right">
+			{ isRestrictedSectionVisible && (
+				<>
+					<Card>
+						<CardBody>
+							<UserSelectFormTokenField
+								label={ __( 'Allowed users', 'vip-workflow' ) }
+								help={ __( 'These users are allowed to advance this status.', 'vip-workflow' ) }
+								requiredUsers={ requiredUsers }
+								onUsersChanged={ setRequiredUsers }
+							/>
+						</CardBody>
+					</Card>
+				</>
+			) }
+
+			<HStack justify="right" style={ { marginTop: '16px' } }>
 				<Tooltip
 					text={
 						customStatus
