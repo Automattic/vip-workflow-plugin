@@ -282,6 +282,7 @@ class Custom_Status extends Module {
 		$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? true : false;
 
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
+			'current_user_id'          => get_current_user_id(),
 			'is_publish_guard_enabled' => $publish_guard_enabled,
 			'status_terms'             => $this->get_custom_statuses(),
 			'supported_post_types'     => VIP_Workflow::instance()->get_supported_post_types(),
