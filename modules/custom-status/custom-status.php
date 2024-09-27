@@ -11,6 +11,7 @@ require_once __DIR__ . '/rest/custom-status-endpoint.php';
 
 // Term meta
 require_once __DIR__ . '/meta/required-user-ids.php';
+require_once __DIR__ . '/meta/required-metadata-fields.php';
 
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;

@@ -407,6 +407,8 @@ class EditorialMetadata {
 			return new WP_Error( 'invalid', __( 'Unable to delete editorial metadata term.', 'vip-workflow' ) );
 		}
 
+		do_action( 'vw_editorial_metadata_term_deleted', $term_id );
+
 		// Reset the internal object cache
 		self::$editorial_metadata_terms_cache = [];
 

@@ -6,10 +6,10 @@
 
 namespace VIPWorkflow\Modules\CustomStatus\Meta;
 
+use VIPWorkflow\Modules\Custom_Status;
 use VIPWorkflow\VIP_Workflow;
 
 class RequiredUserIds {
-	const TERM_META_KEY = 'required_user_ids';
 
 	public static function init(): void {
 		add_action( 'delete_user', [ __CLASS__, 'remove_deleted_user_from_required_users' ], 10, 2 );
@@ -47,7 +47,7 @@ class RequiredUserIds {
 	 * Given a $term_id, return the user IDs required to make changes to the status.
 	 */
 	public static function get( int $term_id ): array {
-		$result = get_term_meta( $term_id, self::TERM_META_KEY, true );
+		$result = get_term_meta( $term_id, Custom_Status::METADATA_REQ_USER_IDS_KEY, true );
 		return is_array( $result ) ? $result : [];
 	}
 
@@ -55,7 +55,7 @@ class RequiredUserIds {
 	 * Given a $term_id an an array of user IDs, return the user IDs required to make changes to the status.
 	 */
 	public static function update( int $term_id, array $user_ids ): void {
-		update_term_meta( $term_id, self::TERM_META_KEY, $user_ids );
+		update_term_meta( $term_id, Custom_Status::METADATA_REQ_USER_IDS_KEY, $user_ids );
 	}
 }
 
