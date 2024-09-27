@@ -21,7 +21,7 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	// Custom status properties
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
-	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.required_users || [] );
+	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.meta?.required_users || [] );
 
 	// Modal properties
 	const [ error, setError ] = useState( null );
