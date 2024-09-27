@@ -53,8 +53,8 @@ class CustomStatusRestApiTest extends RestTestCase {
 
 		$this->assertEquals( 'test-status', $created_term->name );
 		$this->assertEquals( 'A test status for testing', $created_term->description );
-		$this->assertCount( 1, $created_term->required_user_ids );
-		$this->assertEquals( $admin_user->ID, $created_term->required_user_ids[0] );
+		$this->assertCount( 1, $created_term->meta['required_user_ids'] );
+		$this->assertEquals( $admin_user->ID, $created_term->meta['required_user_ids'][0] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 		wp_delete_user( $admin_user->ID );
@@ -89,8 +89,8 @@ class CustomStatusRestApiTest extends RestTestCase {
 
 		$this->assertEquals( 'Test Custom Status 2', $updated_term->name );
 		$this->assertEquals( 'Test Description 2!', $updated_term->description );
-		$this->assertCount( 1, $updated_term->required_user_ids );
-		$this->assertEquals( $editor_user->ID, $updated_term->required_user_ids[0] );
+		$this->assertCount( 1, $updated_term->meta['required_user_ids'] );
+		$this->assertEquals( $editor_user->ID, $updated_term->meta['required_user_ids'][0] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 	}
