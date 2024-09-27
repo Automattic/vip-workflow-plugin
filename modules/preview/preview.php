@@ -20,8 +20,6 @@ class Preview {
 	 * Initialize preview module
 	 */
 	public static function init(): void {
-		PreviewEndpoint::init();
-
 		// Load block editor JS
 		add_action( 'enqueue_block_editor_assets', [ __CLASS__, 'load_block_editor_scripts' ], 9 /* Load before custom status module */ );
 

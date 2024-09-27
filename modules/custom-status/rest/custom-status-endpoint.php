@@ -414,3 +414,5 @@ class CustomStatusEndpoint {
 		return rest_url( sprintf( '%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status/reorder' ) );
 	}
 }
+
+CustomStatusEndpoint::init();

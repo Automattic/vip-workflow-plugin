@@ -92,9 +92,6 @@ class Custom_Status extends Module {
 		// Pagination for custom post statuses when previewing posts
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
 
-		// REST endpoints
-		CustomStatusEndpoint::init();
-
 		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
 	}
 
