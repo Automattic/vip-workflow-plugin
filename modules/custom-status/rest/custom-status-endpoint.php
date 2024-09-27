@@ -12,6 +12,7 @@ use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_REST_Request;
 use WP_Term;
+use WP_User;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -33,7 +34,7 @@ class CustomStatusEndpoint {
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
-				'name'               => [
+				'name'              => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						return ! empty( trim( $param ) );
@@ -44,7 +45,7 @@ class CustomStatusEndpoint {
 				],
 
 				// Optional parameters
-				'description'        => [
+				'description'       => [
 					'default'           => '',
 					'sanitize_callback' => function ( $param ) {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
@@ -53,21 +54,21 @@ class CustomStatusEndpoint {
 				'required_metadata_fields' => [
 					'default'           => [],
 					'validate_callback' => function ( $param ) {
-						$metadata_fields = array_map( [ __CLASS__, 'sanitize_each_array_item' ], $param );
-
-						// iterate over each field and check if it exists
-						foreach ( $metadata_fields as $metadata_field ) {
-							$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_field );
-
-							if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
-								return false;
-							}
-						}
-
-						return true;
+						$metadata_field_ids = array_map( 'absint', $param );
+						return self::is_valid_editorial_metadata_ids( $metadata_field_ids );
 					},
 					'sanitize_callback' => function ( $param ) {
-						return array_map( [ __CLASS__, 'sanitize_each_array_item' ], $param );
+						return array_map( 'absint', $param );
+					},
+				],
+				'required_user_ids' => [
+					'default'           => [],
+					'validate_callback' => function ( $param ) {
+						$user_ids = array_map( 'absint', $param );
+						return self::is_valid_user_ids( $user_ids );
+					},
+					'sanitize_callback' => function ( $param ) {
+						return array_map( 'absint', $param );
 					},
 				],
 			],
@@ -79,7 +80,7 @@ class CustomStatusEndpoint {
 			'permission_callback' => [ __CLASS__, 'permission_callback' ],
 			'args'                => [
 				// Required parameters
-				'name'               => [
+				'name'              => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						return ! empty( trim( $param ) );
@@ -88,7 +89,7 @@ class CustomStatusEndpoint {
 						return trim( $param );
 					},
 				],
-				'id'                 => [
+				'id'                => [
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
@@ -102,7 +103,7 @@ class CustomStatusEndpoint {
 				],
 
 				// Optional parameters
-				'description'        => [
+				'description'       => [
 					'default'           => '',
 					'sanitize_callback' => function ( $param ) {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
@@ -111,21 +112,21 @@ class CustomStatusEndpoint {
 				'required_metadata_fields' => [
 					'default'           => [],
 					'validate_callback' => function ( $param ) {
-						$metadata_fields = array_map( [ __CLASS__, 'sanitize_each_array_item' ], $param );
-
-						// iterate over each field and check if it exists
-						foreach ( $metadata_fields as $metadata_field ) {
-							$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_field );
-
-							if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
-								return false;
-							}
-						}
-
-						return true;
+						$metadata_field_ids = array_map( 'absint', $param );
+						return self::is_valid_editorial_metadata_ids( $metadata_field_ids );
 					},
 					'sanitize_callback' => function ( $param ) {
-						return array_map( [ __CLASS__, 'sanitize_each_array_item' ], $param );
+						return array_map( 'absint', $param );
+					},
+				],
+				'required_user_ids' => [
+					'default'           => [],
+					'validate_callback' => function ( $param ) {
+						$user_ids = array_map( 'absint', $param );
+						return self::is_valid_user_ids( $user_ids );
+					},
+					'sanitize_callback' => function ( $param ) {
+						return array_map( 'absint', $param );
 					},
 				],
 			],
@@ -206,6 +207,7 @@ class CustomStatusEndpoint {
 		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
 		$status_description        = $request->get_param( 'description' );
 		$status_required_metadata_fields = $request->get_param( 'required_metadata_fields' );
+		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -231,21 +233,12 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Status name conflicts with existing term. Please choose another.' );
 		}
 
-		// Check to make sure the required_metadata_fields are valid
-		foreach ( $status_required_metadata_fields as $metadata_field ) {
-			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_field );
-
-			if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
-				return new WP_Error( 'invalid', 'Required metadata field does not exist. Please choose another.' );
-			}
-		}
-
-		// get status_slug & status_description
 		$args = [
 			'name'               => $status_name,
 			'description'        => $status_description,
 			'slug'               => $status_slug,
 			'required_metadata_fields' => $status_required_metadata_fields,
+			'required_user_ids' => $status_required_user_ids,
 		];
 
 		$add_status_result = $custom_status_module->add_custom_status( $args );
@@ -265,6 +258,7 @@ class CustomStatusEndpoint {
 		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
 		$status_description        = $request->get_param( 'description' );
 		$status_required_metadata_fields = $request->get_param( 'required_metadata_fields' );
+		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
 
@@ -284,8 +278,7 @@ class CustomStatusEndpoint {
 		}
 
 		// Check to make sure the status doesn't already exist
-		$custom_status_by_id = $custom_status_module->get_custom_status_by( 'id', $term_id );
-
+		$custom_status_by_id   = $custom_status_module->get_custom_status_by( 'id', $term_id );
 		$custom_status_by_slug = $custom_status_module->get_custom_status_by( 'slug', $status_slug );
 
 		if ( $custom_status_by_slug && $custom_status_by_id && $custom_status_by_id->slug !== $status_slug ) {
@@ -300,28 +293,19 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Status name conflicts with existing term. Please choose another.' );
 		}
 
-		// Check to make sure the required_metadata_fields are valid
-		foreach ( $status_required_metadata_fields as $metadata_field ) {
-			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_field );
-
-			if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
-				return new WP_Error( 'invalid', 'Required metadata field does not exist. Please choose another.' );
-			}
-		}
-
 		// get status_name & status_description
 		$args = [
 			'name'               => $status_name,
 			'description'        => $status_description,
 			'slug'               => $status_slug,
 			'required_metadata_fields' => $status_required_metadata_fields,
+			'required_user_ids' => $status_required_user_ids,
 		];
 
-		// ToDo: Ensure that we don't do an update when the name and description are the same as the current status
-		$update_status_result = $custom_status_module->update_custom_status( $term_id, $args );
+		$updated_status = $custom_status_module->update_custom_status( $term_id, $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
-		return rest_ensure_response( $update_status_result );
+		return rest_ensure_response( $updated_status );
 	}
 
 	/**
@@ -380,18 +364,28 @@ class CustomStatusEndpoint {
 		return rest_ensure_response( $custom_status_module->get_custom_statuses() );
 	}
 
-	// Helper Function
+	// Utility functions
 
-	/**
-	 * Sanitize each array item and covert it to an integer
-	 *
-	 * @param string $param
-	 * @return integer The sanitized and converted parameter
-	 */
-	public static function sanitize_each_array_item( string $param ): int {
-		$sanitized_param = sanitize_text_field( $param );
+	private static function is_valid_editorial_metadata_ids( $metadata_ids ) {
+		foreach ( $metadata_ids as $metadata_id ) {
+			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_id );
+			if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
+				return false;
+			}
+		}
 
-		return absint( $sanitized_param );
+		return true;
+	}
+
+	private static function is_valid_user_ids( $user_ids ) {
+		foreach ( $user_ids as $user_id ) {
+			$user = get_user_by( 'id', $user_id );
+			if ( ! $user instanceof WP_User ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	// Public API

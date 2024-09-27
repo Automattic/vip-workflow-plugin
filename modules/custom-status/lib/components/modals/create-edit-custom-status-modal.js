@@ -1,23 +1,34 @@
 import apiFetch from '@wordpress/api-fetch';
 import {
 	Button,
+	Card,
+	CardBody,
 	__experimentalDivider as Divider,
 	__experimentalHStack as HStack,
 	Modal,
 	TextControl,
 	TextareaControl,
+	ToggleControl,
 	Tooltip,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import ErrorNotice from '../../../../shared/js/components/error-notice';
+import UserSelectFormTokenField from '../user-select-form-token-field';
 
 export default function CreateEditCustomStatusModal( { customStatus, onCancel, onSuccess } ) {
-	const [ error, setError ] = useState( null );
+	// Custom status properties
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
+	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.required_users || [] );
+
+	// Modal properties
+	const [ error, setError ] = useState( null );
 	const [ isRequesting, setIsRequesting ] = useState( false );
+	const [ isRestrictedSectionVisible, setIsRestrictedSectionVisible ] = useState(
+		requiredUsers.length > 0
+	);
 
 	let titleText;
 	if ( customStatus ) {
@@ -27,10 +38,12 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	}
 
 	const handleSave = async () => {
-		const data = {
-			name,
-			description,
-		};
+		const data = { name, description };
+
+		if ( isRestrictedSectionVisible ) {
+			const userIds = requiredUsers.map( user => user.id );
+			data.required_user_ids = userIds;
+		}
 
 		try {
 			setIsRequesting( true );
@@ -80,7 +93,32 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 			/>
 			<Divider margin="1rem" />
 
-			<HStack justify="right">
+			<ToggleControl
+				label={ __( 'This status is restricted', 'vip-workflow' ) }
+				help={ __(
+					'Require a specific user or role to advance to the next status.',
+					'vip-workflow'
+				) }
+				checked={ isRestrictedSectionVisible }
+				onChange={ setIsRestrictedSectionVisible }
+			/>
+
+			{ isRestrictedSectionVisible && (
+				<>
+					<Card>
+						<CardBody>
+							<UserSelectFormTokenField
+								label={ __( 'Allowed users', 'vip-workflow' ) }
+								help={ __( 'These users are allowed to advance this status.', 'vip-workflow' ) }
+								requiredUsers={ requiredUsers }
+								onUsersChanged={ setRequiredUsers }
+							/>
+						</CardBody>
+					</Card>
+				</>
+			) }
+
+			<HStack justify="right" style={ { marginTop: '16px' } }>
 				<Tooltip
 					text={
 						customStatus

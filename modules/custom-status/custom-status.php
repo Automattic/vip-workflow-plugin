@@ -6,13 +6,19 @@
 
 namespace VIPWorkflow\Modules;
 
+// REST endpoints
 require_once __DIR__ . '/rest/custom-status-endpoint.php';
+
+// Term meta
+require_once __DIR__ . '/meta/required-user-ids.php';
 
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
 use WP_Error;
 use WP_Query;
+use WP_User;
+
 use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
 use WP_Term;
 use WP_Post;
@@ -31,6 +37,8 @@ class Custom_Status extends Module {
 	// The metadata keys for the custom status term
 	const METADATA_POSITION_KEY = 'position';
 	const METADATA_REQ_EDITORIAL_FIELDS_KEY = 'required_metadata_fields';
+	const METADATA_REQ_USER_IDS_KEY = 'required_user_ids';
+	const METADATA_REQ_USERS_KEY = 'required_users';
 
 	/**
 	 * Register the module with VIP Workflow but don't do anything else
@@ -453,15 +461,33 @@ class Custom_Status extends Module {
 		}
 
 		// if metadata is already set, don't overwrite it
-		if ( isset( $term->meta ) && isset( $term->meta[ self::METADATA_POSITION_KEY ] ) && isset( $term->meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] ) ) {
+		if ( isset( $term->meta )
+		&& isset( $term->meta[ self::METADATA_POSITION_KEY ] )
+		&& isset( $term->meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] )
+		&& isset( $term->meta[ self::METADATA_REQ_USER_IDS_KEY ] )
+		&& isset( $term->meta[ self::METADATA_REQ_USERS_KEY ] ) ) {
 			return $term;
 		}
 
 		$term_meta = [];
 		$term_meta[ self::METADATA_POSITION_KEY ] = get_term_meta( $term->term_id, self::METADATA_POSITION_KEY, true );
 		$term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] = get_term_meta( $term->term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, true );
+		$term_meta[ self::METADATA_REQ_USER_IDS_KEY ] = get_term_meta( $term->term_id, self::METADATA_REQ_USER_IDS_KEY, true );
 
-		// Required postmeta fields is not required, so we set it to an empty array on purpose. The position is required however.
+		// Add 'required_users' computed property with additional metadata about users (for UI purporses)
+		$term_meta[ self::METADATA_REQ_USERS_KEY ] = array_filter( array_map( function ( $user_id ) {
+			$user = get_user_by( 'ID', $user_id );
+			if ( $user instanceof WP_User ) {
+				return [
+					'id'   => $user->ID,
+					'slug' => $user->user_login,
+				];
+			} else {
+				return false;
+			}
+		}, $term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] ) );
+
+		// Only the position is required.
 		if ( '' === $term_meta[ self::METADATA_POSITION_KEY ] ) {
 			return $term;
 		}
@@ -469,25 +495,6 @@ class Custom_Status extends Module {
 		$term->meta = $term_meta;
 
 		return $term;
-	}
-
-	/**
-	 * Add all the metadata fields to all terms in a list
-	 *
-	 * @param array $terms The terms to add metadata to
-	 * @param array $taxonomies The taxonomies to add metadata to
-	 * @return array $terms The terms with metadata added
-	 */
-	public static function add_metadata_to_terms( array $terms, array $taxonomies ): array {
-		if ( ! in_array( self::TAXONOMY_KEY, $taxonomies ) ) {
-			return $terms;
-		}
-
-		foreach ( $terms as $term ) {
-			$term = self::add_metadata_to_term( $term );
-		}
-
-		return $terms;
 	}
 
 	/**
@@ -502,7 +509,7 @@ class Custom_Status extends Module {
 	 * 'description'. There is no default. If exists, will be added to the database
 	 * along with the term. Expected to be a string.
 	 *
-	 * 'is_review_required'. Expected to be a boolean. Default is false.
+	 * 'required_user_ids'. An optional array of user IDs that are required to review the post in the current status.
 	 *
 	 * @param int|string $term The status to add or update
 	 * @param array|string $args Change the values of the inserted term
@@ -541,24 +548,30 @@ class Custom_Status extends Module {
 
 		$position = $args['position'];
 		$required_metadata_fields = $args['required_metadata_fields'] ?? [];
+		$required_user_ids = $args['required_user_ids'] ?? [];
 
-		$position_meta_result = add_term_meta( $term_id, self::METADATA_POSITION_KEY, $position );
-		if ( is_wp_error( $position_meta_result ) ) {
-			return $position_meta_result;
-		} else if ( ! $position_meta_result ) {
-			// If we can't save the type, we should delete the term
+		// In case of failure, data cleanup happens which includes the term and the meta keys.
+
+		$position_meta_result = update_term_meta( $term_id, self::METADATA_POSITION_KEY, $position );
+		if ( is_wp_error( $position_meta_result ) || ! $position_meta_result ) {
 			wp_delete_term( $term_id, self::TAXONOMY_KEY );
-			return new WP_Error( 'invalid', __( 'Unable to create custom status.', 'vip-workflow' ) );
+			// Don't eat the error, return it
+			return is_wp_error( $position_meta_result ) ? $position_meta_result : new WP_Error( 'invalid', __( 'Unable to create custom status.', 'vip-workflow' ) );
 		}
 
-		$req_postmeta_fields_meta_result = add_term_meta( $term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, $required_metadata_fields );
-		if ( is_wp_error( $req_postmeta_fields_meta_result ) ) {
-			return $req_postmeta_fields_meta_result;
-		} else if ( ! $req_postmeta_fields_meta_result ) {
-			// If we can't save the postmeta key, we should delete the term
+		$req_metadata_fields_result = update_term_meta( $term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, $required_metadata_fields );
+		if ( is_wp_error( $req_metadata_fields_result ) || ! $req_metadata_fields_result ) {
 			delete_term_meta( $term_id, self::METADATA_POSITION_KEY );
 			wp_delete_term( $term_id, self::TAXONOMY_KEY );
-			return new WP_Error( 'invalid', __( 'Unable to create editorial metadata.', 'vip-workflow' ) );
+			return is_wp_error( $req_metadata_fields_result ) ? $req_metadata_fields_result : new WP_Error( 'invalid', __( 'Unable to create custom status.', 'vip-workflow' ) );
+		}
+
+		$required_user_ids_result = update_term_meta( $term_id, self::METADATA_REQ_USER_IDS_KEY, $required_user_ids );
+		if ( is_wp_error( $required_user_ids_result ) || ! $required_user_ids_result ) {
+			delete_term_meta( $term_id, self::METADATA_POSITION_KEY );
+			delete_term_meta( $term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY );
+			wp_delete_term( $term_id, self::TAXONOMY_KEY );
+			return is_wp_error( $required_user_ids_result ) ? $required_user_ids_result : new WP_Error( 'invalid', __( 'Unable to create custom status.', 'vip-workflow' ) );
 		}
 
 		$term_result = $this->get_custom_status_by( 'id', $term_id );
@@ -631,6 +644,13 @@ class Custom_Status extends Module {
 			}
 		}
 
+		if ( isset( $args['required_user_ids'] ) ) {
+			$req_user_ids_meta_result = update_term_meta( $status_id, self::METADATA_REQ_USER_IDS_KEY, $args['required_user_ids'] );
+			if ( is_wp_error( $req_user_ids_meta_result ) ) {
+				return $req_user_ids_meta_result;
+			}
+		}
+
 		$updated_term = wp_update_term( $status_id, self::TAXONOMY_KEY, $term_fields_to_update );
 
 		// Reset status cache again, as reassign_post_status() will recache prior statuses
@@ -654,8 +674,8 @@ class Custom_Status extends Module {
 	public function delete_custom_status( int $status_id ): bool|WP_Error {
 		// Get slug for the old status
 		$old_status = $this->get_custom_status_by( 'id', $status_id );
-		if ( ! $old_status ) {
-			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
+		if ( is_wp_error( $old_status ) ) {
+			return $old_status;
 		} else if ( ! $old_status ) {
 			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
 		}
@@ -687,6 +707,8 @@ class Custom_Status extends Module {
 		delete_term_meta( $status_id, self::METADATA_POSITION_KEY );
 
 		delete_term_meta( $status_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY );
+
+		delete_term_meta( $status_id, self::METADATA_REQ_USER_IDS_KEY );
 
 		$result = wp_delete_term( $status_id, self::TAXONOMY_KEY );
 		if ( ! $result ) {
