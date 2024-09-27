@@ -38,6 +38,7 @@ class Custom_Status extends Module {
 	// The metadata keys for the custom status term
 	const METADATA_POSITION_KEY = 'position';
 	const METADATA_REQ_EDITORIAL_FIELDS_KEY = 'required_metadata_fields';
+	const METADATA_REQ_EDITORIALS_KEY = 'required_metadatas';
 	const METADATA_REQ_USER_IDS_KEY = 'required_user_ids';
 	const METADATA_REQ_USERS_KEY = 'required_users';
 
@@ -475,7 +476,8 @@ class Custom_Status extends Module {
 		$term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] = get_term_meta( $term->term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, true );
 		$term_meta[ self::METADATA_REQ_USER_IDS_KEY ] = get_term_meta( $term->term_id, self::METADATA_REQ_USER_IDS_KEY, true );
 
-		// Add 'required_users' computed property with additional metadata about users (for UI purporses)
+		// For UI purposes, add 'required_users' and 'required_metadatas' to the term meta.
+
 		$term_meta[ self::METADATA_REQ_USERS_KEY ] = array_filter( array_map( function ( $user_id ) {
 			$user = get_user_by( 'ID', $user_id );
 			if ( $user instanceof WP_User ) {
@@ -487,6 +489,19 @@ class Custom_Status extends Module {
 				return false;
 			}
 		}, $term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] ) );
+
+		$term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] = array_filter( array_map( function ( $field ) {
+			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $field );
+
+			if ( $editorial_metadata instanceof WP_Term ) {
+				return [
+					'id'   => $editorial_metadata->term_id,
+					'name' => $editorial_metadata->name,
+				];
+			} else {
+				return false;
+			}
+		}, $term_meta[ self::METADATA_REQ_EDITORIALS_KEY ] ) );
 
 		// Only the position is required.
 		if ( '' === $term_meta[ self::METADATA_POSITION_KEY ] ) {

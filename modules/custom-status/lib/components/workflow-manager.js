@@ -4,17 +4,19 @@ import { Button, Flex, __experimentalHeading as Heading, Tooltip } from '@wordpr
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
-import DraggableCustomStatus from './draggable-custom-status';
-import CreateEditCustomStatusModal from './modals/create-edit-custom-status-modal';
 import ErrorNotice from '../../../shared/js/components/error-notice';
 import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
+import DraggableCustomStatus from './draggable-custom-status';
+import CreateEditCustomStatusModal from './modals/create-edit-custom-status-modal';
 
-export default function WorkflowManager( { customStatuses } ) {
+export default function WorkflowManager( { customStatuses, editorialMetadatas } ) {
 	const [ success, setSuccess ] = useState( null );
 	const [ error, setError ] = useState( null );
 
 	const [ statuses, setStatuses ] = useState( customStatuses );
+	const [ metadatas, setMetadatas ] = useState( editorialMetadatas );
+
 	const [ status, setStatus ] = useState( null );
 
 	const [ isConfirmingDelete, setIsConfirmingDelete ] = useState( false );
@@ -82,6 +84,7 @@ export default function WorkflowManager( { customStatuses } ) {
 	const createEditModal = (
 		<CreateEditCustomStatusModal
 			customStatus={ status }
+			metadatas={ metadatas }
 			onCancel={ () => setIsCreateEditModalVisible( false ) }
 			onSuccess={ handleSuccess }
 		/>
