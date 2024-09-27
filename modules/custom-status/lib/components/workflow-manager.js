@@ -84,7 +84,7 @@ export default function WorkflowManager( { customStatuses, editorialMetadatas } 
 	const createEditModal = (
 		<CreateEditCustomStatusModal
 			customStatus={ status }
-			metadatas={ metadatas }
+			editorialMetadatas={ metadatas }
 			onCancel={ () => setIsCreateEditModalVisible( false ) }
 			onSuccess={ handleSuccess }
 		/>

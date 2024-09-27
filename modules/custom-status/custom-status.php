@@ -38,7 +38,6 @@ class Custom_Status extends Module {
 	// The metadata keys for the custom status term
 	const METADATA_POSITION_KEY = 'position';
 	const METADATA_REQ_EDITORIAL_FIELDS_KEY = 'required_metadata_fields';
-	const METADATA_REQ_EDITORIALS_KEY = 'required_metadatas';
 	const METADATA_REQ_USER_IDS_KEY = 'required_user_ids';
 	const METADATA_REQ_USERS_KEY = 'required_users';
 
@@ -250,6 +249,7 @@ class Custom_Status extends Module {
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
 				'custom_statuses'    => $this->get_custom_statuses(),
+				'editorial_metadatas' => EditorialMetadata::get_editorial_metadata_terms(),
 				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
 				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
 			] );
@@ -345,13 +345,6 @@ class Custom_Status extends Module {
 				} else {
 					$selected = $post->post_status;
 				}
-
-				// Get the label of current status
-				foreach ( $custom_statuses as $status ) {
-					if ( $status->slug === $selected ) {
-						$selected_name = $status->name;
-					}
-				}
 			}
 
 			// All right, we want to set up the JS var which contains all custom statuses
@@ -390,7 +383,6 @@ class Custom_Status extends Module {
 				<script type="text/javascript">
 					var custom_statuses = <?php echo json_encode( $all_statuses ); ?>;
 					var current_status = '<?php echo esc_js( $selected ); ?>';
-					var current_status_name = '<?php echo esc_js( $selected_name ); ?>';
 					var current_user_can_publish_posts = <?php echo current_user_can( $post_type_obj->cap->publish_posts ) ? 1 : 0; ?>;
 				</script>
 			<?php
@@ -473,11 +465,21 @@ class Custom_Status extends Module {
 
 		$term_meta = [];
 		$term_meta[ self::METADATA_POSITION_KEY ] = get_term_meta( $term->term_id, self::METADATA_POSITION_KEY, true );
-		$term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] = get_term_meta( $term->term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, true );
-		$term_meta[ self::METADATA_REQ_USER_IDS_KEY ] = get_term_meta( $term->term_id, self::METADATA_REQ_USER_IDS_KEY, true );
 
-		// For UI purposes, add 'required_users' and 'required_metadatas' to the term meta.
+		$editorial_metadata_ids = get_term_meta( $term->term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, true );
+		if ( ! is_array( $editorial_metadata_ids ) ) {
+			$editorial_metadata_ids = [];
+		}
+		$term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] = $editorial_metadata_ids;
 
+		$user_ids = get_term_meta( $term->term_id, self::METADATA_REQ_USER_IDS_KEY, true );
+		if ( ! is_array( $user_ids ) ) {
+			$user_ids = [];
+		}
+		$term_meta[ self::METADATA_REQ_USER_IDS_KEY ] = $user_ids;
+
+		// For UI purposes, add 'required_users' to the term meta.
+		// `required_metadatas` hasn't been added as that causes init problems with the taxonomies.
 		$term_meta[ self::METADATA_REQ_USERS_KEY ] = array_filter( array_map( function ( $user_id ) {
 			$user = get_user_by( 'ID', $user_id );
 			if ( $user instanceof WP_User ) {
@@ -488,20 +490,7 @@ class Custom_Status extends Module {
 			} else {
 				return false;
 			}
-		}, $term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] ) );
-
-		$term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] = array_filter( array_map( function ( $field ) {
-			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $field );
-
-			if ( $editorial_metadata instanceof WP_Term ) {
-				return [
-					'id'   => $editorial_metadata->term_id,
-					'name' => $editorial_metadata->name,
-				];
-			} else {
-				return false;
-			}
-		}, $term_meta[ self::METADATA_REQ_EDITORIALS_KEY ] ) );
+		}, $term_meta[ self::METADATA_REQ_USER_IDS_KEY ] ) );
 
 		// Only the position is required.
 		if ( '' === $term_meta[ self::METADATA_POSITION_KEY ] ) {

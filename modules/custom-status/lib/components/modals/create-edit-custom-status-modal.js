@@ -28,9 +28,25 @@ export default function CreateEditCustomStatusModal( {
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
 	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.meta?.required_users || [] );
-	const [ requiredMetadatas, setRequiredMetadatas ] = useState(
-		customStatus?.meta?.required_metadatas || []
-	);
+
+	// Taxonomy conflicts arise if this is done server side, so this transient field is only set here.
+	const [ requiredMetadatas, setRequiredMetadatas ] = useState( () => {
+		if (
+			customStatus?.meta?.required_metadata_fields &&
+			customStatus?.meta?.required_metadata_fields.length > 0 &&
+			editorialMetadatas.length > 0
+		) {
+			const required_metadatas = customStatus.meta.required_metadata_fields.map( metadata => {
+				return editorialMetadatas.find(
+					editorialMetadata => editorialMetadata.term_id === metadata
+				);
+			} );
+
+			return required_metadatas;
+		}
+
+		return [];
+	} );
 	const [ metadatas, setMetadatas ] = useState( editorialMetadatas );
 
 	// Modal properties
@@ -54,7 +70,7 @@ export default function CreateEditCustomStatusModal( {
 			const userIds = requiredUsers.map( user => user.id );
 			data.required_user_ids = userIds;
 
-			const metadataFields = requiredMetadatas.map( metadata => metadata.id );
+			const metadataFields = requiredMetadatas.map( metadata => metadata.term_id );
 			data.required_metadata_fields = metadataFields;
 		}
 

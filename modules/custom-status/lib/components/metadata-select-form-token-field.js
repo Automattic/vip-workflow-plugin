@@ -13,9 +13,8 @@ export default function MetadataSelectFormTokenField( {
 	...formTokenFieldProps
 } ) {
 	const [ metadataSearch, setMetadataSearch ] = useState( '' );
-	const debouncedSetMetadataSearch = debounce( setUserSearch, 200 );
+	const debouncedSetMetadataSearch = debounce( setMetadataSearch, 200 );
 	const [ searchedMetadatas, setSearchedMetadatas ] = useState( [] );
-	const [ metadatas, setMetadatas ] = useState( editorialMetadatas );
 
 	const [ selectedMetadataTokens, setSelectedMetadataTokens ] = useState(
 		// Map login strings to TokenItem objects
@@ -27,16 +26,20 @@ export default function MetadataSelectFormTokenField( {
 	);
 
 	useEffect( () => {
-		if ( metadataSearch.trim().length === 0 ) {
+		if (
+			metadataSearch.trim().length === 0 ||
+			! editorialMetadatas ||
+			editorialMetadatas.length === 0
+		) {
 			return;
 		}
 
-		const matchedUsers = metadatas.filter( metadata =>
+		const matchedMetadatas = editorialMetadatas.filter( metadata =>
 			metadata.name.toLowerCase().includes( metadataSearch.toLowerCase() )
 		);
 
-		setSearchedMetadatas( matchedUsers );
-	}, [ metadataSearch ] );
+		setSearchedMetadatas( matchedMetadatas );
+	}, [ editorialMetadatas, metadataSearch ] );
 
 	const suggestions = useMemo( () => {
 		let metadatasToSuggest = searchedMetadatas;
