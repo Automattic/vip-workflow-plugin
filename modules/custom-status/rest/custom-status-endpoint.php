@@ -12,7 +12,6 @@ use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_REST_Request;
 use WP_Term;
-use WP_User;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -367,6 +366,7 @@ class CustomStatusEndpoint {
 	// Utility functions
 
 	private static function is_valid_editorial_metadata_ids( $metadata_ids ) {
+		// ToDo: Optimize this to batch fetch metadata terms, and only include the ID field.
 		foreach ( $metadata_ids as $metadata_id ) {
 			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_id );
 			if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
@@ -378,11 +378,15 @@ class CustomStatusEndpoint {
 	}
 
 	private static function is_valid_user_ids( $user_ids ) {
-		foreach ( $user_ids as $user_id ) {
-			$user = get_user_by( 'id', $user_id );
-			if ( ! $user instanceof WP_User ) {
-				return false;
-			}
+		$args = [
+			'include' => $user_ids,
+			'fields'  => [ 'ID' ],
+		];
+
+		$users_found = get_users( $args );
+
+		if ( count( $users_found ) !== count( $user_ids ) ) {
+			return false;
 		}
 
 		return true;
