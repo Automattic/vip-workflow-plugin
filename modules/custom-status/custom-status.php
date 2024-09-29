@@ -10,8 +10,7 @@ namespace VIPWorkflow\Modules;
 require_once __DIR__ . '/rest/custom-status-endpoint.php';
 
 // Term meta
-require_once __DIR__ . '/meta/required-user-ids.php';
-require_once __DIR__ . '/meta/required-metadata-fields.php';
+require_once __DIR__ . '/meta/required-fields-cron-cleaner.php';
 
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
@@ -443,6 +442,10 @@ class Custom_Status extends Module {
 		return $allcaps;
 	}
 
+	// ToDo: Once custom status has been refactored, the below CRUD methods should be unified with the
+	// ones from Editorial metadata module and turned into a utility class focused on DB operations.
+	// We could call that utility class ORM or DAO.
+
 	/**
 	 * Add all the metadata fields to a term
 	 *
@@ -854,6 +857,8 @@ class Custom_Status extends Module {
 
 		return true;
 	}
+
+	// ToDo: Move all these hacks to a separate class focused on core hacks, that gets init at the top of the file.
 
 	/**
 	 * Display our custom post statuses in post listings when needed.
