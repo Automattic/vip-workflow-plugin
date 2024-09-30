@@ -95,7 +95,7 @@ class Custom_Status extends Module {
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
 
 		// Add server-side controls to block post status movements that are prohihibited by workflow rules
-		add_filter( 'wp_insert_post_data', [ $this, 'maybe_block_post_update' ], 10, 4 );
+		add_filter( 'wp_insert_post_data', [ $this, 'maybe_block_post_update' ], 1000, 4 );
 		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
 	}
 
