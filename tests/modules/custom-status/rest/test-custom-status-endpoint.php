@@ -63,7 +63,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertCount( 1, $created_term->meta['required_user_ids'] );
 		$this->assertEquals( $admin_user->ID, $created_term->meta['required_user_ids'][0] );
 		$this->assertCount( 1, $created_term->meta['required_metadata_fields'] );
-		$this->assertCount( $editorial_metadata_term->term_id, $created_term->meta['required_metadata_fields'] );
+		$this->assertEquals( $editorial_metadata_term->term_id, $created_term->meta['required_metadata_fields'][0] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 		EditorialMetadata::delete_editorial_metadata_term( $editorial_metadata_term->term_id );

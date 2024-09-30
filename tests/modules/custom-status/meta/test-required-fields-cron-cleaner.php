@@ -40,8 +40,10 @@ class RequiredFieldsCronCleanerTest extends WP_UnitTestCase {
 		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
 
 		$this->assertEquals( 'Test Custom Status', $updated_term->name );
-		$this->assertEquals( 'Test Description', $updated_term->description );
+		$this->assertEquals( 'Test Description.', $updated_term->description );
 		$this->assertEmpty( $updated_term->meta['required_metadata_fields'] );
+
+		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 	}
 
 	public function test_remove_deleted_user_from_required_users_no_reassigned_user() {
@@ -59,8 +61,10 @@ class RequiredFieldsCronCleanerTest extends WP_UnitTestCase {
 		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
 
 		$this->assertEquals( 'Test Custom Status', $updated_term->name );
-		$this->assertEquals( 'Test Description', $updated_term->description );
+		$this->assertEquals( 'Test Description.', $updated_term->description );
 		$this->assertEmpty( $updated_term->meta['required_user_ids'] );
+
+		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 	}
 
 	public function test_remove_deleted_user_from_required_users_with_reassigned_user() {
@@ -79,8 +83,10 @@ class RequiredFieldsCronCleanerTest extends WP_UnitTestCase {
 		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
 
 		$this->assertEquals( 'Test Custom Status', $updated_term->name );
-		$this->assertEquals( 'Test Description', $updated_term->description );
+		$this->assertEquals( 'Test Description.', $updated_term->description );
 		$this->assertCount( 1, $updated_term->meta['required_user_ids'] );
 		$this->assertEquals( $reassigned_user_id, $updated_term->meta['required_user_ids'][0] );
+
+		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 	}
 }
