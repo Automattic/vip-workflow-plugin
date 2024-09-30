@@ -9,6 +9,7 @@ namespace VIPWorkflow\Tests;
 
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\CustomStatus\Meta\RequiredFieldsCronCleaner;
+use WP_UnitTestCase;
 
 class RequiredFieldsCronCleanerTest extends WP_UnitTestCase {
 
