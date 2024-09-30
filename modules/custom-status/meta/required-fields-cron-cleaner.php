@@ -16,7 +16,7 @@ class RequiredFieldsCronCleaner {
 		add_action( 'delete_user', [ __CLASS__, 'remove_deleted_user_from_required_users' ], 10, 2 );
 
 		// Remove deleted metadata fields from required metadata fields
-		add_action( 'delete_metadata', [ __CLASS__, 'remove_deleted_metadata_from_required_metadata' ], 10, 1 );
+		add_action( 'vw_editorial_metadata_term_deleted', [ __CLASS__, 'remove_deleted_metadata_from_required_metadata' ], 10, 1 );
 	}
 
 	/**

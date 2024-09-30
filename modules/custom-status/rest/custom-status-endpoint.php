@@ -366,6 +366,11 @@ class CustomStatusEndpoint {
 	// Utility functions
 
 	private static function is_valid_editorial_metadata_ids( $metadata_ids ) {
+		// If the array is empty, it's valid
+		if ( [] === $metadata_ids ) {
+			return true;
+		}
+
 		// ToDo: Optimize this to batch fetch metadata terms, and only include the ID field.
 		foreach ( $metadata_ids as $metadata_id ) {
 			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_id );
@@ -378,6 +383,11 @@ class CustomStatusEndpoint {
 	}
 
 	private static function is_valid_user_ids( $user_ids ) {
+		// If the array is empty, it's valid
+		if ( [] === $user_ids ) {
+			return true;
+		}
+
 		$args = [
 			'include' => $user_ids,
 			'fields'  => [ 'ID' ],
