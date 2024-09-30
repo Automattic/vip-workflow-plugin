@@ -36,17 +36,22 @@ export default function CreateEditCustomStatusModal( {
 			customStatus?.meta?.required_metadata_fields.length > 0 &&
 			editorialMetadatas.length > 0
 		) {
+			// Get the required metadata fields from the custom status meta and find the corresponding editorial metadata.
 			const required_metadatas = customStatus.meta.required_metadata_fields.map( metadata => {
 				return editorialMetadatas.find(
 					editorialMetadata => editorialMetadata.term_id === metadata
 				);
 			} );
 
-			return required_metadatas;
+			// Filter out any undefined values.
+			return required_metadatas.filter( metadata => metadata );
 		}
 
 		return [];
 	} );
+
+	console.log( requiredMetadatas );
+
 	const [ metadatas, setMetadatas ] = useState( editorialMetadatas );
 
 	// Modal properties
