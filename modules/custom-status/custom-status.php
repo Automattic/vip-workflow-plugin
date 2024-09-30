@@ -83,8 +83,6 @@ class Custom_Status extends Module {
 		add_action( 'admin_menu', [ $this, 'add_admin_menu' ], 6 /* Prior to default registration of sub-pages */ );
 
 		// These seven-ish methods are hacks for fixing bugs in WordPress core
-		add_action( 'admin_init', [ $this, 'check_timestamp_on_publish' ] );
-		add_filter( 'wp_insert_post_data', [ $this, 'fix_custom_status_timestamp' ], 10, 2 );
 		add_filter( 'wp_insert_post_data', [ $this, 'maybe_keep_post_name_empty' ], 10, 2 );
 		add_filter( 'pre_wp_unique_post_slug', [ $this, 'fix_unique_post_slug' ], 10, 6 );
 		add_filter( 'preview_post_link', [ $this, 'fix_preview_link_part_one' ] );
@@ -194,6 +192,7 @@ class Custom_Status extends Module {
 					'label_count'               => _n_noop( "{$status->name} <span class='count'>(%s)</span>", "{$status->name} <span class='count'>(%s)</span>" ),
 					'show_in_admin_status_list' => true,
 					'show_in_admin_all_list'    => true,
+					'date_floating'             => true,
 				] );
 			}
 		}
@@ -979,103 +978,6 @@ class Custom_Status extends Module {
 	}
 
 	// Hacks for custom statuses to work with core
-
-	// phpcs:disable:WordPress.Security.NonceVerification.Missing -- Disabling nonce verification but we should renable it.
-
-	/**
-	 * This is a hack! hack! hack! until core is fixed/better supports custom statuses
-	 *
-	 * When publishing a post with a custom status, set the status to 'pending' temporarily
-	 * @see Works around this limitation: http://core.trac.wordpress.org/browser/tags/3.2.1/wp-includes/post.php#L2694
-	 * @see Original thread: http://wordpress.org/support/topic/plugin-edit-flow-custom-statuses-create-timestamp-problem
-	 * @see Core ticket: http://core.trac.wordpress.org/ticket/18362
-	 */
-	public function check_timestamp_on_publish() {
-		global $pagenow, $wpdb;
-
-		if ( $this->disable_custom_statuses_for_post_type() ) {
-			return;
-		}
-
-		// Handles the transition to 'publish' on edit.php
-		if ( VIP_Workflow::instance() !== null && 'edit.php' === $pagenow && isset( $_REQUEST['bulk_edit'] ) ) {
-			// For every post_id, set the post_status as 'pending' only when there's no timestamp set for $post_date_gmt
-			if ( isset( $_REQUEST['post'] ) && isset( $_REQUEST['_status'] ) && 'publish' === $_REQUEST['_status'] ) {
-				$post_ids = array_map( 'intval', (array) $_REQUEST['post'] );
-				foreach ( $post_ids as $post_id ) {
-					$wpdb->update( $wpdb->posts, [ 'post_status' => 'pending' ], [
-						'ID'            => $post_id,
-						'post_date_gmt' => '0000-00-00 00:00:00',
-					] );
-					clean_post_cache( $post_id );
-				}
-			}
-		}
-
-		// Handles the transition to 'publish' on post.php
-		if ( VIP_Workflow::instance() !== null && 'post.php' === $pagenow && isset( $_POST['publish'] ) ) {
-			// Set the post_status as 'pending' only when there's no timestamp set for $post_date_gmt
-			if ( isset( $_POST['post_ID'] ) ) {
-				$post_id = (int) $_POST['post_ID'];
-				$ret     = $wpdb->update( $wpdb->posts, [ 'post_status' => 'pending' ], [
-					'ID'            => $post_id,
-					'post_date_gmt' => '0000-00-00 00:00:00',
-				] );
-				clean_post_cache( $post_id );
-				foreach ( [ 'aa', 'mm', 'jj', 'hh', 'mn' ] as $timeunit ) {
-					if ( isset( $_POST[ $timeunit ] ) && ! empty( $_POST[ 'hidden_' . $timeunit ] ) && $_POST[ 'hidden_' . $timeunit ] != $_POST[ $timeunit ] ) {
-						$edit_date = '1';
-						break;
-					}
-				}
-				if ( $ret && empty( $edit_date ) ) {
-					add_filter( 'pre_post_date', [ $this, 'helper_timestamp_hack' ] );
-					add_filter( 'pre_post_date_gmt', [ $this, 'helper_timestamp_hack' ] );
-				}
-			}
-		}
-	}
-
-	//phpcs:enable:WordPress.Security.NonceVerification.Missing
-
-	/**
-	 * PHP < 5.3.x doesn't support anonymous functions
-	 * This helper is only used for the check_timestamp_on_publish method above
-	 */
-	public function helper_timestamp_hack() {
-		return ( 'pre_post_date' === current_filter() ) ? current_time( 'mysql' ) : '';
-	}
-
-	/**
-	 * This is a hack! hack! hack! until core is fixed/better supports custom statuses
-	 *
-	 * Normalize post_date_gmt if it isn't set to the past or the future
-	 * @see Works around this limitation: https://core.trac.wordpress.org/browser/tags/4.5.1/src/wp-includes/post.php#L3182
-	 * @see Original thread: http://wordpress.org/support/topic/plugin-edit-flow-custom-statuses-create-timestamp-problem
-	 * @see Core ticket: http://core.trac.wordpress.org/ticket/18362
-	 */
-	public function fix_custom_status_timestamp( $data, $postarr ) {
-		// Don't run this if VIP Workflow isn't active, or we're on some other page
-		if ( $this->disable_custom_statuses_for_post_type()
-		|| VIP_Workflow::instance() === null ) {
-			return $data;
-		}
-
-		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
-
-		//Post is scheduled or published? Ignoring.
-		if ( ! in_array( $postarr['post_status'], $status_slugs ) ) {
-			return $data;
-		}
-
-		//If empty, keep empty.
-		if ( empty( $postarr['post_date_gmt'] )
-		|| '0000-00-00 00:00:00' === $postarr['post_date_gmt'] ) {
-			$data['post_date_gmt'] = '0000-00-00 00:00:00';
-		}
-
-		return $data;
-	}
 
 	/**
 	 * A new hack! hack! hack! until core better supports custom statuses`
