@@ -8,16 +8,15 @@
 namespace VIPWorkflow\Tests;
 
 use VIPWorkflow\VIP_Workflow;
-use WP_UnitTestCase;
 
 /**
  * Ensure restricted posts block updates from unauthorized users.
  */
-class CustomStatusTransitionsTest extends WP_UnitTestCase {
+class CustomStatusTransitionsTest extends WorkflowTestCase {
 
 	public function test_transition_restrictions_as_privileged_user() {
-		$admin_user = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
-		wp_set_current_user( $admin_user->ID );
+		$admin_user_id = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
+		wp_set_current_user( $admin_user_id );
 
 		// Setup statuses, with the second status requiring admin user permissions
 		$status_1 = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 1', [
@@ -28,7 +27,7 @@ class CustomStatusTransitionsTest extends WP_UnitTestCase {
 		$status_2_restricted = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 2 (restricted)', [
 			'position'          => -2,
 			'slug'              => 'status-2-restricted',
-			'required_user_ids' => [ $admin_user->ID ],
+			'required_user_ids' => [ $admin_user_id ],
 		] );
 
 		$status_3 = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 3', [
@@ -67,12 +66,12 @@ class CustomStatusTransitionsTest extends WP_UnitTestCase {
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_3->term_id );
 
 		wp_set_current_user( null );
-		wp_delete_user( $admin_user->ID );
+		wp_delete_user( $admin_user_id );
 	}
 
 	public function test_transition_restrictions_as_unprivileged_user() {
-		$author_user = self::create_user( 'test-unprivileged-author', [ 'role' => 'author' ] );
-		wp_set_current_user( $author_user->ID );
+		$author_user_id = self::create_user( 'test-unprivileged-author', [ 'role' => 'author' ] );
+		wp_set_current_user( $author_user_id );
 
 		// Setup statuses, with the second status requiring admin user permissions
 		$status_1 = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 1', [
@@ -80,11 +79,11 @@ class CustomStatusTransitionsTest extends WP_UnitTestCase {
 			'slug'     => 'status-1',
 		] );
 
-		$admin_user          = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
+		$admin_user_id       = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
 		$status_2_restricted = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 2 (restricted)', [
 			'position'          => -2,
 			'slug'              => 'status-2-restricted',
-			'required_user_ids' => [ $admin_user->ID ],
+			'required_user_ids' => [ $admin_user_id ],
 		] );
 
 		$status_3 = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 3', [
@@ -121,27 +120,5 @@ class CustomStatusTransitionsTest extends WP_UnitTestCase {
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_1->term_id );
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_2_restricted->term_id );
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_3->term_id );
-
-		wp_set_current_user( null );
-		wp_delete_user( $admin_user->ID );
-		wp_delete_user( $author_user->ID );
-	}
-
-	private static function create_user( $username, $args = [] ) {
-		$default_args = [
-			'user_login'   => $username,
-			'user_pass'    => 'password',
-			'display_name' => $username,
-			'user_email'   => sprintf( '%s@example.com', $username ),
-			'role'         => 'editor',
-		];
-
-		$user_id = wp_insert_user( array_merge( $default_args, $args ) );
-
-		if ( is_wp_error( $user_id ) ) {
-			throw new \Exception( esc_html( $user_id->get_error_message() ) );
-		}
-
-		return get_user_by( 'id', $user_id );
 	}
 }

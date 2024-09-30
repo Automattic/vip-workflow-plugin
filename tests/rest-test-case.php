@@ -2,7 +2,7 @@
 /**
  * Class RestApiTest
  *
- * @package vip-block-data-api
+ * @package vip-workflow
  */
 
 namespace VIPWorkflow\Tests;
@@ -14,7 +14,7 @@ use WP_REST_Server;
 /**
  * e2e tests to ensure that the REST API endpoint is available.
  */
-class RestTestCase extends TestCase {
+class RestTestCase extends WorkflowTestCase {
 	protected $administrator_user_id;
 	protected $server;
 
@@ -25,8 +25,7 @@ class RestTestCase extends TestCase {
 		parent::setUp();
 
 		// Create an administrative user for tests to use
-		$this->administrator_user_id = wp_insert_user([
-			'user_login' => 'admin-rest-user',
+		$this->administrator_user_id = $this->create_user( 'admin-rest-user', [
 			'user_pass'  => wp_generate_password(),
 			'user_email' => 'admin-rest-user@example.com',
 			'role'       => 'administrator',
@@ -47,13 +46,6 @@ class RestTestCase extends TestCase {
 	protected function tearDown(): void {
 		global $wp_rest_server;
 		$wp_rest_server = null;
-
-		if ( is_multisite() ) {
-			// Ensure user is fully deleted in multisite tests
-			wpmu_delete_user( $this->administrator_user_id );
-		} else {
-			wp_delete_user( $this->administrator_user_id );
-		}
 
 		parent::tearDown();
 	}
