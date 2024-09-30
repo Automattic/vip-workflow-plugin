@@ -438,7 +438,7 @@ class Custom_Status extends Module {
 		if ( $required_user_ids && ! in_array( get_current_user_id(), $required_user_ids, true ) ) {
 			// This status requires review, and the current user is not permitted to transition the post.
 			// Return an empty array, which will cause the update to fail with an error.
-			return [];
+			return false;
 		}
 
 		return $data;
