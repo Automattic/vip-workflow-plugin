@@ -92,6 +92,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertEquals( $editor_user->ID, $updated_term->required_user_ids[0] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
+		wp_delete_user( $editor_user->ID );
 	}
 
 	public function test_delete_custom_status() {
