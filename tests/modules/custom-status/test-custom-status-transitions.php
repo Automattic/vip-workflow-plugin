@@ -8,12 +8,12 @@
 namespace VIPWorkflow\Tests;
 
 use VIPWorkflow\VIP_Workflow;
-use WP_REST_Request;
+use WP_UnitTestCase;
 
 /**
  * Ensure restricted posts block updates from unauthorized users.
  */
-class CustomStatusTransitionsTest extends RestTestCase {
+class CustomStatusTransitionsTest extends WP_UnitTestCase {
 
 	public function test_transition_restrictions_as_privileged_user() {
 		$admin_user = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
@@ -137,6 +137,11 @@ class CustomStatusTransitionsTest extends RestTestCase {
 		];
 
 		$user_id = wp_insert_user( array_merge( $default_args, $args ) );
+
+		if ( is_wp_error( $user_id ) ) {
+			throw new \Exception( esc_html( $user_id->get_error_message() ) );
+		}
+
 		return get_user_by( 'id', $user_id );
 	}
 }
