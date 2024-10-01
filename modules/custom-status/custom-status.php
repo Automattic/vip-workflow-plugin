@@ -421,7 +421,7 @@ class Custom_Status extends Module {
 		}
 
 		$prior_post_status = $this->get_custom_status_by( 'slug', $prior_post_status_slug );
-		$required_user_ids = $prior_post_status->required_user_ids ?? [];
+		$required_user_ids = $prior_post_status->meta[ self::METADATA_REQ_USER_IDS_KEY ] ?? [];
 
 		if ( $required_user_ids && ! in_array( get_current_user_id(), $required_user_ids, true ) ) {
 			// This status requires review, and the current user is not permitted to transition the post.
