@@ -175,8 +175,6 @@ class Settings extends Module {
 	 * Validate input from the end user
 	 */
 	public function settings_validate( $new_options ) {
-		// ToDo: There's no error messages shown right now, or any kind of notice that data is invalid.
-
 		// Whitelist validation for the post type options
 		if ( ! isset( $new_options['post_types'] ) ) {
 			$new_options['post_types'] = [];

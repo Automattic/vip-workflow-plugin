@@ -22,7 +22,6 @@ if ( defined( 'VIP_WORKFLOW_LOADED' ) ) {
 
 define( 'VIP_WORKFLOW_LOADED', true );
 
-// ToDo: When 6.4 is our min version, switch to wp_admin_notice.
 global $wp_version;
 if ( version_compare( phpversion(), '8.0', '<' ) || version_compare( $wp_version, '6.2', '<' ) ) {
 		add_action( 'admin_notices', function () {

@@ -297,8 +297,6 @@ class Custom_Status extends Module {
 
 	/**
 	 * Check whether custom status stuff should be loaded on this page
-	 *
-	 * @todo migrate this to the base module class
 	 */
 	public function is_whitelisted_page() {
 		global $pagenow;
@@ -319,8 +317,6 @@ class Custom_Status extends Module {
 
 	/**
 	 * Adds all necessary javascripts to make custom statuses work
-	 *
-	 * @todo Support private and future posts on edit.php view
 	 */
 	public function post_admin_header() {
 		global $post, $pagenow;
@@ -339,7 +335,6 @@ class Custom_Status extends Module {
 
 			// $selected can be empty, but must be set because it's used as a JS variable
 			$selected      = '';
-			$selected_name = '';
 
 			if ( ! empty( $post ) ) {
 				// Get the status of the current post
@@ -459,10 +454,6 @@ class Custom_Status extends Module {
 		/* translators: %s: meta key that failed to save */
 		return new WP_Error( 'invalid', sprintf( __( 'Unable to create the custom status, as the %s failed to save.', 'vip-workflow' ), $meta ) );
 	}
-
-	// ToDo: Once custom status has been refactored, the below CRUD methods should be unified with the
-	// ones from Editorial metadata module and turned into a utility class focused on DB operations.
-	// We could call that utility class ORM or DAO.
 
 	/**
 	 * Adds a new custom status as a term in the wp_terms table.
@@ -678,7 +669,6 @@ class Custom_Status extends Module {
 		// Re-order the positions after deletion
 		$custom_statuses = $this->get_custom_statuses();
 
-		// ToDo: Optimize this to only work on the next or previous item.
 		$current_postition = 1;
 
 		// save each status with the new position
@@ -813,8 +803,6 @@ class Custom_Status extends Module {
 
 		return true;
 	}
-
-	// ToDo: Move all these hacks to a separate class focused on core hacks, that gets init at the top of the file.
 
 	/**
 	 * Display our custom post statuses in post listings when needed.

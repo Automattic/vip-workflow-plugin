@@ -211,7 +211,6 @@ class EditorialMetadataEndpoint {
 			'name'        => $editorial_metadata_name,
 		];
 
-		// ToDo: Ensure that we don't do an update when the name, description and type are the same as the current editorial metadata
 		$update_editorial_metadata_result = EditorialMetadata::update_editorial_metadata_term( $term_id, $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
@@ -225,7 +224,6 @@ class EditorialMetadataEndpoint {
 	 */
 	public static function handle_delete_editorial_metadata( WP_REST_Request $request ) {
 		$term_id = $request->get_param( 'id' );
-
 		// Check to make sure the editorial metadata exists
 		$editorial_metadata_by_id = EditorialMetadata::get_editorial_metadata_term_by( 'id', $term_id );
 		if ( ! $editorial_metadata_by_id ) {
