@@ -19,18 +19,21 @@ class CustomStatusTransitionsTest extends WorkflowTestCase {
 		wp_set_current_user( $admin_user_id );
 
 		// Setup statuses, with the second status requiring admin user permissions
-		$status_1 = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 1', [
+		$status_1 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+			'name'     => 'Status 1',
 			'position' => -3,
 			'slug'     => 'status-1',
 		] );
 
-		$status_2_restricted = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 2 (restricted)', [
+		$status_2_restricted = VIP_Workflow::instance()->custom_status->add_custom_status( [
+			'name'              => 'Status 2 (restricted)',
 			'position'          => -2,
 			'slug'              => 'status-2-restricted',
 			'required_user_ids' => [ $admin_user_id ],
 		] );
 
-		$status_3 = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 3', [
+		$status_3 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+			'name'     => 'Status 3',
 			'position' => -1,
 			'slug'     => 'status-3',
 		] );
@@ -74,19 +77,22 @@ class CustomStatusTransitionsTest extends WorkflowTestCase {
 		wp_set_current_user( $author_user_id );
 
 		// Setup statuses, with the second status requiring admin user permissions
-		$status_1 = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 1', [
+		$status_1 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+			'name'     => 'Status 1',
 			'position' => -3,
 			'slug'     => 'status-1',
 		] );
 
 		$admin_user_id       = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
-		$status_2_restricted = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 2 (restricted)', [
+		$status_2_restricted = VIP_Workflow::instance()->custom_status->add_custom_status( [
+			'name'              => 'Status 2 (restricted)',
 			'position'          => -2,
 			'slug'              => 'status-2-restricted',
 			'required_user_ids' => [ $admin_user_id ],
 		] );
 
-		$status_3 = VIP_Workflow::instance()->custom_status->add_custom_status( 'Status 3', [
+		$status_3 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+			'name'     => 'Status 3',
 			'position' => -1,
 			'slug'     => 'status-3',
 		] );

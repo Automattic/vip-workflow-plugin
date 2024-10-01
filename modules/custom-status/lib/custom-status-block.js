@@ -207,11 +207,11 @@ const getCustomSaveButtonText = ( nextStatusTerm, isRestrictedStatus, isWideView
 };
 
 const isStatusRestrictedFromMovement = status => {
-	if ( ! status.required_user_ids || status.required_user_ids.length === 0 ) {
+	if ( ! status?.meta?.required_users || status?.meta?.required_users.length === 0 ) {
 		return false;
 	}
 
-	const requiredUserIds = status.required_user_ids;
+	const requiredUserIds = status.meta.required_users;
 	const currentUserId = parseInt( VW_CUSTOM_STATUSES.current_user_id, /* radix */ 10 );
 
 	return ! requiredUserIds.includes( currentUserId );
