@@ -20,6 +20,9 @@ class RequiredUserIdHandler {
 		// Add the required user IDs to the custom status
 		add_filter( 'vw_register_custom_status_meta', [ __CLASS__, 'add_required_user_ids' ], 10, 2 );
 
+		// Remove the required users on a status
+		add_action( 'vw_delete_custom_status_meta', [ __CLASS__, 'delete_required_users' ], 10, 1 );
+
 		// Remove deleted users from required users, and if a user is reassigned, update the required users
 		add_action( 'delete_user', [ __CLASS__, 'remove_deleted_user_from_required_users' ], 10, 2 );
 	}
@@ -32,10 +35,7 @@ class RequiredUserIdHandler {
 	 * @return array The updated meta keys
 	 */
 	public static function add_required_user_ids( array $term_meta, WP_Term $custom_status ): array {
-		$user_ids = get_term_meta( $custom_status->term_id, Custom_Status::METADATA_REQ_USER_IDS_KEY, true );
-		if ( ! is_array( $user_ids ) ) {
-			$user_ids = [];
-		}
+		$user_ids = MetaCleanupUtilities::get_array( $custom_status->term_id, Custom_Status::METADATA_REQ_USER_IDS_KEY );
 
 		$term_meta[ Custom_Status::METADATA_REQ_USER_IDS_KEY ] = $user_ids;
 
@@ -53,6 +53,16 @@ class RequiredUserIdHandler {
 		}, $term_meta[ Custom_Status::METADATA_REQ_USER_IDS_KEY ] ) );
 
 		return $term_meta;
+	}
+
+	/**
+	 * Delete the required users on a status
+	 *
+	 * @param integer $term_id The term ID of the status
+	 * @return void
+	 */
+	public static function delete_required_users( int $term_id ): void {
+		delete_term_meta( $term_id, Custom_Status::METADATA_REQ_USER_IDS_KEY );
 	}
 
 	/**

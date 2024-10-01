@@ -31,7 +31,7 @@ class RequiredMetadataIdHandlerTest extends WP_UnitTestCase {
 			'name'               => 'Test Custom Status',
 			'slug'               => 'test-custom-status',
 			'description'        => 'Test Description.',
-			'required_metadata_fields' => [ $meta_id ],
+			'required_metadata_ids' => [ $meta_id ],
 		] );
 		$term_id     = $custom_status_term->term_id;
 
@@ -41,7 +41,7 @@ class RequiredMetadataIdHandlerTest extends WP_UnitTestCase {
 
 		$this->assertEquals( 'Test Custom Status', $updated_term->name );
 		$this->assertEquals( 'Test Description.', $updated_term->description );
-		$this->assertEmpty( $updated_term->meta['required_metadata_fields'] );
+		$this->assertEmpty( $updated_term->meta['required_metadata_ids'] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 	}

@@ -8,7 +8,7 @@
 namespace VIPWorkflow\Modules\CustomStatus\Meta;
 
 use VIPWorkflow\Modules\Custom_Status;
-
+use VIPWorkflow\Modules\Shared\PHP\MetaCleanupUtilities;
 use WP_Term;
 
 class PositionHandler {
@@ -16,6 +16,9 @@ class PositionHandler {
 	public static function init(): void {
 		// Add the position to the custom status
 		add_filter( 'vw_register_custom_status_meta', [ __CLASS__, 'add_position' ], 10, 2 );
+
+		// Remove the position on a status
+		add_action( 'vw_delete_custom_status_meta', [ __CLASS__, 'delete_position' ], 10, 1 );
 	}
 
 	/**
@@ -26,16 +29,21 @@ class PositionHandler {
 	 * @return array The updated meta keys
 	 */
 	public static function add_position( array $term_meta, WP_Term $custom_status ): array {
-		$position = get_term_meta( $custom_status->term_id, Custom_Status::METADATA_POSITION_KEY, true );
-
-		// ToDo: Should this be done, or is it better to just return the value?
-		if ( ! is_numeric( $position ) ) {
-			$position = 0;
-		}
+		$position = MetaCleanupUtilities::get_int( $custom_status->term_id, Custom_Status::METADATA_POSITION_KEY );
 
 		$term_meta[ Custom_Status::METADATA_POSITION_KEY ] = $position;
 
 		return $term_meta;
+	}
+
+	/**
+	 * Delete the position on a status
+	 *
+	 * @param integer $term_id The term ID of the status
+	 * @return void
+	 */
+	public static function delete_position( int $term_id ): void {
+		delete_term_meta( $term_id, Custom_Status::METADATA_POSITION_KEY );
 	}
 }
 

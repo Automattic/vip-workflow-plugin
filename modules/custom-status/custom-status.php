@@ -19,7 +19,6 @@ use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
 use WP_Error;
 use WP_Query;
-use WP_User;
 
 use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
 use WP_Term;
@@ -38,7 +37,7 @@ class Custom_Status extends Module {
 
 	// The metadata keys for the custom status term
 	const METADATA_POSITION_KEY = 'position';
-	const METADATA_REQ_EDITORIAL_FIELDS_KEY = 'required_metadata_fields';
+	const METADATA_REQ_EDITORIAL_IDS_KEY = 'required_metadata_ids';
 	const METADATA_REQ_USER_IDS_KEY = 'required_user_ids';
 	const METADATA_REQ_USERS_KEY = 'required_users';
 
@@ -444,6 +443,23 @@ class Custom_Status extends Module {
 		return $allcaps;
 	}
 
+	/**
+	 * Perform the necessary data cleanup when an error occurs while saving the custom status,
+	 * and generate a WP_Error object.
+	 *
+	 * @param integer $term_id The ID of the term that failed to save
+	 * @param string $meta The metadata that failed to save
+	 * @return WP_Error The WP_Error object
+	 */
+	private function generate_error_and_delete_bad_data( int $term_id, string $meta ): WP_Error {
+		// Trigger the deletion of the metadata associated with the status
+		do_action( 'vw_delete_custom_status_meta', $term_id );
+		wp_delete_term( $term_id, self::TAXONOMY_KEY );
+
+		/* translators: %s: meta key that failed to save */
+		return new WP_Error( 'invalid', sprintf( __( 'Unable to create the custom status, as the %s failed to save.', 'vip-workflow' ), $meta ) );
+	}
+
 	// ToDo: Once custom status has been refactored, the below CRUD methods should be unified with the
 	// ones from Editorial metadata module and turned into a utility class focused on DB operations.
 	// We could call that utility class ORM or DAO.
@@ -497,32 +513,25 @@ class Custom_Status extends Module {
 
 		$term_id = $inserted_term['term_id'];
 
-		$position = $args['position'];
-		$required_metadata_fields = $args['required_metadata_fields'] ?? [];
-		$required_user_ids = $args['required_user_ids'] ?? [];
+		$position = $args[ self::METADATA_POSITION_KEY ];
+		$required_metadata_ids = $args[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [];
+		$required_user_ids = $args[ self::METADATA_REQ_USER_IDS_KEY ] ?? [];
 
 		// In case of failure, data cleanup happens which includes the term and the meta keys.
 
 		$position_meta_result = update_term_meta( $term_id, self::METADATA_POSITION_KEY, $position );
 		if ( is_wp_error( $position_meta_result ) || ! $position_meta_result ) {
-			wp_delete_term( $term_id, self::TAXONOMY_KEY );
-			// Don't eat the error, return it
-			return is_wp_error( $position_meta_result ) ? $position_meta_result : new WP_Error( 'invalid', __( 'Unable to create custom status.', 'vip-workflow' ) );
+			return $this->generate_error_and_delete_bad_data( $term_id, 'position' );
 		}
 
-		$req_metadata_fields_result = update_term_meta( $term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, $required_metadata_fields );
-		if ( is_wp_error( $req_metadata_fields_result ) || ! $req_metadata_fields_result ) {
-			delete_term_meta( $term_id, self::METADATA_POSITION_KEY );
-			wp_delete_term( $term_id, self::TAXONOMY_KEY );
-			return is_wp_error( $req_metadata_fields_result ) ? $req_metadata_fields_result : new WP_Error( 'invalid', __( 'Unable to create custom status.', 'vip-workflow' ) );
+		$required_metadata_ids_result = update_term_meta( $term_id, self::METADATA_REQ_EDITORIAL_IDS_KEY, $required_metadata_ids );
+		if ( is_wp_error( $required_metadata_ids_result ) || ! $required_metadata_ids_result ) {
+			return $this->generate_error_and_delete_bad_data( $term_id, 'required editorial metadata fields' );
 		}
 
 		$required_user_ids_result = update_term_meta( $term_id, self::METADATA_REQ_USER_IDS_KEY, $required_user_ids );
 		if ( is_wp_error( $required_user_ids_result ) || ! $required_user_ids_result ) {
-			delete_term_meta( $term_id, self::METADATA_POSITION_KEY );
-			delete_term_meta( $term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY );
-			wp_delete_term( $term_id, self::TAXONOMY_KEY );
-			return is_wp_error( $required_user_ids_result ) ? $required_user_ids_result : new WP_Error( 'invalid', __( 'Unable to create custom status.', 'vip-workflow' ) );
+			return $this->generate_error_and_delete_bad_data( $term_id, 'required users' );
 		}
 
 		$term_result = $this->get_custom_status_by( 'id', $term_id );
@@ -581,24 +590,24 @@ class Custom_Status extends Module {
 
 		// Update the metadata first, as if it fails we don't want to update the term
 
-		if ( isset( $args['position'] ) ) {
-			$position_meta_result = update_term_meta( $status_id, self::METADATA_POSITION_KEY, $args['position'] );
-			if ( is_wp_error( $position_meta_result ) ) {
-				return $position_meta_result;
+		if ( isset( $args[ self::METADATA_POSITION_KEY ] ) ) {
+			$position_meta_result = update_term_meta( $status_id, self::METADATA_POSITION_KEY, $args[ self::METADATA_POSITION_KEY ] );
+			if ( is_wp_error( $position_meta_result ) || ! $position_meta_result ) {
+				return new WP_Error( 'invalid', __( 'Unable to update custom status.', 'vip-workflow' ) );
 			}
 		}
 
-		if ( isset( $args['required_metadata_fields'] ) ) {
-			$req_postmeta_fields_meta_result = update_term_meta( $status_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, $args['required_metadata_fields'] );
-			if ( is_wp_error( $req_postmeta_fields_meta_result ) ) {
-				return $req_postmeta_fields_meta_result;
+		if ( isset( $args[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ) ) {
+			$required_metadata_ids_result = update_term_meta( $status_id, self::METADATA_REQ_EDITORIAL_IDS_KEY, $args[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] );
+			if ( is_wp_error( $required_metadata_ids_result ) || ! $required_metadata_ids_result ) {
+				return new WP_Error( 'invalid', __( 'Unable to update custom status.', 'vip-workflow' ) );
 			}
 		}
 
-		if ( isset( $args['required_user_ids'] ) ) {
-			$req_user_ids_meta_result = update_term_meta( $status_id, self::METADATA_REQ_USER_IDS_KEY, $args['required_user_ids'] );
-			if ( is_wp_error( $req_user_ids_meta_result ) ) {
-				return $req_user_ids_meta_result;
+		if ( isset( $args[ self::METADATA_REQ_USER_IDS_KEY ] ) ) {
+			$req_user_ids_meta_result = update_term_meta( $status_id, self::METADATA_REQ_USER_IDS_KEY, $args[ self::METADATA_REQ_USER_IDS_KEY ] );
+			if ( is_wp_error( $req_user_ids_meta_result ) || ! $req_user_ids_meta_result ) {
+				return new WP_Error( 'invalid', __( 'Unable to update custom status.', 'vip-workflow' ) );
 			}
 		}
 
@@ -655,11 +664,8 @@ class Custom_Status extends Module {
 			return $reassigned_result;
 		}
 
-		delete_term_meta( $status_id, self::METADATA_POSITION_KEY );
-
-		delete_term_meta( $status_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY );
-
-		delete_term_meta( $status_id, self::METADATA_REQ_USER_IDS_KEY );
+		// Trigger the deletion of the metadata associated with the status
+		do_action( 'vw_delete_custom_status_meta', $status_id );
 
 		$result = wp_delete_term( $status_id, self::TAXONOMY_KEY );
 		if ( ! $result ) {

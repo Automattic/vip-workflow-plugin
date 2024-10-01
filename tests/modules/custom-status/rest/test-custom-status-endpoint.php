@@ -41,7 +41,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 			'name'              => 'test-status',
 			'description'       => 'A test status for testing',
 			'required_user_ids' => [ $admin_user->ID ],
-			'required_metadata_fields' => [ $editorial_metadata_term->term_id ],
+			'required_metadata_ids' => [ $editorial_metadata_term->term_id ],
 		] );
 
 		wp_set_current_user( $this->administrator_user_id );
@@ -62,8 +62,8 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertEquals( 'A test status for testing', $created_term->description );
 		$this->assertCount( 1, $created_term->meta['required_user_ids'] );
 		$this->assertEquals( $admin_user->ID, $created_term->meta['required_user_ids'][0] );
-		$this->assertCount( 1, $created_term->meta['required_metadata_fields'] );
-		$this->assertEquals( $editorial_metadata_term->term_id, $created_term->meta['required_metadata_fields'][0] );
+		$this->assertCount( 1, $created_term->meta['required_metadata_ids'] );
+		$this->assertEquals( $editorial_metadata_term->term_id, $created_term->meta['required_metadata_ids'][0] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 		EditorialMetadata::delete_editorial_metadata_term( $editorial_metadata_term->term_id );

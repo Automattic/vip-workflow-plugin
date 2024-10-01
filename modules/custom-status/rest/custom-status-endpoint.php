@@ -50,11 +50,11 @@ class CustomStatusEndpoint {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
-				'required_metadata_fields' => [
+				'required_metadata_ids' => [
 					'default'           => [],
 					'validate_callback' => function ( $param ) {
-						$metadata_field_ids = array_map( 'absint', $param );
-						return self::is_valid_editorial_metadata_ids( $metadata_field_ids );
+						$metadata_ids = array_map( 'absint', $param );
+						return self::is_valid_editorial_metadata_ids( $metadata_ids );
 					},
 					'sanitize_callback' => function ( $param ) {
 						return array_map( 'absint', $param );
@@ -108,11 +108,11 @@ class CustomStatusEndpoint {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
-				'required_metadata_fields' => [
+				'required_metadata_ids' => [
 					'default'           => [],
 					'validate_callback' => function ( $param ) {
-						$metadata_field_ids = array_map( 'absint', $param );
-						return self::is_valid_editorial_metadata_ids( $metadata_field_ids );
+						$metadata_ids = array_map( 'absint', $param );
+						return self::is_valid_editorial_metadata_ids( $metadata_ids );
 					},
 					'sanitize_callback' => function ( $param ) {
 						return array_map( 'absint', $param );
@@ -205,7 +205,7 @@ class CustomStatusEndpoint {
 		$status_name               = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
 		$status_description        = $request->get_param( 'description' );
-		$status_required_metadata_fields = $request->get_param( 'required_metadata_fields' );
+		$status_required_metadata_ids = $request->get_param( 'required_metadata_ids' );
 		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
@@ -236,7 +236,7 @@ class CustomStatusEndpoint {
 			'name'               => $status_name,
 			'description'        => $status_description,
 			'slug'               => $status_slug,
-			'required_metadata_fields' => $status_required_metadata_fields,
+			'required_metadata_ids' => $status_required_metadata_ids,
 			'required_user_ids' => $status_required_user_ids,
 		];
 
@@ -256,7 +256,7 @@ class CustomStatusEndpoint {
 		$status_name               = sanitize_text_field( $request->get_param( 'name' ) );
 		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
 		$status_description        = $request->get_param( 'description' );
-		$status_required_metadata_fields = $request->get_param( 'required_metadata_fields' );
+		$status_required_metadata_ids = $request->get_param( 'required_metadata_ids' );
 		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
@@ -297,7 +297,7 @@ class CustomStatusEndpoint {
 			'name'               => $status_name,
 			'description'        => $status_description,
 			'slug'               => $status_slug,
-			'required_metadata_fields' => $status_required_metadata_fields,
+			'required_metadata_ids' => $status_required_metadata_ids,
 			'required_user_ids' => $status_required_user_ids,
 		];
 

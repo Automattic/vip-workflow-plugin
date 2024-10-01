@@ -32,12 +32,12 @@ export default function CreateEditCustomStatusModal( {
 	// Taxonomy conflicts arise if this is done server side, so this transient field is only set here.
 	const [ requiredMetadatas, setRequiredMetadatas ] = useState( () => {
 		if (
-			customStatus?.meta?.required_metadata_fields &&
-			customStatus?.meta?.required_metadata_fields.length > 0 &&
+			customStatus?.meta?.required_metadata_ids &&
+			customStatus?.meta?.required_metadata_ids.length > 0 &&
 			editorialMetadatas.length > 0
 		) {
 			// Get the required metadata fields from the custom status meta and find the corresponding editorial metadata.
-			const required_metadatas = customStatus.meta.required_metadata_fields.map( metadata => {
+			const required_metadatas = customStatus.meta.required_metadata_ids.map( metadata => {
 				return editorialMetadatas.find(
 					editorialMetadata => editorialMetadata.term_id === metadata
 				);
@@ -73,8 +73,8 @@ export default function CreateEditCustomStatusModal( {
 			const userIds = requiredUsers.map( user => user.id );
 			data.required_user_ids = userIds;
 
-			const metadataFields = requiredMetadatas.map( metadata => metadata.term_id );
-			data.required_metadata_fields = metadataFields;
+			const metadataIds = requiredMetadatas.map( metadata => metadata.term_id );
+			data.required_metadata_ids = metadataIds;
 		}
 
 		try {
