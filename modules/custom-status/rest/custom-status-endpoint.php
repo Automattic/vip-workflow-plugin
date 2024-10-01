@@ -92,7 +92,6 @@ class CustomStatusEndpoint {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
-						// ToDo: Switch this to our own method once Custom Status module has been refactored.
 						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
 						return ( $term instanceof WP_Term );
 					},
@@ -141,7 +140,6 @@ class CustomStatusEndpoint {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
-						// ToDo: Switch this to our own method once Custom Status module has been refactored.
 						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
 						return ( $term instanceof WP_Term );
 					},
@@ -168,7 +166,6 @@ class CustomStatusEndpoint {
 						// validate each item in the array.
 						foreach ( $param as $position => $term_id ) {
 							$term_id = absint( $term_id );
-							// ToDo: Switch this to our own method once Custom Status module has been refactored.
 							$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
 							if ( ! $term instanceof WP_Term ) {
 								return false;
@@ -343,7 +340,6 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Status order must be an array.' );
 		}
 
-		// ToDo: Switch this to be a bulk update instead.
 		foreach ( $status_order as $position => $term_id ) {
 
 			// Have to add 1 to the position because the index started with zero
@@ -371,7 +367,6 @@ class CustomStatusEndpoint {
 			return true;
 		}
 
-		// ToDo: Optimize this to batch fetch metadata terms, and only include the ID field.
 		foreach ( $metadata_ids as $metadata_id ) {
 			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_id );
 			if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {

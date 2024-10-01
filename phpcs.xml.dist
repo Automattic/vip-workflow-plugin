@@ -53,10 +53,6 @@
 		<!-- Localization is done in a legacy manner in some places, and its been left as is for now -->
 		<exclude name="WordPress.WP.I18n.InterpolatedVariableSingular" />
 		<exclude name="WordPress.WP.I18n.InterpolatedVariablePlural" />
-		<exclude name="WordPress.WP.I18n.MissingSingularPlaceholder" />
-		<exclude name="WordPress.WP.I18n.NonSingularStringLiteralText" />
-		<!-- This rule is hard to solve given the heavy use of JS in the PHP code right now -->
-		<exclude name="Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure" />
 	</rule>
 
 </ruleset>

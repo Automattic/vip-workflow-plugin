@@ -1,4 +1,3 @@
-// ToDo: Refactor to use vanilla JS instead.
 jQuery( document ).ready( function () {
 	const i18n = window.__vw_localize_custom_status;
 
