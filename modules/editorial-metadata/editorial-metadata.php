@@ -49,12 +49,6 @@ class EditorialMetadata {
 
 		// Load block editor CSS
 		add_action( 'enqueue_block_editor_assets', [ __CLASS__, 'load_styles_for_block_editor' ] );
-
-		// Add metadata fields to term
-		add_filter( 'get_term', [ __CLASS__, 'add_metadata_to_term' ], 10, 1 );
-
-		// Add metadata fields to all terms
-		add_filter( 'get_terms', [ __CLASS__, 'add_metadata_to_terms' ], 10, 2 );
 	}
 
 	/**
@@ -231,7 +225,7 @@ class EditorialMetadata {
 			$terms = [];
 		}
 
-		$terms = array_values( $terms );
+		$terms = array_map( [ __CLASS__, 'add_metadata_to_term' ], $terms );
 
 		// Set the internal object cache
 		self::$editorial_metadata_terms_cache = $terms;
@@ -242,10 +236,11 @@ class EditorialMetadata {
 	/**
 	 * Returns a term for single metadata field
 	 *
-	 * @param int|string $field The slug or ID for the metadata field term to return
+	 * @param string $field The field to search by
+	 * @param int|string $value The value to search for
 	 * @return WP_Term|false $term Term's object representation
 	 */
-	public static function get_editorial_metadata_term_by( $field, $value ) {
+	public static function get_editorial_metadata_term_by( string $field, int|string $value ): WP_Term|false {
 		// We only support id, slug and name for lookup.
 		if ( ! in_array( $field, [ 'id', 'slug', 'name' ] ) ) {
 			return false;
@@ -259,7 +254,13 @@ class EditorialMetadata {
 			$term = get_term_by( $field, $value, self::METADATA_TAXONOMY );
 		}
 
-		return null !== $term ? $term : false;
+		if ( is_wp_error( $term ) || ! $term ) {
+			$term = false;
+		} else {
+			$term = self::add_metadata_to_term( $term );
+		}
+
+		return $term;
 	}
 
 	/**
@@ -292,25 +293,6 @@ class EditorialMetadata {
 	}
 
 	/**
-	 * Add all the metadata fields to all terms in a list
-	 *
-	 * @param array $terms The terms to add metadata to
-	 * @param array $taxonomies The taxonomies to add metadata to
-	 * @return array $terms The terms with metadata added
-	 */
-	public static function add_metadata_to_terms( array $terms, array $taxonomies ): array {
-		if ( ! in_array( self::METADATA_TAXONOMY, $taxonomies ) ) {
-			return $terms;
-		}
-
-		foreach ( $terms as $term ) {
-			$term = self::add_metadata_to_term( $term );
-		}
-
-		return $terms;
-	}
-
-	/**
 	 * Insert a new editorial metadata term
 	 *
 	 * @param array $args The arguments for the new term
@@ -318,10 +300,10 @@ class EditorialMetadata {
 	 */
 	public static function insert_editorial_metadata_term( array $args ): WP_Term|WP_Error {
 		$term_to_save = [
-			'slug'        => $args['slug'] ?? '',
+			'slug'        => $args['slug'] ?? sanitize_title( $args['name'] ),
 			'description' => $args['description'] ?? '',
 		];
-		$term_name = $args['name'] ?? '';
+		$term_name = $args['name'];
 
 		$inserted_term = wp_insert_term( $term_name, self::METADATA_TAXONOMY, $term_to_save );
 
@@ -334,7 +316,7 @@ class EditorialMetadata {
 
 		$term_id = $inserted_term['term_id'];
 
-		$metadata_type = $args['type'] ?? '';
+		$metadata_type = $args['type'];
 		$metadata_postmeta_key  = self::get_postmeta_key( $metadata_type, $term_id );
 
 		$type_meta_result = add_term_meta( $term_id, self::METADATA_TYPE_KEY, $metadata_type );
@@ -373,7 +355,7 @@ class EditorialMetadata {
 		if ( is_wp_error( $old_term ) ) {
 			return $old_term;
 		} else if ( ! $old_term ) {
-			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( "Editorial metadata doesn't exist.", 'vip-workflow' ) );
 		}
 
 		// Reset the internal object cache
@@ -404,7 +386,7 @@ class EditorialMetadata {
 	 * @param int $term_id The term we want deleted
 	 * @return bool $result Whether or not the term was deleted
 	 */
-	public static function delete_editorial_metadata_term( int $term_id ): bool {
+	public static function delete_editorial_metadata_term( int $term_id ): bool|WP_Error {
 		$term = self::get_editorial_metadata_term_by( 'id', $term_id );
 		if ( is_wp_error( $term ) ) {
 			return $term;
@@ -424,6 +406,8 @@ class EditorialMetadata {
 		if ( ! $result ) {
 			return new WP_Error( 'invalid', __( 'Unable to delete editorial metadata term.', 'vip-workflow' ) );
 		}
+
+		do_action( 'vw_editorial_metadata_term_deleted', $term_id );
 
 		// Reset the internal object cache
 		self::$editorial_metadata_terms_cache = [];

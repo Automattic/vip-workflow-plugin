@@ -1,33 +1,62 @@
 import apiFetch from '@wordpress/api-fetch';
 import {
-	Card,
 	Button,
+	Card,
+	CardBody,
+	__experimentalDivider as Divider,
+	__experimentalHStack as HStack,
 	Modal,
 	TextControl,
 	TextareaControl,
-	Tooltip,
 	ToggleControl,
-	__experimentalDivider as Divider,
-	__experimentalHStack as HStack,
-	CardBody,
+	Tooltip,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import ErrorNotice from '../../../../shared/js/components/error-notice';
+import MetadataSelectFormTokenField from '../metadata-select-form-token-field';
 import UserSelectFormTokenField from '../user-select-form-token-field';
 
-export default function CreateEditCustomStatusModal( { customStatus, onCancel, onSuccess } ) {
+export default function CreateEditCustomStatusModal( {
+	customStatus,
+	editorialMetadatas,
+	onCancel,
+	onSuccess,
+} ) {
 	// Custom status properties
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
-	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.required_users || [] );
+	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.meta?.required_users || [] );
+
+	// Taxonomy conflicts arise if this is done server side, so this transient field is only set here.
+	const [ requiredMetadatas, setRequiredMetadatas ] = useState( () => {
+		if (
+			customStatus?.meta?.required_metadata_ids &&
+			customStatus?.meta?.required_metadata_ids.length > 0 &&
+			editorialMetadatas.length > 0
+		) {
+			// Get the required metadata fields from the custom status meta and find the corresponding editorial metadata.
+			const required_metadatas = customStatus.meta.required_metadata_ids.map( metadata => {
+				return editorialMetadatas.find(
+					editorialMetadata => editorialMetadata.term_id === metadata
+				);
+			} );
+
+			// Filter out any undefined values.
+			return required_metadatas.filter( metadata => metadata );
+		}
+
+		return [];
+	} );
+
+	const [ metadatas, setMetadatas ] = useState( editorialMetadatas );
 
 	// Modal properties
 	const [ error, setError ] = useState( null );
 	const [ isRequesting, setIsRequesting ] = useState( false );
 	const [ isRestrictedSectionVisible, setIsRestrictedSectionVisible ] = useState(
-		requiredUsers.length > 0
+		requiredUsers.length > 0 || requiredMetadatas.length > 0
 	);
 
 	let titleText;
@@ -43,6 +72,9 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 		if ( isRestrictedSectionVisible ) {
 			const userIds = requiredUsers.map( user => user.id );
 			data.required_user_ids = userIds;
+
+			const metadataIds = requiredMetadatas.map( metadata => metadata.term_id );
+			data.required_metadata_ids = metadataIds;
 		}
 
 		try {
@@ -96,7 +128,7 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 			<ToggleControl
 				label={ __( 'This status is restricted', 'vip-workflow' ) }
 				help={ __(
-					'Require a specific user or role to advance to the next status.',
+					'Require a specific user or editorial metadata field to advance to the next status.',
 					'vip-workflow'
 				) }
 				checked={ isRestrictedSectionVisible }
@@ -112,6 +144,16 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 								help={ __( 'These users are allowed to advance this status.', 'vip-workflow' ) }
 								requiredUsers={ requiredUsers }
 								onUsersChanged={ setRequiredUsers }
+							/>
+							<MetadataSelectFormTokenField
+								label={ __( 'Required metadata fields', 'vip-workflow' ) }
+								help={ __(
+									'These editorial metadata fields are required to advance this status.',
+									'vip-workflow'
+								) }
+								editorialMetadatas={ metadatas }
+								requiredMetadatas={ requiredMetadatas }
+								onMetadatasChanged={ setRequiredMetadatas }
 							/>
 						</CardBody>
 					</Card>

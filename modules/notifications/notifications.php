@@ -237,7 +237,6 @@ class Notifications {
 	public static function send_emails( array $recipients, string $subject, string $message, string $message_headers = '' ): void {
 		$response = wp_mail( $recipients, $subject, $message, $message_headers );
 
-		// ToDo: Switch to using log2logstash instead of error_log.
 		if ( ! $response ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( 'Unable to send notification to email(s) provided.' );
@@ -296,7 +295,6 @@ class Notifications {
 			]
 		);
 
-		// ToDo: Switch to using log2logstash instead of error_log.
 		if ( is_wp_error( $response ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( 'Unable to send notification to webhook provided.' );

@@ -22,7 +22,6 @@ if ( defined( 'VIP_WORKFLOW_LOADED' ) ) {
 
 define( 'VIP_WORKFLOW_LOADED', true );
 
-// ToDo: When 6.4 is our min version, switch to wp_admin_notice.
 global $wp_version;
 if ( version_compare( phpversion(), '8.0', '<' ) || version_compare( $wp_version, '6.2', '<' ) ) {
 		add_action( 'admin_notices', function () {
@@ -48,7 +47,7 @@ require_once VIP_WORKFLOW_ROOT . '/class-workflow.php';
 // Utility classes
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/install-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/options-utilities.php';
-require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/taxonomy-utilities.php';
+require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/meta-cleanup-utilities.php';
 
 // Modules
 require_once VIP_WORKFLOW_ROOT . '/modules/editorial-metadata/editorial-metadata.php';

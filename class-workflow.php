@@ -294,8 +294,6 @@ class VIP_Workflow {
 	 * @return array $post_types All of the post types that are 'on'
 	 */
 	public function get_supported_post_types(): array {
-		// ToDo: Move this function to a shared static helper after we've refactored into static modules
-
 		$post_types         = [];
 		$post_types_options = $this->settings->module->options->post_types;
 
