@@ -28,12 +28,15 @@ const CustomSaveButtonSidebar = ( {
 	const isTinyViewport = useViewportMatch( 'small', '<' );
 	const isWideViewport = useViewportMatch( 'wide', '>=' );
 
-	const isCustomSaveButtonVisible = useMemo(
-		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, savedStatus ),
-		[ isUnsavedPost, postType, savedStatus ]
-	);
+	const isRestrictedStatus = useMemo( () => {
+		const currentStatusTerm = getCurrentStatusTerm( savedStatus );
+		return isStatusRestrictedFromMovement( currentStatusTerm );
+	}, [ savedStatus ] );
 
-	const isCustomSaveButtonDisabled = isSavingPost;
+	const isCustomSaveButtonVisible = useMemo(
+		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, savedStatus, isRestrictedStatus ),
+		[ isUnsavedPost, postType, savedStatus, isRestrictedStatus ]
+	);
 
 	// Selectively remove the native save button when publish guard and workflow statuses are in use
 	useEffect( () => {
@@ -51,6 +54,7 @@ const CustomSaveButtonSidebar = ( {
 	}, [ isCustomSaveButtonVisible ] );
 
 	const nextStatusTerm = useMemo( () => getNextStatusTerm( savedStatus ), [ savedStatus ] );
+	const isCustomSaveButtonDisabled = isSavingPost || isRestrictedStatus;
 
 	useInterceptPluginSidebar(
 		`${ pluginName }/${ sidebarName }`,
@@ -66,7 +70,10 @@ const CustomSaveButtonSidebar = ( {
 		}
 	);
 
-	const buttonText = getCustomSaveButtonText( nextStatusTerm, isWideViewport );
+	const buttonText = getCustomSaveButtonText( nextStatusTerm, isRestrictedStatus, isWideViewport );
+	const tooltipText = isRestrictedStatus
+		? __( 'Awaiting review from a privileged user', 'vip-workflow' )
+		: buttonText;
 
 	const InnerSaveButton = (
 		<CustomInnerSaveButton
@@ -88,7 +95,7 @@ const CustomSaveButtonSidebar = ( {
 
 			{ /* Custom save button in the toolbar */ }
 			{ isCustomSaveButtonVisible && (
-				<PluginSidebar name={ sidebarName } title={ buttonText } icon={ InnerSaveButton }>
+				<PluginSidebar name={ sidebarName } title={ tooltipText } icon={ InnerSaveButton }>
 					{ /* ToDo: Use this space to show approve/reject UI or other sidebar controls */ }
 					{ null }
 				</PluginSidebar>
@@ -160,7 +167,7 @@ const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled, isTinyVi
 
 // Utility methods
 
-const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
+const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug, isRestrictedStatus ) => {
 	if ( isUnsavedPost ) {
 		// Show native "Save" for new posts
 		return false;
@@ -172,10 +179,10 @@ const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
 	const allButLastStatusTerm = VW_CUSTOM_STATUSES.status_terms.slice( 0, -1 );
 	const isSupportedStatusTerm = allButLastStatusTerm.map( t => t.slug ).includes( statusSlug );
 
-	return isSupportedPostType && isSupportedStatusTerm;
+	return isSupportedPostType && ( isSupportedStatusTerm || isRestrictedStatus );
 };
 
-const getCustomSaveButtonText = ( nextStatusTerm, isWideViewport ) => {
+const getCustomSaveButtonText = ( nextStatusTerm, isRestrictedStatus, isWideViewport ) => {
 	let buttonText = __( 'Save', 'vip-workflow' );
 
 	if ( nextStatusTerm ) {
@@ -190,9 +197,29 @@ const getCustomSaveButtonText = ( nextStatusTerm, isWideViewport ) => {
 			// translators: %s: Next custom status name, possibly truncated with an ellipsis. e.g. "Draft" or "Pendi…"
 			buttonText = sprintf( __( 'Move to %s', 'vip-workflow' ), truncatedStatus );
 		}
+	} else if ( ! nextStatusTerm && isRestrictedStatus ) {
+		// Awaiting a privileged user to approve publishing.
+		// Show disabled "Publish" button as a placeholder.
+		buttonText = __( 'Publish', 'vip-workflow' );
 	}
 
 	return buttonText;
+};
+
+const isStatusRestrictedFromMovement = status => {
+	if ( ! status?.meta?.required_user_ids || status?.meta?.required_user_ids.length === 0 ) {
+		return false;
+	}
+
+	const requiredUserIds = status.meta.required_user_ids;
+	const currentUserId = parseInt( VW_CUSTOM_STATUSES.current_user_id, /* radix */ 10 );
+
+	return ! requiredUserIds.includes( currentUserId );
+};
+
+const getCurrentStatusTerm = currentStatus => {
+	const statusTerm = VW_CUSTOM_STATUSES.status_terms.find( term => term.slug === currentStatus );
+	return statusTerm ? statusTerm : false;
 };
 
 const getNextStatusTerm = currentStatus => {

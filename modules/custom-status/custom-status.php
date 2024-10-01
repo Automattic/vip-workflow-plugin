@@ -102,6 +102,8 @@ class Custom_Status extends Module {
 		// Pagination for custom post statuses when previewing posts
 		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
 
+		// Add server-side controls to block post status movements that are prohihibited by workflow rules
+		add_filter( 'wp_insert_post_data', [ $this, 'maybe_block_post_update' ], 1000, 4 );
 		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
 	}
 
@@ -283,6 +285,7 @@ class Custom_Status extends Module {
 		$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? true : false;
 
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
+			'current_user_id'          => get_current_user_id(),
 			'is_publish_guard_enabled' => $publish_guard_enabled,
 			'status_terms'             => $this->get_custom_statuses(),
 			'supported_post_types'     => VIP_Workflow::instance()->get_supported_post_types(),
@@ -388,6 +391,48 @@ class Custom_Status extends Module {
 	}
 
 	/**
+	 * Remove the ability to transition a post if custom status requires review from a nonpresent user
+	 *
+	 * @param array $data Post data submitted for update
+	 *
+	 * @return array $allcaps All capabilities for the user
+	 */
+	public function maybe_block_post_update( $data ) {
+		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
+
+		// Ignore if it's not a post status and post type we support
+		if ( ! in_array( $data['post_type'], VIP_Workflow::instance()->get_supported_post_types() ) ) {
+			return $data;
+		}
+
+		$new_post_status   = $data['post_status'];
+		$post_status_index = array_search( $new_post_status, $status_slugs, /* strict */ true );
+
+		if ( false === $post_status_index ) {
+			// This is not a supported custom status
+			return $data;
+		}
+
+		$prior_post_status_slug = $post_status_index > 0 ? $status_slugs[ $post_status_index - 1 ] : false;
+
+		if ( false === $prior_post_status_slug ) {
+			// This is the first custom status, so we don't need to block it
+			return $data;
+		}
+
+		$prior_post_status = $this->get_custom_status_by( 'slug', $prior_post_status_slug );
+		$required_user_ids = $prior_post_status->meta[ self::METADATA_REQ_USER_IDS_KEY ] ?? [];
+
+		if ( $required_user_ids && ! in_array( get_current_user_id(), $required_user_ids, true ) ) {
+			// This status requires review, and the current user is not permitted to transition the post.
+			// Return an empty array, which will cause the update to fail with an error.
+			return false;
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Remove or add the publish capability for users based on the post status
 	 *
 	 * @param array $allcaps All capabilities for the user
@@ -398,6 +443,7 @@ class Custom_Status extends Module {
 	 */
 	public function remove_or_add_publish_capability_for_user( $allcaps, $cap, $args ) {
 		global $post;
+
 		$supported_publish_caps_map = [
 			'post' => 'publish_posts',
 			'page' => 'publish_pages',
@@ -429,9 +475,8 @@ class Custom_Status extends Module {
 
 		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
 
-		// If the post status is not the last status, remove the publish capability
+		// Ensure publishing is disabled for all but the last status
 		if ( $status_before_publish->slug !== $post->post_status ) {
-			// Remove the publish capability based on the post type
 			$allcaps[ $supported_publish_caps_map[ $post->post_type ] ] = false;
 		}
 

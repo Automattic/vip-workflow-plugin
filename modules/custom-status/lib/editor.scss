@@ -65,7 +65,7 @@
 	// When the inner button has `.is-disabled`,
 	// make the outer button appear disabled
 	&:has(.vip-workflow-save-button.is-disabled) {
-		cursor: none;
+		cursor: not-allowed;
 		color: rgba(255, 255, 255, 0.4);
 		outline: none;
 	}

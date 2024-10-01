@@ -39,6 +39,7 @@ function _manually_load_plugin() {
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
 // Add TestCase classes.
+require_once __DIR__ . '/workflow-test-case.php';
 require_once __DIR__ . '/rest-test-case.php';
 
 // Allow wp_mail() in tests from a valid domain name

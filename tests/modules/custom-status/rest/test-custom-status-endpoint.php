@@ -34,13 +34,13 @@ class CustomStatusRestApiTest extends RestTestCase {
 			'description' => 'A test metadata for testing',
 			'type'        => 'text',
 		] );
-		$admin_user = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
+		$admin_user_id = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
 
 		$request = new WP_REST_Request( 'POST', sprintf( '/%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status' ) );
 		$request->set_body_params( [
 			'name'              => 'test-status',
 			'description'       => 'A test status for testing',
-			'required_user_ids' => [ $admin_user->ID ],
+			'required_user_ids' => [ $admin_user_id ],
 			'required_metadata_ids' => [ $editorial_metadata_term->term_id ],
 		] );
 
@@ -61,13 +61,12 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertEquals( 'test-status', $created_term->name );
 		$this->assertEquals( 'A test status for testing', $created_term->description );
 		$this->assertCount( 1, $created_term->meta['required_user_ids'] );
-		$this->assertEquals( $admin_user->ID, $created_term->meta['required_user_ids'][0] );
+		$this->assertEquals( $admin_user_id, $created_term->meta['required_user_ids'][0] );
 		$this->assertCount( 1, $created_term->meta['required_metadata_ids'] );
 		$this->assertEquals( $editorial_metadata_term->term_id, $created_term->meta['required_metadata_ids'][0] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 		EditorialMetadata::delete_editorial_metadata_term( $editorial_metadata_term->term_id );
-		wp_delete_user( $admin_user->ID );
 	}
 
 	public function test_create_custom_status() {
@@ -102,15 +101,15 @@ class CustomStatusRestApiTest extends RestTestCase {
 			'description'        => 'Test Description.',
 		] );
 
-		$term_id     = $custom_status_term->term_id;
-		$editor_user = self::create_user( 'test-editor', [ 'role' => 'editor' ] );
+		$term_id        = $custom_status_term->term_id;
+		$editor_user_id = self::create_user( 'test-editor', [ 'role' => 'editor' ] );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( '/%s/%s/%d', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status', $term_id ) );
 		$request->set_body_params( [
 			'id'                => $term_id,
 			'name'              => 'Test Custom Status 2',
 			'description'       => 'Test Description 2!',
-			'required_user_ids' => [ $editor_user->ID ],
+			'required_user_ids' => [ $editor_user_id ],
 		] );
 
 		wp_set_current_user( $this->administrator_user_id );
@@ -125,7 +124,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertEquals( 'Test Custom Status 2', $updated_term->name );
 		$this->assertEquals( 'Test Description 2!', $updated_term->description );
 		$this->assertCount( 1, $updated_term->meta['required_user_ids'] );
-		$this->assertEquals( $editor_user->ID, $updated_term->meta['required_user_ids'][0] );
+		$this->assertEquals( $editor_user_id, $updated_term->meta['required_user_ids'][0] );
 
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
 	}
@@ -194,18 +193,5 @@ class CustomStatusRestApiTest extends RestTestCase {
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term1->term_id );
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term2->term_id );
 		VIP_Workflow::instance()->custom_status->delete_custom_status( $term3->term_id );
-	}
-
-	private static function create_user( $username, $args = [] ) {
-		$default_args = [
-			'user_login'   => $username,
-			'user_pass'    => 'password',
-			'display_name' => $username,
-			'user_email'   => sprintf( '%s@example.com', $username ),
-			'role'         => 'editor',
-		];
-
-		$user_id = wp_insert_user( array_merge( $default_args, $args ) );
-		return get_user_by( 'id', $user_id );
 	}
 }
