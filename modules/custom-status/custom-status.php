@@ -10,8 +10,9 @@ namespace VIPWorkflow\Modules;
 require_once __DIR__ . '/rest/custom-status-endpoint.php';
 
 // Term meta
-require_once __DIR__ . '/meta/required-user-id-cleanup.php';
-require_once __DIR__ . '/meta/required-metadata-id-cleanup.php';
+require_once __DIR__ . '/meta/required-user-id-handler.php';
+require_once __DIR__ . '/meta/required-metadata-id-handler.php';
+require_once __DIR__ . '/meta/position-handler.php';
 
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
@@ -448,65 +449,6 @@ class Custom_Status extends Module {
 	// We could call that utility class ORM or DAO.
 
 	/**
-	 * Add all the metadata fields to a term
-	 *
-	 * @param WP_Term $term The term to add metadata to
-	 * @return WP_Term $term The term with metadata added
-	 */
-	public static function add_metadata_to_term( WP_Term $term ): WP_Term {
-		if ( ! isset( $term->taxonomy ) || self::TAXONOMY_KEY !== $term->taxonomy ) {
-			return $term;
-		}
-
-		// if metadata is already set, don't overwrite it
-		if ( isset( $term->meta )
-		&& isset( $term->meta[ self::METADATA_POSITION_KEY ] )
-		&& isset( $term->meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] )
-		&& isset( $term->meta[ self::METADATA_REQ_USER_IDS_KEY ] )
-		&& isset( $term->meta[ self::METADATA_REQ_USERS_KEY ] ) ) {
-			return $term;
-		}
-
-		$term_meta = [];
-		$term_meta[ self::METADATA_POSITION_KEY ] = get_term_meta( $term->term_id, self::METADATA_POSITION_KEY, true );
-
-		$editorial_metadata_ids = get_term_meta( $term->term_id, self::METADATA_REQ_EDITORIAL_FIELDS_KEY, true );
-		if ( ! is_array( $editorial_metadata_ids ) ) {
-			$editorial_metadata_ids = [];
-		}
-		$term_meta[ self::METADATA_REQ_EDITORIAL_FIELDS_KEY ] = $editorial_metadata_ids;
-
-		$user_ids = get_term_meta( $term->term_id, self::METADATA_REQ_USER_IDS_KEY, true );
-		if ( ! is_array( $user_ids ) ) {
-			$user_ids = [];
-		}
-		$term_meta[ self::METADATA_REQ_USER_IDS_KEY ] = $user_ids;
-
-		// For UI purposes, add 'required_users' to the term meta.
-		// `required_metadatas` hasn't been added as that causes init problems with the taxonomies.
-		$term_meta[ self::METADATA_REQ_USERS_KEY ] = array_filter( array_map( function ( $user_id ) {
-			$user = get_user_by( 'ID', $user_id );
-			if ( $user instanceof WP_User ) {
-				return [
-					'id'   => $user->ID,
-					'slug' => $user->user_login,
-				];
-			} else {
-				return false;
-			}
-		}, $term_meta[ self::METADATA_REQ_USER_IDS_KEY ] ) );
-
-		// Only the position is required.
-		if ( '' === $term_meta[ self::METADATA_POSITION_KEY ] ) {
-			return $term;
-		}
-
-		$term->meta = $term_meta;
-
-		return $term;
-	}
-
-	/**
 	 * Adds a new custom status as a term in the wp_terms table.
 	 * Basically a wrapper for the wp_insert_term class.
 	 *
@@ -771,7 +713,13 @@ class Custom_Status extends Module {
 			$statuses = [];
 		}
 
-		$statuses = array_map( [ $this, 'add_metadata_to_term' ], $statuses );
+		// Add metadata to each term
+		$statuses = array_map( function ( $status ) {
+			$term_meta = apply_filters( 'vw_register_custom_status_meta', [], $status );
+			$status->meta = $term_meta;
+
+			return $status;
+		}, $statuses );
 
 		// Set the internal object cache
 		$this->custom_statuses_cache = $statuses;
@@ -803,7 +751,8 @@ class Custom_Status extends Module {
 		if ( is_wp_error( $custom_status ) || ! $custom_status ) {
 			$custom_status = false;
 		} else {
-			$custom_status = $this->add_metadata_to_term( $custom_status );
+			$term_meta = apply_filters( 'vw_register_custom_status_meta', [], $custom_status );
+			$custom_status->meta = $term_meta;
 		}
 
 		return $custom_status;
