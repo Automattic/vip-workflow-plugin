@@ -47,7 +47,7 @@ class EditorialMetadataRestApiTest extends RestTestCase {
 
 	public function test_update_editorial_metadata() {
 		$editorial_metadata_term = EditorialMetadata::insert_editorial_metadata_term( [
-			'name'        => 'Test Metadata 1',
+			'name'        => 'Test Metadata 3',
 			'description' => 'A test metadata for testing',
 			'type'        => 'text',
 		] );

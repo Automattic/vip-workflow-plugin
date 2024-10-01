@@ -7,11 +7,11 @@
 namespace VIPWorkflow\Modules\CustomStatus\REST;
 
 use VIPWorkflow\Modules\Custom_Status;
+use VIPWorkflow\Modules\EditorialMetadata;
 use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_REST_Request;
 use WP_Term;
-use WP_User;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -50,6 +50,16 @@ class CustomStatusEndpoint {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
 					},
 				],
+				'required_metadata_ids' => [
+					'default'           => [],
+					'validate_callback' => function ( $param ) {
+						$metadata_ids = array_map( 'absint', $param );
+						return self::is_valid_editorial_metadata_ids( $metadata_ids );
+					},
+					'sanitize_callback' => function ( $param ) {
+						return array_map( 'absint', $param );
+					},
+				],
 				'required_user_ids' => [
 					'default'           => [],
 					'validate_callback' => function ( $param ) {
@@ -82,6 +92,7 @@ class CustomStatusEndpoint {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
+						// ToDo: Switch this to our own method once Custom Status module has been refactored.
 						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
 						return ( $term instanceof WP_Term );
 					},
@@ -95,6 +106,16 @@ class CustomStatusEndpoint {
 					'default'           => '',
 					'sanitize_callback' => function ( $param ) {
 						return stripslashes( wp_filter_nohtml_kses( trim( $param ) ) );
+					},
+				],
+				'required_metadata_ids' => [
+					'default'           => [],
+					'validate_callback' => function ( $param ) {
+						$metadata_ids = array_map( 'absint', $param );
+						return self::is_valid_editorial_metadata_ids( $metadata_ids );
+					},
+					'sanitize_callback' => function ( $param ) {
+						return array_map( 'absint', $param );
 					},
 				],
 				'required_user_ids' => [
@@ -120,6 +141,7 @@ class CustomStatusEndpoint {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
+						// ToDo: Switch this to our own method once Custom Status module has been refactored.
 						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
 						return ( $term instanceof WP_Term );
 					},
@@ -146,6 +168,7 @@ class CustomStatusEndpoint {
 						// validate each item in the array.
 						foreach ( $param as $position => $term_id ) {
 							$term_id = absint( $term_id );
+							// ToDo: Switch this to our own method once Custom Status module has been refactored.
 							$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
 							if ( ! $term instanceof WP_Term ) {
 								return false;
@@ -179,9 +202,10 @@ class CustomStatusEndpoint {
 	 * @param WP_REST_Request $request
 	 */
 	public static function handle_create_status( WP_REST_Request $request ) {
-		$status_name              = sanitize_text_field( $request->get_param( 'name' ) );
-		$status_slug              = sanitize_title( $request->get_param( 'name' ) );
-		$status_description       = $request->get_param( 'description' );
+		$status_name               = sanitize_text_field( $request->get_param( 'name' ) );
+		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
+		$status_description        = $request->get_param( 'description' );
+		$status_required_metadata_ids = $request->get_param( 'required_metadata_ids' );
 		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
@@ -208,14 +232,15 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Status name conflicts with existing term. Please choose another.' );
 		}
 
-		// get status_slug & status_description
 		$args = [
-			'description'       => $status_description,
-			'slug'              => $status_slug,
+			'name'               => $status_name,
+			'description'        => $status_description,
+			'slug'               => $status_slug,
+			'required_metadata_ids' => $status_required_metadata_ids,
 			'required_user_ids' => $status_required_user_ids,
 		];
 
-		$add_status_result = $custom_status_module->add_custom_status( $status_name, $args );
+		$add_status_result = $custom_status_module->add_custom_status( $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $add_status_result );
@@ -227,10 +252,11 @@ class CustomStatusEndpoint {
 	 * @param WP_REST_Request $request
 	 */
 	public static function handle_update_status( WP_REST_Request $request ) {
-		$term_id                  = $request->get_param( 'id' );
-		$status_name              = sanitize_text_field( $request->get_param( 'name' ) );
-		$status_slug              = sanitize_title( $request->get_param( 'name' ) );
-		$status_description       = $request->get_param( 'description' );
+		$term_id                   = $request->get_param( 'id' );
+		$status_name               = sanitize_text_field( $request->get_param( 'name' ) );
+		$status_slug               = sanitize_title( $request->get_param( 'name' ) );
+		$status_description        = $request->get_param( 'description' );
+		$status_required_metadata_ids = $request->get_param( 'required_metadata_ids' );
 		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
 		$custom_status_module = VIP_Workflow::instance()->custom_status;
@@ -268,13 +294,13 @@ class CustomStatusEndpoint {
 
 		// get status_name & status_description
 		$args = [
-			'name'              => $status_name,
-			'description'       => $status_description,
-			'slug'              => $status_slug,
+			'name'               => $status_name,
+			'description'        => $status_description,
+			'slug'               => $status_slug,
+			'required_metadata_ids' => $status_required_metadata_ids,
 			'required_user_ids' => $status_required_user_ids,
 		];
 
-		// ToDo: Ensure that we don't do an update when the name and description are the same as the current status
 		$updated_status = $custom_status_module->update_custom_status( $term_id, $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
@@ -339,12 +365,38 @@ class CustomStatusEndpoint {
 
 	// Utility functions
 
-	private static function is_valid_user_ids( $user_ids ) {
-		foreach ( $user_ids as $user_id ) {
-			$user = get_user_by( 'id', $user_id );
-			if ( ! $user instanceof WP_User ) {
+	private static function is_valid_editorial_metadata_ids( $metadata_ids ) {
+		// If the array is empty, it's valid
+		if ( [] === $metadata_ids ) {
+			return true;
+		}
+
+		// ToDo: Optimize this to batch fetch metadata terms, and only include the ID field.
+		foreach ( $metadata_ids as $metadata_id ) {
+			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_id );
+			if ( is_wp_error( $editorial_metadata ) || ! $editorial_metadata ) {
 				return false;
 			}
+		}
+
+		return true;
+	}
+
+	private static function is_valid_user_ids( $user_ids ) {
+		// If the array is empty, it's valid
+		if ( [] === $user_ids ) {
+			return true;
+		}
+
+		$args = [
+			'include' => $user_ids,
+			'fields'  => [ 'ID' ],
+		];
+
+		$users_found = get_users( $args );
+
+		if ( count( $users_found ) !== count( $user_ids ) ) {
+			return false;
 		}
 
 		return true;
