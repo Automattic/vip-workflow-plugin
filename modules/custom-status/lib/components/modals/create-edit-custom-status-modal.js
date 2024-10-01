@@ -50,8 +50,6 @@ export default function CreateEditCustomStatusModal( {
 		return [];
 	} );
 
-	console.log( requiredMetadatas );
-
 	const [ metadatas, setMetadatas ] = useState( editorialMetadatas );
 
 	// Modal properties

@@ -48,6 +48,7 @@ require_once VIP_WORKFLOW_ROOT . '/class-workflow.php';
 // Utility classes
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/install-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/options-utilities.php';
+require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/meta-cleanup-utilities.php';
 
 // Modules
 require_once VIP_WORKFLOW_ROOT . '/modules/editorial-metadata/editorial-metadata.php';

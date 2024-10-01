@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Class RequiredFieldsCronCleanerTest
+ * Class RequiredUserIdCleanupTest
  *
  * @package vip-workflow-plugin
  */
 namespace VIPWorkflow\Tests;
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Modules\CustomStatus\Meta\RequiredFieldsCronCleaner;
+use VIPWorkflow\Modules\CustomStatus\Meta\RequiredUserIdCleanup;
 use WP_UnitTestCase;
 
-class RequiredFieldsCronCleanerTest extends WP_UnitTestCase {
+class RequiredUserIdCleanupTest extends WP_UnitTestCase {
 
 	/**
 	 * Before each test, ensure default custom statuses are available.
@@ -25,27 +25,6 @@ class RequiredFieldsCronCleanerTest extends WP_UnitTestCase {
 		VIP_Workflow::instance()->custom_status->install();
 	}
 
-	public function test_remove_deleted_metadata_from_required_metadata() {
-		$meta_id = 1;
-		$custom_status_term = VIP_Workflow::instance()->custom_status->add_custom_status( [
-			'name'               => 'Test Custom Status',
-			'slug'               => 'test-custom-status',
-			'description'        => 'Test Description.',
-			'required_metadata_fields' => [ $meta_id ],
-		] );
-		$term_id     = $custom_status_term->term_id;
-
-		RequiredFieldsCronCleaner::remove_deleted_metadata_from_required_metadata( $meta_id );
-
-		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
-
-		$this->assertEquals( 'Test Custom Status', $updated_term->name );
-		$this->assertEquals( 'Test Description.', $updated_term->description );
-		$this->assertEmpty( $updated_term->meta['required_metadata_fields'] );
-
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
-	}
-
 	public function test_remove_deleted_user_from_required_users_no_reassigned_user() {
 		$deleted_user_id = 1;
 		$custom_status_term = VIP_Workflow::instance()->custom_status->add_custom_status( [
@@ -56,7 +35,7 @@ class RequiredFieldsCronCleanerTest extends WP_UnitTestCase {
 		] );
 		$term_id     = $custom_status_term->term_id;
 
-		RequiredFieldsCronCleaner::remove_deleted_user_from_required_users( $deleted_user_id, null );
+		RequiredUserIdCleanup::remove_deleted_user_from_required_users( $deleted_user_id, null );
 
 		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
 
@@ -78,7 +57,7 @@ class RequiredFieldsCronCleanerTest extends WP_UnitTestCase {
 		] );
 		$term_id     = $custom_status_term->term_id;
 
-		RequiredFieldsCronCleaner::remove_deleted_user_from_required_users( $deleted_user_id, $reassigned_user_id );
+		RequiredUserIdCleanup::remove_deleted_user_from_required_users( $deleted_user_id, $reassigned_user_id );
 
 		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
 

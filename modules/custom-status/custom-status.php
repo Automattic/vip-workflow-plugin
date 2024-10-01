@@ -10,7 +10,8 @@ namespace VIPWorkflow\Modules;
 require_once __DIR__ . '/rest/custom-status-endpoint.php';
 
 // Term meta
-require_once __DIR__ . '/meta/required-fields-cron-cleaner.php';
+require_once __DIR__ . '/meta/required-user-id-cleanup.php';
+require_once __DIR__ . '/meta/required-metadata-id-cleanup.php';
 
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
@@ -59,7 +60,10 @@ class Custom_Status extends Module {
 	 * Initialize the Custom_Status class if the module is active
 	 */
 	public function init() {
-		// Register custom statuses as a taxonomy
+		// Register the custom status taxonomy
+		$this->register_custom_status_taxonomy();
+
+		// Register the custom statuses in core
 		$this->register_custom_statuses();
 
 		// Register our settings
@@ -148,33 +152,35 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Makes the call to register_post_status to register the user's custom statuses.
-	 * Also unregisters draft and pending, in case the user doesn't want them.
+	 * Register the post metadata taxonomy
+	 *
+	 * @access private
 	 */
-	public function register_custom_statuses() {
-		global $wp_post_statuses;
+	public static function register_custom_status_taxonomy(): void {
+		// We need to make sure taxonomy is registered for all of the post types that support it
+		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
 
-		if ( $this->disable_custom_statuses_for_post_type() ) {
-			return;
-		}
-
-		// Register new taxonomy so that we can store all our fancy new custom statuses (or is it stati?)
-		if ( ! taxonomy_exists( self::TAXONOMY_KEY ) ) {
-			$args = [
+		register_taxonomy( self::TAXONOMY_KEY, $supported_post_types,
+			[
 				'hierarchical'          => false,
 				'update_count_callback' => '_update_post_term_count',
 				'label'                 => false,
 				'query_var'             => false,
 				'rewrite'               => false,
 				'show_ui'               => false,
-			];
-			register_taxonomy( self::TAXONOMY_KEY, 'post', $args );
-		}
+			]
+		);
+	}
 
-		if ( function_exists( 'register_post_status' ) ) {
-			// Users can delete the pending and draft status if they want, so let's get rid of that
+	/**
+	 * Makes the call to register_post_status to register the user's custom statuses.
+	 * Also unregisters pending, in case the user doesn't want them.
+	 */
+	public function register_custom_statuses() {
+		global $wp_post_statuses;
+
+			// Users can delete the pending status if they want, so let's get rid of that
 			// It'll get re-added if the user hasn't "deleted" them
-			unset( $wp_post_statuses['draft'] );
 			unset( $wp_post_statuses['pending'] );
 
 			$custom_statuses = $this->get_custom_statuses();
@@ -184,17 +190,16 @@ class Custom_Status extends Module {
 			// statuses for all post types. This results in
 			// all post statuses for a post type appearing at the top
 			// of manage posts if there is a post with the status
-			foreach ( $custom_statuses as $status ) {
-				register_post_status( $status->slug, [
-					'label'                     => $status->name,
-					'protected'                 => true,
-					'_builtin'                  => false,
-					'label_count'               => _n_noop( "{$status->name} <span class='count'>(%s)</span>", "{$status->name} <span class='count'>(%s)</span>" ),
-					'show_in_admin_status_list' => true,
-					'show_in_admin_all_list'    => true,
-					'date_floating'             => true,
-				] );
-			}
+		foreach ( $custom_statuses as $status ) {
+			register_post_status( $status->slug, [
+				'label'                     => $status->name,
+				'protected'                 => true,
+				'_builtin'                  => false,
+				'label_count'               => _n_noop( "{$status->name} <span class='count'>(%s)</span>", "{$status->name} <span class='count'>(%s)</span>" ),
+				'show_in_admin_status_list' => true,
+				'show_in_admin_all_list'    => true,
+				'date_floating'             => true,
+			] );
 		}
 	}
 
@@ -1130,7 +1135,7 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Fix get_sample_permalink. Previosuly the 'editable_slug' filter was leveraged
+	 * Fix get_sample_permalink. Previously the 'editable_slug' filter was leveraged
 	 * to correct the sample permalink a user could edit on post.php. Since 4.4.40
 	 * the `get_sample_permalink` filter was added which allows greater flexibility in
 	 * manipulating the slug. Critical for cases like editing the sample permalink on
