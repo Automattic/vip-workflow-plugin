@@ -434,13 +434,10 @@ class Custom_Status extends Module {
 
 		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
 
-		// If the post status is not the last status, remove the publish capability or else add it back in
+		// If the post status is not the last status, remove the publish capability
 		if ( $status_before_publish->slug !== $post->post_status ) {
 			// Remove the publish capability based on the post type
 			$allcaps[ $supported_publish_caps_map[ $post->post_type ] ] = false;
-		} else {
-			// Remove the publish capability based on the post type
-			$allcaps[ $supported_publish_caps_map[ $post->post_type ] ] = true;
 		}
 
 		return $allcaps;
