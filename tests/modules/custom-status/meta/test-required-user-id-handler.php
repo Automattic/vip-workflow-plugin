@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Class RequiredUserIdCleanupTest
+ * Class RequiredUserIdHandlerTest
  *
  * @package vip-workflow-plugin
  */
 namespace VIPWorkflow\Tests;
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Modules\CustomStatus\Meta\RequiredUserIdCleanup;
+use VIPWorkflow\Modules\CustomStatus\Meta\RequiredUserIdHandler;
 use WP_UnitTestCase;
 
-class RequiredUserIdCleanupTest extends WP_UnitTestCase {
+class RequiredUserIdHandlerTest extends WP_UnitTestCase {
 
 	/**
 	 * Before each test, ensure default custom statuses are available.
@@ -35,7 +35,7 @@ class RequiredUserIdCleanupTest extends WP_UnitTestCase {
 		] );
 		$term_id     = $custom_status_term->term_id;
 
-		RequiredUserIdCleanup::remove_deleted_user_from_required_users( $deleted_user_id, null );
+		RequiredUserIdHandler::remove_deleted_user_from_required_users( $deleted_user_id, null );
 
 		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
 
@@ -57,7 +57,7 @@ class RequiredUserIdCleanupTest extends WP_UnitTestCase {
 		] );
 		$term_id     = $custom_status_term->term_id;
 
-		RequiredUserIdCleanup::remove_deleted_user_from_required_users( $deleted_user_id, $reassigned_user_id );
+		RequiredUserIdHandler::remove_deleted_user_from_required_users( $deleted_user_id, $reassigned_user_id );
 
 		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
 

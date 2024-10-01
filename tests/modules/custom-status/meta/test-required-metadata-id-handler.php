@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Class RequiredMetadataIdCleanupTest
+ * Class RequiredMetadataIdHandlerTest
  *
  * @package vip-workflow-plugin
  */
 namespace VIPWorkflow\Tests;
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Modules\CustomStatus\Meta\RequiredMetadataIdCleanup;
+use VIPWorkflow\Modules\CustomStatus\Meta\RequiredMetadataIdHandler;
 use WP_UnitTestCase;
 
-class RequiredMetadataIdCleanupTest extends WP_UnitTestCase {
+class RequiredMetadataIdHandlerTest extends WP_UnitTestCase {
 
 	/**
 	 * Before each test, ensure default custom statuses are available.
@@ -35,7 +35,7 @@ class RequiredMetadataIdCleanupTest extends WP_UnitTestCase {
 		] );
 		$term_id     = $custom_status_term->term_id;
 
-		RequiredMetadataIdCleanup::remove_deleted_metadata_from_required_metadata( $meta_id );
+		RequiredMetadataIdHandler::remove_deleted_metadata_from_required_metadata( $meta_id );
 
 		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
 

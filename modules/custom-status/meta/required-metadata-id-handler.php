@@ -1,6 +1,6 @@
 <?php
 /**
- * class RequiredMetadataIdCleanup
+ * class RequiredMetadataIdHandler
  *
  * Cleans up editorial metadata IDs that are required on a custom status, and should be cleaned up once they are deleted.
  */
@@ -13,7 +13,7 @@ use VIPWorkflow\Modules\Shared\PHP\MetaCleanupUtilities;
 
 use WP_Term;
 
-class RequiredMetadataIdCleanup {
+class RequiredMetadataIdHandler {
 
 	public static function init(): void {
 		// Add the required metadata IDs to the custom status
@@ -54,4 +54,4 @@ class RequiredMetadataIdCleanup {
 	}
 }
 
-RequiredMetadataIdCleanup::init();
+RequiredMetadataIdHandler::init();
