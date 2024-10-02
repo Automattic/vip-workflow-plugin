@@ -124,8 +124,8 @@ export default function CreateEditCustomStatusModal( {
 				label="Who can advance to the next status?"
 				selected={ areRestrictedUsersSet }
 				options={ [
-					{ label: 'All users and roles', value: 'all' },
-					{ label: 'Only specific users and roles', value: 'specific' },
+					{ label: 'All users', value: 'all' },
+					{ label: 'Only specific users', value: 'specific' },
 				] }
 				onChange={ value => {
 					setAreRestrictedUsersSet( value );
