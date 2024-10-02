@@ -227,6 +227,7 @@ const isStatusRestrictedFromMovement = ( status, metaFields ) => {
 		const hasMissingMetaFields = requiredMetadas.some( field => {
 			const postmeta_key = field.meta.postmeta_key;
 
+			// Insert the rules engine check here, once that's implemented. Right now, it's just the default values for a boolean and a text field.
 			if ( field.meta.type === 'checkbox' ) {
 				return metaFields[ postmeta_key ];
 			} else {

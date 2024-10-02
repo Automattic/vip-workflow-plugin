@@ -99,7 +99,9 @@ const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
 const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 	return (
 		<HStack __nextHasNoMarginBottom>
-			<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
+			<label id="editorial-metadata-label" title={ editorialMetadata.description }>
+				{ editorialMetadata.label }
+			</label>
 			<ToggleControl
 				__nextHasNoMarginBottom
 				checked={ metaFields?.[ editorialMetadata.key ] }
@@ -138,7 +140,9 @@ const getMemoizedPopoverProps = ( { popoverAnchor, text } ) => {
 const getDropdownButton = ( { editorialMetadata, label, onToggle, isOpen, shouldTruncate } ) => {
 	return (
 		<HStack __nextHasNoMarginBottom>
-			<label title={ editorialMetadata.description }>{ editorialMetadata.label }</label>
+			<label id="editorial-metadata-label" title={ editorialMetadata.description }>
+				{ editorialMetadata.label }
+			</label>
 			<Button
 				// Gutenberg uses whiteSpace: nowrap, but we need to wrap the text so it has to be set here so as to not be overriden
 				style={ { whiteSpace: 'normal' } }

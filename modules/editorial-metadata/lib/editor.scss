@@ -6,3 +6,8 @@
 .vip-workflow-text-popover {
 	min-width: 248px;
 }
+
+.required:after {
+	content: " *";
+	color: red;
+}
