@@ -1,5 +1,5 @@
 import apiFetch from '@wordpress/api-fetch';
-import { FormTokenField, BaseControl } from '@wordpress/components';
+import { FormTokenField } from '@wordpress/components';
 import { debounce } from '@wordpress/compose';
 import { useEffect, useMemo, useState } from '@wordpress/element';
 /**
@@ -9,7 +9,6 @@ import { useEffect, useMemo, useState } from '@wordpress/element';
 export default function UserSelectFormTokenField( {
 	requiredUsers,
 	onUsersChanged,
-	help,
 	...formTokenFieldProps
 } ) {
 	const [ userSearch, setUserSearch ] = useState( '' );
@@ -92,9 +91,6 @@ export default function UserSelectFormTokenField( {
 				// Auto-select first match, so that it's possible to press <Enter> and immediately choose it
 				__experimentalAutoSelectFirstMatch={ true }
 			/>
-
-			{ /* <FormTokenField> doesn't support help text. Provide a BaseControl with the help text instead. */ }
-			{ help && <BaseControl help={ help }></BaseControl> }
 		</>
 	);
 }

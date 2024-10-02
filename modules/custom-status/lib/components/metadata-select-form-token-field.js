@@ -1,6 +1,7 @@
 import { BaseControl, FormTokenField } from '@wordpress/components';
 import { debounce } from '@wordpress/compose';
 import { useEffect, useMemo, useState } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 /**
  * Custom status component
  * @param object props
@@ -21,7 +22,7 @@ export default function MetadataSelectFormTokenField( {
 		requiredMetadatas.map( requiredMetadata => ( {
 			title: requiredMetadata.name,
 			value: requiredMetadata.name,
-			requiredMetadata,
+			metadata: requiredMetadata,
 		} ) )
 	);
 
@@ -97,10 +98,14 @@ export default function MetadataSelectFormTokenField( {
 				__experimentalShowHowTo={ false }
 				// Auto-select first match, so that it's possible to press <Enter> and immediately choose it
 				__experimentalAutoSelectFirstMatch={ true }
+				__experimentalExpandOnFocus={ true }
 			/>
-
-			{ /* <FormTokenField> doesn't support help text. Provide a BaseControl with the help text instead. */ }
-			{ help && <BaseControl help={ help }></BaseControl> }
+			<BaseControl
+				help={ __(
+					'Select editorial metadata fields that users must complete to proceed.',
+					'vip-workflow'
+				) }
+			/>
 		</>
 	);
 }
