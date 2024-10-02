@@ -110,16 +110,13 @@ export default function CreateEditCustomStatusModal( {
 			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<TextControl
 				label={ __( 'Name', 'vip-workflow' ) }
-				help={ __( 'The name is used to identify the custom status.', 'vip-workflow' ) }
+				help={ __( 'Visible to all users involved in the publishing process.', 'vip-workflow' ) }
 				onChange={ setName }
 				value={ name }
 			/>
 			<TextareaControl
 				label={ __( 'Description', 'vip-workflow' ) }
-				help={ __(
-					'The description is primarily for administrative use, to give you some context on what the custom status is to be used for.',
-					'vip-workflow'
-				) }
+				help={ __( 'Only visible to you and other administrators.', 'vip-workflow' ) }
 				onChange={ setDescription }
 				value={ description }
 			/>
