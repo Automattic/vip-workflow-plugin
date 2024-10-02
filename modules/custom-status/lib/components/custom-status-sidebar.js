@@ -33,6 +33,45 @@ subscribe( function () {
 			status: statusOptions[ 0 ].value,
 		} );
 	}
+
+	// Keeping this anywhere else causes the labels to not be available.
+	if ( VW_CUSTOM_STATUSES.is_publish_guard_enabled ) {
+		const editorialMetadataLabels = document.querySelectorAll(
+			'#vip-workflow-editorial-metadata-label'
+		);
+
+		if ( ! editorialMetadataLabels || editorialMetadataLabels.length === 0 ) {
+			return;
+		}
+
+		const customStatus = VW_CUSTOM_STATUSES.status_terms.find(
+			customStatus =>
+				customStatus.slug === select( editorStore ).getCurrentPostAttribute( 'status' )
+		);
+
+		if ( ! customStatus ) {
+			return;
+		}
+
+		// Add a class to the editorial metadata labels so we can style them.
+		editorialMetadataLabels.forEach( label => {
+			if ( ! label?.classList ) {
+				return;
+			}
+
+			if (
+				customStatus?.meta?.required_metadatas &&
+				customStatus?.meta?.required_metadatas.length > 0 &&
+				customStatus?.meta?.required_metadatas.some( requiredMetadata =>
+					label.classList.contains( requiredMetadata.slug )
+				)
+			) {
+				label.classList.add( 'required' );
+			} else {
+				label.classList.remove( 'required' );
+			}
+		} );
+	}
 } );
 
 /**

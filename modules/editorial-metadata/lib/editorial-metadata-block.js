@@ -27,6 +27,7 @@ const editorialMetadatas = window.VW_EDITORIAL_METADATA.editorial_metadata_terms
 		label: editorialMetadata.name,
 		type: editorialMetadata.meta.type,
 		term_id: editorialMetadata.term_id,
+		slug: editorialMetadata.slug,
 		description: editorialMetadata.description,
 	} )
 );
@@ -99,7 +100,11 @@ const getComponentByType = ( editorialMetadata, metaFields, setMetaFields ) => {
 const CheckboxComponent = ( { editorialMetadata, metaFields, setMetaFields } ) => {
 	return (
 		<HStack __nextHasNoMarginBottom>
-			<label id="editorial-metadata-label" title={ editorialMetadata.description }>
+			<label
+				id="vip-workflow-editorial-metadata-label"
+				className={ editorialMetadata.slug }
+				title={ editorialMetadata.description }
+			>
 				{ editorialMetadata.label }
 			</label>
 			<ToggleControl
@@ -140,7 +145,11 @@ const getMemoizedPopoverProps = ( { popoverAnchor, text } ) => {
 const getDropdownButton = ( { editorialMetadata, label, onToggle, isOpen, shouldTruncate } ) => {
 	return (
 		<HStack __nextHasNoMarginBottom>
-			<label id="editorial-metadata-label" title={ editorialMetadata.description }>
+			<label
+				id="vip-workflow-editorial-metadata-label"
+				className={ editorialMetadata.slug }
+				title={ editorialMetadata.description }
+			>
 				{ editorialMetadata.label }
 			</label>
 			<Button
