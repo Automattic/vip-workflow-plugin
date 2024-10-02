@@ -14,6 +14,7 @@ require_once __DIR__ . '/meta/required-user-id-handler.php';
 require_once __DIR__ . '/meta/required-metadata-id-handler.php';
 require_once __DIR__ . '/meta/position-handler.php';
 
+use PhpParser\Node\Stmt\While_;
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
@@ -38,6 +39,7 @@ class Custom_Status extends Module {
 	// The metadata keys for the custom status term
 	const METADATA_POSITION_KEY = 'position';
 	const METADATA_REQ_EDITORIAL_IDS_KEY = 'required_metadata_ids';
+	const METADATA_REQ_EDITORIALS_KEY = 'required_metadatas';
 	const METADATA_REQ_USER_IDS_KEY = 'required_user_ids';
 	const METADATA_REQ_USERS_KEY = 'required_users';
 
@@ -284,10 +286,35 @@ class Custom_Status extends Module {
 
 		$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? true : false;
 
+		$editorial_metadatas = EditorialMetadata::get_editorial_metadata_terms();
+
+		// ToDo: Add this to the action_admin_enqueue_scripts method as well.
+
+		// Map the editorial metadata id under meta[required_metadata_ids] to the term
+		$custom_statuses = array_map( function ( $status ) use ( $editorial_metadatas ) {
+			if ( [] !== $status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ) {
+				$meta_fields = array_values( array_filter( array_map( function ( $metadata_id ) use ( $editorial_metadatas ) {
+					// look up the metadata_id in the editorial_metadatas array, to match by term_id
+					$terms = array_values( array_filter( $editorial_metadatas, function ( $editorial_metadata ) use ( $metadata_id ) {
+						return $editorial_metadata->term_id === $metadata_id;
+					} ) );
+
+					if ( [] !== $terms ) {
+						return $terms[0];
+					} else {
+						return false;
+					}
+				}, $status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ) ) );
+				$status->meta[ self::METADATA_REQ_EDITORIALS_KEY ] = $meta_fields;
+			}
+
+			return $status;
+		}, $this->get_custom_statuses() );
+
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
 			'current_user_id'          => get_current_user_id(),
 			'is_publish_guard_enabled' => $publish_guard_enabled,
-			'status_terms'             => $this->get_custom_statuses(),
+			'status_terms'             => $custom_statuses,
 			'supported_post_types'     => VIP_Workflow::instance()->get_supported_post_types(),
 		] );
 	}

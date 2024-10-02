@@ -21,6 +21,7 @@ const CustomSaveButtonSidebar = ( {
 	postType,
 	savedStatus,
 	editedStatus,
+	metaFields,
 	isUnsavedPost,
 	isSavingPost,
 	onUpdateStatus,
@@ -30,8 +31,8 @@ const CustomSaveButtonSidebar = ( {
 
 	const isRestrictedStatus = useMemo( () => {
 		const currentStatusTerm = getCurrentStatusTerm( savedStatus );
-		return isStatusRestrictedFromMovement( currentStatusTerm );
-	}, [ savedStatus ] );
+		return isStatusRestrictedFromMovement( currentStatusTerm, metaFields );
+	}, [ savedStatus, metaFields ] );
 
 	const isCustomSaveButtonVisible = useMemo(
 		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, savedStatus, isRestrictedStatus ),
@@ -126,6 +127,8 @@ const mapSelectProps = select => {
 		// before the post is updated in the backend.
 		editedStatus: getEditedPostAttribute( 'status' ),
 
+		metaFields: getEditedPostAttribute( 'meta' ),
+
 		postType: getCurrentPostType(),
 		isSavingPost: isSavingPost(),
 		isUnsavedPost,
@@ -206,15 +209,34 @@ const getCustomSaveButtonText = ( nextStatusTerm, isRestrictedStatus, isWideView
 	return buttonText;
 };
 
-const isStatusRestrictedFromMovement = status => {
-	if ( ! status?.meta?.required_user_ids || status?.meta?.required_user_ids.length === 0 ) {
-		return false;
+const isStatusRestrictedFromMovement = ( status, metaFields ) => {
+	let isStatusRestricted = false;
+
+	if ( status?.meta?.required_user_ids && status.meta.required_user_ids.length > 0 ) {
+		const requiredUserIds = status.meta.required_user_ids;
+		const currentUserId = parseInt( VW_CUSTOM_STATUSES.current_user_id, /* radix */ 10 );
+		isStatusRestricted = ! requiredUserIds.includes( currentUserId );
 	}
 
-	const requiredUserIds = status.meta.required_user_ids;
-	const currentUserId = parseInt( VW_CUSTOM_STATUSES.current_user_id, /* radix */ 10 );
+	if (
+		! isStatusRestricted &&
+		status?.meta?.required_metadatas &&
+		status.meta.required_metadatas.length > 0
+	) {
+		const requiredMetadas = status.meta.required_metadatas;
+		const hasMissingMetaFields = requiredMetadas.some( field => {
+			const postmeta_key = field.meta.postmeta_key;
 
-	return ! requiredUserIds.includes( currentUserId );
+			if ( field.meta.type === 'checkbox' ) {
+				return metaFields[ postmeta_key ];
+			} else {
+				return ! metaFields[ postmeta_key ] || metaFields[ postmeta_key ].length === 0;
+			}
+		} );
+		isStatusRestricted = hasMissingMetaFields;
+	}
+
+	return isStatusRestricted;
 };
 
 const getCurrentStatusTerm = currentStatus => {
