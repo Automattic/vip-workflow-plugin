@@ -1,14 +1,12 @@
 import apiFetch from '@wordpress/api-fetch';
 import {
 	Button,
-	Card,
-	CardBody,
-	__experimentalDivider as Divider,
 	__experimentalHStack as HStack,
 	Modal,
+	RadioControl,
+	__experimentalSpacer as Spacer,
 	TextControl,
 	TextareaControl,
-	ToggleControl,
 	Tooltip,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
@@ -55,8 +53,8 @@ export default function CreateEditCustomStatusModal( {
 	// Modal properties
 	const [ error, setError ] = useState( null );
 	const [ isRequesting, setIsRequesting ] = useState( false );
-	const [ isRestrictedSectionVisible, setIsRestrictedSectionVisible ] = useState(
-		requiredUsers.length > 0 || requiredMetadatas.length > 0
+	const [ areRestrictedUsersSet, setAreRestrictedUsersSet ] = useState(
+		requiredUsers.length > 0 ? 'specific' : 'all'
 	);
 
 	let titleText;
@@ -69,10 +67,12 @@ export default function CreateEditCustomStatusModal( {
 	const handleSave = async () => {
 		const data = { name, description };
 
-		if ( isRestrictedSectionVisible ) {
+		if ( areRestrictedUsersSet === 'specific' ) {
 			const userIds = requiredUsers.map( user => user.id );
 			data.required_user_ids = userIds;
+		}
 
+		if ( requiredMetadatas.length > 0 ) {
 			const metadataIds = requiredMetadatas.map( metadata => metadata.term_id );
 			data.required_metadata_ids = metadataIds;
 		}
@@ -123,42 +123,35 @@ export default function CreateEditCustomStatusModal( {
 				onChange={ setDescription }
 				value={ description }
 			/>
-			<Divider margin="1rem" />
-
-			<ToggleControl
-				label={ __( 'This status is restricted', 'vip-workflow' ) }
-				help={ __(
-					'Require a specific user or editorial metadata field to advance to the next status.',
-					'vip-workflow'
-				) }
-				checked={ isRestrictedSectionVisible }
-				onChange={ setIsRestrictedSectionVisible }
+			<RadioControl
+				label="Who can advance to the next status?"
+				selected={ areRestrictedUsersSet }
+				options={ [
+					{ label: 'All users and roles', value: 'all' },
+					{ label: 'Only specific users and roles', value: 'specific' },
+				] }
+				onChange={ value => {
+					setAreRestrictedUsersSet( value );
+					if ( value === 'all' ) {
+						setRequiredUsers( [] );
+					}
+				} }
 			/>
-
-			{ isRestrictedSectionVisible && (
-				<>
-					<Card>
-						<CardBody>
-							<UserSelectFormTokenField
-								label={ __( 'Allowed users', 'vip-workflow' ) }
-								help={ __( 'These users are allowed to advance this status.', 'vip-workflow' ) }
-								requiredUsers={ requiredUsers }
-								onUsersChanged={ setRequiredUsers }
-							/>
-							<MetadataSelectFormTokenField
-								label={ __( 'Required metadata fields', 'vip-workflow' ) }
-								help={ __(
-									'These editorial metadata fields are required to advance this status.',
-									'vip-workflow'
-								) }
-								editorialMetadatas={ metadatas }
-								requiredMetadatas={ requiredMetadatas }
-								onMetadatasChanged={ setRequiredMetadatas }
-							/>
-						</CardBody>
-					</Card>
-				</>
+			<Spacer />
+			{ areRestrictedUsersSet !== 'all' && (
+				<UserSelectFormTokenField
+					label={ '' }
+					requiredUsers={ requiredUsers }
+					onUsersChanged={ setRequiredUsers }
+				/>
 			) }
+			<Spacer />
+			<MetadataSelectFormTokenField
+				label={ __( 'What editorial fields are needed for this status?', 'vip-workflow' ) }
+				editorialMetadatas={ metadatas }
+				requiredMetadatas={ requiredMetadatas }
+				onMetadatasChanged={ setRequiredMetadatas }
+			/>
 
 			<HStack justify="right" style={ { marginTop: '16px' } }>
 				<Tooltip
