@@ -66,9 +66,9 @@ subscribe( function () {
 					label.classList.contains( requiredMetadata.slug )
 				)
 			) {
-				label.classList.add( 'required' );
+				label.classList.add( 'vip-workflow-editorial-metadata-required' );
 			} else {
-				label.classList.remove( 'required' );
+				label.classList.remove( 'vip-workflow-editorial-metadata-required' );
 			}
 		} );
 	}
@@ -90,6 +90,10 @@ export default function CustomStatusSidebar( { onUpdateStatus, postType, status 
 	if ( ! isUsingWorkflowStatus( postType, status ) ) {
 		return null;
 	}
+
+	// filter out all statuses after the current status in the list
+	const statusIndex = statusOptions.findIndex( option => option.value === status );
+	const filteredStatusOptions = statusOptions.slice( 0, statusIndex + 1 );
 
 	const customStatusName = VW_CUSTOM_STATUSES.status_terms.find( t => t.slug === status )?.name;
 
@@ -113,7 +117,7 @@ export default function CustomStatusSidebar( { onUpdateStatus, postType, status 
 					<SelectControl
 						label=""
 						value={ status }
-						options={ statusOptions }
+						options={ filteredStatusOptions }
 						onChange={ handleChangeStatus }
 					/>
 				) }

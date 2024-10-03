@@ -235,7 +235,7 @@ const isStatusRestrictedFromMovement = ( status, metaFields ) => {
 
 			// Insert the rules engine check here, once that's implemented. Right now, it's just the default values for a boolean and a text field.
 			if ( field.meta.type === 'checkbox' ) {
-				return metaFields[ postmeta_key ];
+				return ! metaFields[ postmeta_key ];
 			} else {
 				return ! metaFields[ postmeta_key ] || metaFields[ postmeta_key ].length === 0;
 			}
