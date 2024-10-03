@@ -14,7 +14,6 @@ require_once __DIR__ . '/meta/required-user-id-handler.php';
 require_once __DIR__ . '/meta/required-metadata-id-handler.php';
 require_once __DIR__ . '/meta/position-handler.php';
 
-use PhpParser\Node\Stmt\While_;
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\Module;
@@ -254,8 +253,10 @@ class Custom_Status extends Module {
 			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
+			$custom_statuses = $this->get_custom_statuses_with_editorial_metadata();
+
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'custom_statuses'    => $this->get_custom_statuses(),
+				'custom_statuses'    => $custom_statuses,
 				'editorial_metadatas' => EditorialMetadata::get_editorial_metadata_terms(),
 				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
 				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
@@ -286,11 +287,23 @@ class Custom_Status extends Module {
 
 		$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? true : false;
 
+		$custom_statuses = $this->get_custom_statuses_with_editorial_metadata();
+
+		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
+			'current_user_id'          => get_current_user_id(),
+			'is_publish_guard_enabled' => $publish_guard_enabled,
+			'status_terms'             => $custom_statuses,
+			'supported_post_types'     => VIP_Workflow::instance()->get_supported_post_types(),
+		] );
+	}
+
+	/**
+	 * Get the custom statuses, with the editorial metadatas populated under meta.
+	 *
+	 * @return array $custom_statuses The custom statuses with editorial metadatas
+	 */
+	private function get_custom_statuses_with_editorial_metadata() {
 		$editorial_metadatas = EditorialMetadata::get_editorial_metadata_terms();
-
-		// ToDo: Add this to the action_admin_enqueue_scripts method as well.
-
-		// Map the editorial metadata id under meta[required_metadata_ids] to the term
 		$custom_statuses = array_map( function ( $status ) use ( $editorial_metadatas ) {
 			if ( [] !== $status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ) {
 				$meta_fields = array_values( array_filter( array_map( function ( $metadata_id ) use ( $editorial_metadatas ) {
@@ -311,12 +324,7 @@ class Custom_Status extends Module {
 			return $status;
 		}, $this->get_custom_statuses() );
 
-		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
-			'current_user_id'          => get_current_user_id(),
-			'is_publish_guard_enabled' => $publish_guard_enabled,
-			'status_terms'             => $custom_statuses,
-			'supported_post_types'     => VIP_Workflow::instance()->get_supported_post_types(),
-		] );
+		return $custom_statuses;
 	}
 
 	public function load_styles_for_block_editor() {

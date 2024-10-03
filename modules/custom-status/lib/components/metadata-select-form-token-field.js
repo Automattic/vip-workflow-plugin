@@ -1,4 +1,4 @@
-import { FormTokenField } from '@wordpress/components';
+import { BaseControl, FormTokenField } from '@wordpress/components';
 import { debounce } from '@wordpress/compose';
 import { useEffect, useMemo, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
