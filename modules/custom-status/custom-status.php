@@ -237,7 +237,7 @@ class Custom_Status extends Module {
 	public function add_admin_menu() {
 		$menu_title = __( 'VIP Workflow', 'vip-workflow' );
 
-		add_menu_page( $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ] );
+		add_menu_page( $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ], VIP_WORKFLOW_URL . 'modules/shared/img/workflow-icon.svg' );
 	}
 
 	public function configure_page_cb() {

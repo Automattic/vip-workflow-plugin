@@ -73,7 +73,7 @@ const CustomSaveButtonSidebar = ( {
 
 	const buttonText = getCustomSaveButtonText( nextStatusTerm, isRestrictedStatus, isWideViewport );
 	const tooltipText = isRestrictedStatus
-		? __( 'Awaiting review from a privileged user', 'vip-workflow' )
+		? __( 'Requirements for advancing have not been met.', 'vip-workflow' )
 		: buttonText;
 
 	const InnerSaveButton = (
