@@ -43,6 +43,12 @@ const CustomSaveButtonSidebar = ( {
 		if ( VW_CUSTOM_STATUSES.is_publish_guard_enabled ) {
 			const editor = document.querySelector( '#editor' );
 
+			// The editor class may not exist in some contexts, e.g. the site editor
+			// This disables this whole functionality, so it doesn't break anything.
+			if ( ! editor ) {
+				return;
+			}
+
 			if ( isCustomSaveButtonVisible ) {
 				editor.classList.add( 'disable-native-save-button' );
 			} else {
