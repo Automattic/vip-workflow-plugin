@@ -418,13 +418,15 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Remove the ability to transition a post if custom status requires review from a nonpresent user
+	 * Remove the ability to transition a post if custom status requires review from a nonpresent user,
+	 * or requires certain editorial metadata fields to be filled out.
 	 *
-	 * @param array $data Post data submitted for update
+	 * @param array $data An array of slashed, sanitized, and processed post data.
+	 * @param array $postarr An array of sanitized (and slashed) but otherwise unmodified post data.
 	 *
-	 * @return array $allcaps All capabilities for the user
+	 * @return array $data An array of slashed, sanitized, and processed post data.
 	 */
-	public function maybe_block_post_update( $data ) {
+	public function maybe_block_post_update( array $data, array $postarr ): array|false {
 		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
 
 		// Ignore if it's not a post status and post type we support
@@ -449,11 +451,26 @@ class Custom_Status extends Module {
 
 		$prior_post_status = $this->get_custom_status_by( 'slug', $prior_post_status_slug );
 		$required_user_ids = $prior_post_status->meta[ self::METADATA_REQ_USER_IDS_KEY ] ?? [];
+		$required_metadata_ids = $prior_post_status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [];
 
 		if ( $required_user_ids && ! in_array( get_current_user_id(), $required_user_ids, true ) ) {
 			// This status requires review, and the current user is not permitted to transition the post.
 			// Return an empty array, which will cause the update to fail with an error.
 			return false;
+		}
+
+		// This status requires certain editorial metadata fields to be filled out, and they are not.
+		foreach ( $required_metadata_ids as $metadata_id ) {
+			$metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_id );
+
+			if ( $metadata ) {
+				$metadata_value = get_post_meta( $postarr['ID'], $metadata->meta[ EditorialMetadata::METADATA_POSTMETA_KEY ], true );
+				if ( 'checkbox' === $metadata->meta[ EditorialMetadata::METADATA_TYPE_KEY ] && ! $metadata_value ) {
+					return false;
+				} elseif ( '' === $metadata_value ) {
+					return false;
+				}
+			}
 		}
 
 		return $data;
