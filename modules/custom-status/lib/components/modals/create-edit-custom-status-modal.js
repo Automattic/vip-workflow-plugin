@@ -120,6 +120,16 @@ export default function CreateEditCustomStatusModal( {
 				onChange={ setDescription }
 				value={ description }
 			/>
+			<Spacer />
+			<MetadataSelectFormTokenField
+				label={ __(
+					'What editorial fields are required to advance to the next status?',
+					'vip-workflow'
+				) }
+				editorialMetadatas={ metadatas }
+				requiredMetadatas={ requiredMetadatas }
+				onMetadatasChanged={ setRequiredMetadatas }
+			/>
 			<RadioControl
 				label="Who can advance to the next status?"
 				selected={ areRestrictedUsersSet }
@@ -142,13 +152,6 @@ export default function CreateEditCustomStatusModal( {
 					onUsersChanged={ setRequiredUsers }
 				/>
 			) }
-			<Spacer />
-			<MetadataSelectFormTokenField
-				label={ __( 'What editorial fields are needed for this status?', 'vip-workflow' ) }
-				editorialMetadatas={ metadatas }
-				requiredMetadatas={ requiredMetadatas }
-				onMetadatasChanged={ setRequiredMetadatas }
-			/>
 
 			<HStack justify="right" style={ { marginTop: '16px' } }>
 				<Tooltip

@@ -1,6 +1,7 @@
 import { FormTokenField } from '@wordpress/components';
 import { debounce } from '@wordpress/compose';
 import { useEffect, useMemo, useState } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 /**
  * Custom status component
  * @param object props
@@ -98,6 +99,12 @@ export default function MetadataSelectFormTokenField( {
 				// Auto-select first match, so that it's possible to press <Enter> and immediately choose it
 				__experimentalAutoSelectFirstMatch={ true }
 				__experimentalExpandOnFocus={ true }
+			/>
+			<BaseControl
+				help={ __(
+					'Select editorial metadata fields that users must complete to proceed.',
+					'vip-workflow'
+				) }
 			/>
 		</>
 	);
