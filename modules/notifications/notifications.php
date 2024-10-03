@@ -36,7 +36,13 @@ class Notifications {
 			return;
 		}
 
-		$ignored_statuses = [ $old_status, 'inherit', 'auto-draft' ];
+		/**
+		 * Filter the statuses that should be ignored when sending notifications
+		 *
+		 * @param array $ignored_statuses Array of statuses that should be ignored when sending notifications
+		 * @param string $post_type The post type of the post
+		 */
+		$ignored_statuses = apply_filters( 'vw_notification_ignored_statuses', [ $old_status, 'inherit', 'auto-draft' ], $post->post_type );
 
 		if ( ! in_array( $new_status, $ignored_statuses ) ) {
 			// Get current user
