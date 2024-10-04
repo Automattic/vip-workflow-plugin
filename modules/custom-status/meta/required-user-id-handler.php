@@ -7,8 +7,7 @@
 
 namespace VIPWorkflow\Modules\CustomStatus\Meta;
 
-use VIPWorkflow\Modules\Custom_Status;
-use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\Shared\PHP\MetaCleanupUtilities;
 
 use WP_Term;
@@ -35,12 +34,12 @@ class RequiredUserIdHandler {
 	 * @return array The updated meta keys
 	 */
 	public static function add_required_user_ids( array $term_meta, WP_Term $custom_status ): array {
-		$user_ids = MetaCleanupUtilities::get_array( $custom_status->term_id, Custom_Status::METADATA_REQ_USER_IDS_KEY );
+		$user_ids = MetaCleanupUtilities::get_array( $custom_status->term_id, CustomStatus::METADATA_REQ_USER_IDS_KEY );
 
-		$term_meta[ Custom_Status::METADATA_REQ_USER_IDS_KEY ] = $user_ids;
+		$term_meta[ CustomStatus::METADATA_REQ_USER_IDS_KEY ] = $user_ids;
 
 		// For UI purposes, add 'required_users' to the term meta as well.
-		$term_meta[ Custom_Status::METADATA_REQ_USERS_KEY ] = array_filter( array_map( function ( $user_id ) {
+		$term_meta[ CustomStatus::METADATA_REQ_USERS_KEY ] = array_filter( array_map( function ( $user_id ) {
 			$user = get_user_by( 'ID', $user_id );
 			if ( $user instanceof WP_User ) {
 				return [
@@ -50,7 +49,7 @@ class RequiredUserIdHandler {
 			} else {
 				return false;
 			}
-		}, $term_meta[ Custom_Status::METADATA_REQ_USER_IDS_KEY ] ) );
+		}, $term_meta[ CustomStatus::METADATA_REQ_USER_IDS_KEY ] ) );
 
 		return $term_meta;
 	}
@@ -62,7 +61,7 @@ class RequiredUserIdHandler {
 	 * @return void
 	 */
 	public static function delete_required_users( int $term_id ): void {
-		delete_term_meta( $term_id, Custom_Status::METADATA_REQ_USER_IDS_KEY );
+		delete_term_meta( $term_id, CustomStatus::METADATA_REQ_USER_IDS_KEY );
 	}
 
 	/**
@@ -73,9 +72,9 @@ class RequiredUserIdHandler {
 	 * @return void
 	 */
 	public static function remove_deleted_user_from_required_users( int $deleted_user_id, int|null $reassigned_user_id ): void {
-		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
+		$custom_statuses = CustomStatus::get_custom_statuses();
 
-		MetaCleanupUtilities::cleanup_id( $custom_statuses, $deleted_user_id, $reassigned_user_id, Custom_Status::METADATA_REQ_USER_IDS_KEY );
+		MetaCleanupUtilities::cleanup_id( $custom_statuses, $deleted_user_id, $reassigned_user_id, CustomStatus::METADATA_REQ_USER_IDS_KEY );
 	}
 }
 

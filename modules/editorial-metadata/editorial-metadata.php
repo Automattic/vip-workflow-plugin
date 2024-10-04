@@ -142,7 +142,7 @@ class EditorialMetadata {
 	public static function add_admin_menu(): void {
 		$menu_title = __( 'Editorial Metadata', 'vip-workflow' );
 
-		add_submenu_page( Custom_Status::SETTINGS_SLUG, $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ __CLASS__, 'render_settings_view' ] );
+		add_submenu_page( CustomStatus::SETTINGS_SLUG, $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ __CLASS__, 'render_settings_view' ] );
 	}
 
 	/**

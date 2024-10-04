@@ -58,7 +58,7 @@ class Settings extends Module {
 	public function add_admin_menu() {
 		$menu_title = __( 'Settings', 'vip-workflow' );
 
-		add_submenu_page( Custom_Status::SETTINGS_SLUG, $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ] );
+		add_submenu_page( CustomStatus::SETTINGS_SLUG, $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ] );
 	}
 
 	/**

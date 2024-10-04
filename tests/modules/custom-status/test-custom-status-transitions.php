@@ -7,7 +7,7 @@
 
 namespace VIPWorkflow\Tests;
 
-use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Modules\CustomStatus;
 
 /**
  * Ensure restricted posts block updates from unauthorized users.
@@ -19,20 +19,20 @@ class CustomStatusTransitionsTest extends WorkflowTestCase {
 		wp_set_current_user( $admin_user_id );
 
 		// Setup statuses, with the second status requiring admin user permissions
-		$status_1 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$status_1 = CustomStatus::add_custom_status( [
 			'name'     => 'Status 1',
 			'position' => -3,
 			'slug'     => 'status-1',
 		] );
 
-		$status_2_restricted = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$status_2_restricted = CustomStatus::add_custom_status( [
 			'name'              => 'Status 2 (restricted)',
 			'position'          => -2,
 			'slug'              => 'status-2-restricted',
 			'required_user_ids' => [ $admin_user_id ],
 		] );
 
-		$status_3 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$status_3 = CustomStatus::add_custom_status( [
 			'name'     => 'Status 3',
 			'position' => -1,
 			'slug'     => 'status-3',
@@ -64,9 +64,9 @@ class CustomStatusTransitionsTest extends WorkflowTestCase {
 		$this->assertEquals( 'status-3', get_post_status( $post_id ) );
 
 		// Cleanup
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_1->term_id );
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_2_restricted->term_id );
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_3->term_id );
+		CustomStatus::delete_custom_status( $status_1->term_id );
+		CustomStatus::delete_custom_status( $status_2_restricted->term_id );
+		CustomStatus::delete_custom_status( $status_3->term_id );
 
 		wp_set_current_user( null );
 		wp_delete_user( $admin_user_id );
@@ -77,21 +77,21 @@ class CustomStatusTransitionsTest extends WorkflowTestCase {
 		wp_set_current_user( $author_user_id );
 
 		// Setup statuses, with the second status requiring admin user permissions
-		$status_1 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$status_1 = CustomStatus::add_custom_status( [
 			'name'     => 'Status 1',
 			'position' => -3,
 			'slug'     => 'status-1',
 		] );
 
 		$admin_user_id       = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
-		$status_2_restricted = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$status_2_restricted = CustomStatus::add_custom_status( [
 			'name'              => 'Status 2 (restricted)',
 			'position'          => -2,
 			'slug'              => 'status-2-restricted',
 			'required_user_ids' => [ $admin_user_id ],
 		] );
 
-		$status_3 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$status_3 = CustomStatus::add_custom_status( [
 			'name'     => 'Status 3',
 			'position' => -1,
 			'slug'     => 'status-3',
@@ -123,8 +123,8 @@ class CustomStatusTransitionsTest extends WorkflowTestCase {
 		$this->assertEquals( 'status-2-restricted', get_post_status( $post_id ) );
 
 		// Cleanup
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_1->term_id );
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_2_restricted->term_id );
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $status_3->term_id );
+		CustomStatus::delete_custom_status( $status_1->term_id );
+		CustomStatus::delete_custom_status( $status_2_restricted->term_id );
+		CustomStatus::delete_custom_status( $status_3->term_id );
 	}
 }

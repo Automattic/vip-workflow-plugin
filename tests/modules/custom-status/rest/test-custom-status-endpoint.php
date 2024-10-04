@@ -7,8 +7,8 @@
 
 namespace VIPWorkflow\Tests;
 
+use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\EditorialMetadata;
-use VIPWorkflow\VIP_Workflow;
 use WP_REST_Request;
 
 /**
@@ -25,7 +25,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 		// Normally custom statuses are installed on 'admin_init', which is only run when a page is accessed
 		// in the admin web interface. Manually install them here. This avoid issues when a test creates or deletes
 		// a status and it's the only status existing, which can cause errors due to status restrictions.
-		VIP_Workflow::instance()->custom_status->install();
+		CustomStatus::setup_install();
 	}
 
 	public function test_create_custom_status_with_optional_fields() {
@@ -56,7 +56,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertObjectHasProperty( 'term_id', $result, sprintf( 'Unexpected REST output: %s', wp_json_encode( $result ) ) );
 		$term_id = $result->term_id;
 
-		$created_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
+		$created_term = CustomStatus::get_custom_status_by( 'id', $term_id );
 
 		$this->assertEquals( 'test-status', $created_term->name );
 		$this->assertEquals( 'A test status for testing', $created_term->description );
@@ -65,7 +65,7 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertCount( 1, $created_term->meta['required_metadata_ids'] );
 		$this->assertEquals( $editorial_metadata_term->term_id, $created_term->meta['required_metadata_ids'][0] );
 
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
+		CustomStatus::delete_custom_status( $term_id );
 		EditorialMetadata::delete_editorial_metadata_term( $editorial_metadata_term->term_id );
 	}
 
@@ -87,15 +87,15 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertObjectHasProperty( 'term_id', $result, sprintf( 'Unexpected REST output: %s', wp_json_encode( $result ) ) );
 		$term_id = $result->term_id;
 
-		$created_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
+		$created_term = CustomStatus::get_custom_status_by( 'id', $term_id );
 
 		$this->assertEquals( 'test-status', $created_term->name );
 
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
+		CustomStatus::delete_custom_status( $term_id );
 	}
 
 	public function test_update_custom_status() {
-		$custom_status_term = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$custom_status_term = CustomStatus::add_custom_status( [
 			'name'               => 'Test Custom Status',
 			'slug'               => 'test-custom-status',
 			'description'        => 'Test Description.',
@@ -119,18 +119,18 @@ class CustomStatusRestApiTest extends RestTestCase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
+		$updated_term = CustomStatus::get_custom_status_by( 'id', $term_id );
 
 		$this->assertEquals( 'Test Custom Status 2', $updated_term->name );
 		$this->assertEquals( 'Test Description 2!', $updated_term->description );
 		$this->assertCount( 1, $updated_term->meta['required_user_ids'] );
 		$this->assertEquals( $editor_user_id, $updated_term->meta['required_user_ids'][0] );
 
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
+		CustomStatus::delete_custom_status( $term_id );
 	}
 
 	public function test_delete_custom_status() {
-		$term_to_delete = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$term_to_delete = CustomStatus::add_custom_status( [
 			'name' => 'Custom Status To Delete',
 			'slug' => 'custom-status-to-delete',
 		] );
@@ -146,24 +146,24 @@ class CustomStatusRestApiTest extends RestTestCase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_terms      = VIP_Workflow::instance()->custom_status->get_custom_statuses();
+		$all_terms      = CustomStatus::get_custom_statuses();
 		$all_term_slugs = wp_list_pluck( $all_terms, 'slug' );
 		$this->assertNotContains( 'custom-status-to-delete', $all_term_slugs );
 	}
 
 	public function test_reorder_custom_status() {
-		$existing_custom_statuses   = VIP_Workflow::instance()->custom_status->get_custom_statuses();
+		$existing_custom_statuses   = CustomStatus::get_custom_statuses();
 		$existing_custom_status_ids = wp_list_pluck( $existing_custom_statuses, 'term_id' );
 
-		$term1 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$term1 = CustomStatus::add_custom_status( [
 			'name' => 'Custom Status 1',
 			'slug' => 'custom-status-1',
 		] );
-		$term2 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$term2 = CustomStatus::add_custom_status( [
 			'name' => 'Custom Status 2',
 			'slug' => 'custom-status-2',
 		] );
-		$term3 = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$term3 = CustomStatus::add_custom_status( [
 			'name' => 'Custom Status 3',
 			'slug' => 'custom-status-3',
 		] );
@@ -185,13 +185,13 @@ class CustomStatusRestApiTest extends RestTestCase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$reordered_custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
+		$reordered_custom_statuses = CustomStatus::get_custom_statuses();
 		$this->assertEquals( $term3->term_id, $reordered_custom_statuses[0]->term_id );
 		$this->assertEquals( $term1->term_id, $reordered_custom_statuses[1]->term_id );
 		$this->assertEquals( $term2->term_id, $reordered_custom_statuses[2]->term_id );
 
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $term1->term_id );
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $term2->term_id );
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $term3->term_id );
+		CustomStatus::delete_custom_status( $term1->term_id );
+		CustomStatus::delete_custom_status( $term2->term_id );
+		CustomStatus::delete_custom_status( $term3->term_id );
 	}
 }

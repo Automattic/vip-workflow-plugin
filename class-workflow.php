@@ -75,7 +75,7 @@ class VIP_Workflow {
 		// VIP Workflow base module
 		require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/class-module.php';
 
-		$skip_module_dirs = [ 'shared', 'preview', 'notifications', 'editorial-metadata' ];
+		$skip_module_dirs = [ 'shared', 'preview', 'notifications', 'editorial-metadata', 'custom-status' ];
 
 		// Scan the modules directory and include any modules that exist there
 		$module_dirs = scandir( VIP_WORKFLOW_ROOT . '/modules/' );

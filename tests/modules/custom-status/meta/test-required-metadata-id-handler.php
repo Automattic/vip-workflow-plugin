@@ -7,7 +7,7 @@
  */
 namespace VIPWorkflow\Tests;
 
-use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\CustomStatus\Meta\RequiredMetadataIdHandler;
 use WP_UnitTestCase;
 
@@ -22,12 +22,12 @@ class RequiredMetadataIdHandlerTest extends WP_UnitTestCase {
 		// Normally custom statuses are installed on 'admin_init', which is only run when a page is accessed
 		// in the admin web interface. Manually install them here. This avoid issues when a test creates or deletes
 		// a status and it's the only status existing, which can cause errors due to status restrictions.
-		VIP_Workflow::instance()->custom_status->install();
+		CustomStatus::setup_install();
 	}
 
 	public function test_remove_deleted_metadata_from_required_metadata() {
 		$meta_id = 1;
-		$custom_status_term = VIP_Workflow::instance()->custom_status->add_custom_status( [
+		$custom_status_term = CustomStatus::add_custom_status( [
 			'name'               => 'Test Custom Status',
 			'slug'               => 'test-custom-status',
 			'description'        => 'Test Description.',
@@ -37,12 +37,12 @@ class RequiredMetadataIdHandlerTest extends WP_UnitTestCase {
 
 		RequiredMetadataIdHandler::remove_deleted_metadata_from_required_metadata( $meta_id );
 
-		$updated_term = VIP_Workflow::instance()->custom_status->get_custom_status_by( 'id', $term_id );
+		$updated_term = CustomStatus::get_custom_status_by( 'id', $term_id );
 
 		$this->assertEquals( 'Test Custom Status', $updated_term->name );
 		$this->assertEquals( 'Test Description.', $updated_term->description );
 		$this->assertEmpty( $updated_term->meta['required_metadata_ids'] );
 
-		VIP_Workflow::instance()->custom_status->delete_custom_status( $term_id );
+		CustomStatus::delete_custom_status( $term_id );
 	}
 }
