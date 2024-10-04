@@ -18,10 +18,11 @@ require_once __DIR__ . '/meta/position-handler.php';
 use VIPWorkflow\Modules\Shared\PHP\InstallUtilities;
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
 use VIPWorkflow\VIP_Workflow;
-use WP_Error;
-use WP_Query;
 
 use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
+
+use WP_Error;
+use WP_Query;
 use WP_Term;
 use WP_Post;
 
