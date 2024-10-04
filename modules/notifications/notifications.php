@@ -8,7 +8,9 @@ namespace VIPWorkflow\Modules;
 
 use WP_Post;
 
-use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
+use VIPWorkflow\Modules\Settings;
+use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
 use function VIPWorkflow\Modules\Shared\PHP\vw_draft_or_post_title;
 
 class Notifications {
@@ -31,7 +33,7 @@ class Notifications {
 	 * Set up and send post status change notification email
 	 */
 	public static function notification_status_change( string $new_status, string $old_status, WP_Post $post ): void {
-		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
+		$supported_post_types = HelperUtilities::get_supported_post_types();
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
 		}
@@ -179,11 +181,11 @@ class Notifications {
 	 */
 	public static function schedule_emails( string $action, WP_Post $post, string $subject, string $message, string $message_headers = '' ): void {
 		// Ensure the email address is set from settings.
-		if ( empty( VIP_Workflow::instance()->settings->module->options->email_address ) ) {
+		if ( empty( OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'email_address' ) ) ) {
 			return;
 		}
 
-		$email_recipients = [ VIP_Workflow::instance()->settings->module->options->email_address ];
+		$email_recipients = [ OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'email_address' ) ];
 
 		/**
 		 * Filter the email recipients
@@ -252,7 +254,7 @@ class Notifications {
 	 */
 	public static function schedule_webhook_notification( string $webhook_message, string $action, string $timestamp ): void {
 		// Ensure the webhook URL is set from settings.
-		if ( empty( VIP_Workflow::instance()->settings->module->options->webhook_url ) ) {
+		if ( empty( OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'webhook_url' ) ) ) {
 			return;
 		}
 
@@ -270,7 +272,7 @@ class Notifications {
 	 * @return bool True if the notification was sent successfully, false otherwise
 	 */
 	public static function send_to_webhook( string $message, string $message_type, string $timestamp ): bool {
-		$webhook_url = VIP_Workflow::instance()->settings->module->options->webhook_url;
+		$webhook_url = OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'webhook_url' );
 
 		// Set up the payload
 		$payload = [

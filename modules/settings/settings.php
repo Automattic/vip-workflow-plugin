@@ -8,30 +8,15 @@
 namespace VIPWorkflow\Modules;
 
 use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
-use WP_Error;
-use WP_Query;
-use WP_Term;
-use WP_Post;
 
 class Settings {
 	const SETTINGS_SLUG = 'vw-settings';
 
-	const DEFAULT_OPTIONS = [
-		'post_types'          => [
-			'post' => 'on',
-			'page' => 'on',
-		],
-		'publish_guard'       => 'on',
-		'email_address'       => '',
-		'webhook_url'         => '',
-	];
-
 	/**
 	 * Initialize the rest of the stuff in the class if the module is active
 	 */
-	public function init(): void {
+	public static function init(): void {
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_menu' ] );
 
 		add_action( 'admin_init', [ __CLASS__, 'helper_settings_validate_and_save' ], 100 );
@@ -55,10 +40,9 @@ class Settings {
 	 * @access private
 	 */
 	public static function action_admin_enqueue_scripts(): void {
-		if ( VIP_Workflow::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
+		if ( self::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
 			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/settings/settings.asset.php';
 			wp_enqueue_script( 'vip-workflow-settings-js', VIP_WORKFLOW_URL . 'dist/modules/settings/settings.js', $asset_file['dependencies'], $asset_file['version'], true );
-			wp_enqueue_style( 'vip-workflow-settings-styles', VIP_WORKFLOW_URL . 'dist/modules/settings/settings.css', [ ], $asset_file['version'] );
 		}
 	}
 
@@ -67,9 +51,9 @@ class Settings {
 	 */
 	public static function register_settings(): void {
 		$settings_option = OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG );
-		$settings_general_option = OptionsUtilities::get_module_options_general_key(self::SETTINGS_SLUG);
+		$settings_general_option = OptionsUtilities::get_module_options_general_key( self::SETTINGS_SLUG );
 
-		add_settings_section( $settings_general_option , false, '__return_false', $settings_option );
+		add_settings_section( $settings_general_option, false, '__return_false', $settings_option );
 
 		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ __CLASS__, 'helper_option_custom_post_type' ], $settings_option, $settings_general_option );
 		add_settings_field( 'publish_guard', __( 'Publish Guard', 'vip-workflow' ), [ __CLASS__, 'settings_publish_guard' ], $settings_option, $settings_general_option );
@@ -96,7 +80,7 @@ class Settings {
 		echo '<select id="publish_guard" name="' . esc_attr( OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ) ) . '[publish_guard]">';
 		foreach ( $options as $value => $label ) {
 			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( OptionsUtilities::get_module_option_by_key( self::SETTINGS_SLUG, 'publish_guard'), $value );
+			echo selected( OptionsUtilities::get_module_option_by_key( self::SETTINGS_SLUG, 'publish_guard' ), $value );
 			echo '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select>';
@@ -136,17 +120,32 @@ class Settings {
 			echo '<label for="' . esc_attr( $post_type ) . '">';
 			echo '<input id="' . esc_attr( $post_type ) . '" name="'
 			. esc_attr( OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ) ) . '[post_types][' . esc_attr( $post_type ) . ']"';
-			$the_post_types = OptionsUtilities::get_module_option_by_key( self::SETTINGS_SLUG, 'post_types');
+			$the_post_types = OptionsUtilities::get_module_option_by_key( self::SETTINGS_SLUG, 'post_types' );
 			if ( isset( $the_post_types[ $post_type ] ) ) {
 				checked( $the_post_types[ $post_type ], 'on' );
 			}
-			// Defining post_type_supports in the functions.php file or similar should disable the checkbox
-			disabled( post_type_supports( $post_type, 'vw_settings' ), true );
 			echo ' type="checkbox" />&nbsp;&nbsp;&nbsp;' . esc_html( $title ) . '</label>';
 			echo '<br />';
 		}
 
 		printf( '<p class="description" style="margin-top: 0.5rem">%s</p>', esc_html__( 'Enable workflow custom statuses on the above post types.', 'vip-workflow' ) );
+	}
+
+	/**
+	 * Whether or not the current page is our settings view. Determination is based on $pagenow, $_GET['page'], and if it's settings module or not.
+	 *
+	 * @return bool $is_settings_view Return true if it is
+	 */
+	public static function is_settings_view_loaded( string $slug ): bool {
+		global $pagenow;
+
+		// All of the settings views are based on admin.php and a $_GET['page'] parameter
+		if ( 'admin.php' != $pagenow || ! isset( $_GET['page'] ) ) {
+			return false;
+		}
+
+		// The current page better be in the array of registered settings view slugs
+		return $_GET['page'] === $slug;
 	}
 
 	/**
@@ -191,7 +190,7 @@ class Settings {
 		if ( ! isset( $new_options['post_types'] ) ) {
 			$new_options['post_types'] = [];
 		}
-		$new_options['post_types'] = self::clean_post_type_options( $new_options['post_types']);
+		$new_options['post_types'] = self::clean_post_type_options( $new_options['post_types'] );
 
 		// Whitelist validation for the 'publish_guard' optoins
 		if ( ! isset( $new_options['publish_guard'] ) || 'on' != $new_options['publish_guard'] ) {
@@ -227,16 +226,16 @@ class Settings {
 		}
 
 		if ( 'update' != $_POST['action']
-		|| OptionsUtilities::get_module_options_key(self::SETTINGS_SLUG) != $_POST['option_page'] ) {
+		|| OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ) != $_POST['option_page'] ) {
 			return false;
 		}
 
-		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), OptionsUtilities::get_module_options_key(self::SETTINGS_SLUG) . '-options' ) ) {
+		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ) . '-options' ) ) {
 			wp_die( esc_html__( 'Cheatin&#8217; uh?' ) );
 		}
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validation and sanitization is done in the settings_validate method
-		$new_options = ( isset( $_POST[ OptionsUtilities::get_module_options_key(self::SETTINGS_SLUG) ] ) ) ? $_POST[ OptionsUtilities::get_module_options_key(self::SETTINGS_SLUG) ] : array();
+		$new_options = ( isset( $_POST[ OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ) ] ) ) ? $_POST[ OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ) ] : array();
 
 		$new_options = self::settings_validate( $new_options );
 
@@ -248,3 +247,5 @@ class Settings {
 		exit;
 	}
 }
+
+Settings::init();

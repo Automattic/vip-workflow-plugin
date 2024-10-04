@@ -8,7 +8,6 @@
 namespace VIPWorkflow\Modules\Shared\PHP;
 
 use stdClass;
-use VIPWorkflow\VIP_Workflow;
 
 class OptionsUtilities {
 	const OPTIONS_GROUP = 'vip_workflow_';
@@ -72,8 +71,7 @@ class OptionsUtilities {
 		$module_options_name = str_replace( 'vw-', '', $module_slug );
 		$module_options_name = str_replace( '-', '_', $module_options_name );
 
-		$vip_workflow = VIP_Workflow::instance();
-		return sprintf( '%s%s_options', $vip_workflow->options_group, $module_options_name );
+		return sprintf( '%s%s_options', self::OPTIONS_GROUP, $module_options_name );
 	}
 
 	/**
@@ -86,5 +84,4 @@ class OptionsUtilities {
 		$module_options_key = self::get_module_options_key( $module_slug );
 		return $module_options_key . '_general';
 	}
-
 }

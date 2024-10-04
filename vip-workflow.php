@@ -41,10 +41,20 @@ define( 'VIP_WORKFLOW_URL', plugins_url( '/', __FILE__ ) );
 define( 'VIP_WORKFLOW_SETTINGS_PAGE', add_query_arg( 'page', 'vw-settings', get_admin_url( null, 'admin.php' ) ) );
 define( 'VIP_WORKFLOW_REST_NAMESPACE', 'vip-workflow/v1' );
 
-// Main plugin class
-require_once VIP_WORKFLOW_ROOT . '/class-workflow.php';
+
+// Set the version for the plugin
+// It's not used for anything, which is why it's here.
+add_action( 'admin_init', function () {
+	$previous_version = get_option( 'vip_workflow_version' );
+	if ( $previous_version && version_compare( $previous_version, VIP_WORKFLOW_VERSION, '<' ) ) {
+		update_option( 'vip_workflow_version', VIP_WORKFLOW_VERSION );
+	} elseif ( ! $previous_version ) {
+		update_option( 'vip_workflow_version', VIP_WORKFLOW_VERSION );
+	}
+} );
 
 // Utility classes
+require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/helper-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/install-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/options-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/meta-cleanup-utilities.php';

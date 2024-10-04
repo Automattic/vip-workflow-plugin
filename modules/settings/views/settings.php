@@ -1,5 +1,8 @@
 <?php
 
+use VIPWorkflow\Modules\Settings;
+use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
+
 defined( 'ABSPATH' ) || exit();
 
 
@@ -23,10 +26,9 @@ $message_slug = isset( $_REQUEST['message'] ) ? sanitize_title( $_REQUEST['messa
 		</h3>
 	</div>
 
-	<form class="basic-settings" action="<?php echo esc_url( menu_page_url( $this->module->settings_slug, false ) ); ?>" method="post">
-		<?php settings_fields( $this->module->options_group_name ); ?>
-		<?php do_settings_sections( $this->module->options_group_name ); ?>
-		<input id="vip_workflow_module_name" name="vip_workflow_module_name" type="hidden" value="<?php echo esc_attr( $this->module->name ); ?>" />
+	<form class="basic-settings" action="<?php echo esc_url( menu_page_url( Settings::SETTINGS_SLUG, false ) ); ?>" method="post">
+		<?php settings_fields( OptionsUtilities::get_module_options_general_key( Settings::SETTINGS_SLUG ) ); ?>
+		<?php do_settings_sections( OptionsUtilities::get_module_options_general_key( Settings::SETTINGS_SLUG ) ); ?>
 
 		<p class="submit"><?php submit_button( null, 'primary', 'submit', false ); ?></p>
 	</form>
