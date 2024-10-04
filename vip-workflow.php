@@ -61,8 +61,8 @@ require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/meta-cleanup-utilities.php
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/util.php';
 
 // Modules
+require_once VIP_WORKFLOW_ROOT . '/modules/settings/settings.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/custom-status/custom-status.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/editorial-metadata/editorial-metadata.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/notifications/notifications.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/preview/preview.php';
-require_once VIP_WORKFLOW_ROOT . '/modules/settings/settings.php';

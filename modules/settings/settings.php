@@ -42,7 +42,8 @@ class Settings {
 	public static function action_admin_enqueue_scripts(): void {
 		if ( self::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
 			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/settings/settings.asset.php';
-			wp_enqueue_script( 'vip-workflow-settings-js', VIP_WORKFLOW_URL . 'dist/modules/settings/settings.js', $asset_file['dependencies'], $asset_file['version'], true );
+			$dependencies = [ ...$asset_file['dependencies'], 'jquery' ];
+			wp_enqueue_script( 'vip-workflow-settings-js', VIP_WORKFLOW_URL . 'dist/modules/settings/settings.js', $dependencies, $asset_file['version'], true );
 		}
 	}
 
@@ -182,7 +183,7 @@ class Settings {
 	/**
 	 * Validate input from the end user
 	 */
-	public static function settings_validate( $new_options ): object {
+	public static function settings_validate( $new_options ): array {
 		// Whitelist validation for the post type options
 		if ( ! isset( $new_options['post_types'] ) ) {
 			$new_options['post_types'] = [];

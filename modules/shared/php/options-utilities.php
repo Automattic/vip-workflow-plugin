@@ -52,7 +52,7 @@ class OptionsUtilities {
 	 * @param object $new_options The new options to save
 	 * @return bool True if the options were updated, false otherwise.
 	 */
-	public static function update_module_options( string $module_slug, object $new_options ): bool {
+	public static function update_module_options( string $module_slug, array $new_options ): bool {
 		$module_options_key = self::get_module_options_key( $module_slug );
 		$old_options       = self::get_module_options( $module_slug );
 		$new_options = (object) array_merge( (array) $old_options, $new_options );
