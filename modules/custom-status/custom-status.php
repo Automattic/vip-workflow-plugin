@@ -499,7 +499,7 @@ class CustomStatus {
 		];
 
 		// Bail early if publish guard is off, or the post is already published, or the post is not available
-		if ( 'off' === OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'publish_guard' ) || ! $post || 'publish' === $post->post_status ) {
+		if ( ! $post || 'off' === OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'publish_guard' ) || 'publish' === $post->post_status ) {
 			return $allcaps;
 		}
 

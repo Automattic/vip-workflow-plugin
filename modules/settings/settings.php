@@ -50,16 +50,13 @@ class Settings {
 	 * Register the settings for the module
 	 */
 	public static function register_settings(): void {
-		$settings_option = OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG );
-		$settings_general_option = OptionsUtilities::get_module_options_general_key( self::SETTINGS_SLUG );
+		add_settings_section( OptionsUtilities::get_module_options_general_key( self::SETTINGS_SLUG ), false, '__return_false', OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ) );
 
-		add_settings_section( $settings_general_option, false, '__return_false', $settings_option );
+		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ __CLASS__, 'helper_option_custom_post_type' ], OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ), OptionsUtilities::get_module_options_general_key( self::SETTINGS_SLUG ) );
+		add_settings_field( 'publish_guard', __( 'Publish Guard', 'vip-workflow' ), [ __CLASS__, 'settings_publish_guard' ], OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ), OptionsUtilities::get_module_options_general_key( self::SETTINGS_SLUG ) );
 
-		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ __CLASS__, 'helper_option_custom_post_type' ], $settings_option, $settings_general_option );
-		add_settings_field( 'publish_guard', __( 'Publish Guard', 'vip-workflow' ), [ __CLASS__, 'settings_publish_guard' ], $settings_option, $settings_general_option );
-
-		add_settings_field( 'email_address', __( 'Email Address', 'vip-workflow' ), [ __CLASS__, 'settings_email_address' ], $settings_option, $settings_general_option );
-		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ __CLASS__, 'settings_webhook_url' ], $settings_option, $settings_general_option );
+		add_settings_field( 'email_address', __( 'Email Address', 'vip-workflow' ), [ __CLASS__, 'settings_email_address' ], OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ), OptionsUtilities::get_module_options_general_key( self::SETTINGS_SLUG ) );
+		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ __CLASS__, 'settings_webhook_url' ], OptionsUtilities::get_module_options_key( self::SETTINGS_SLUG ), OptionsUtilities::get_module_options_general_key( self::SETTINGS_SLUG ) );
 	}
 
 	/**
