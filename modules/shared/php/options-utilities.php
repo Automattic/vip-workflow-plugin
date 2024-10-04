@@ -19,12 +19,12 @@ class OptionsUtilities {
 	 * @param string $module_slug The slug used for this module
 	 * @return object The set of saved module options for this module, or an empty stdClass if none are found
 	 */
-	public static function get_module_options( string $module_slug ): object {
+	public static function get_module_options( string $module_slug ): object|null {
 		$module_options_key = self::get_module_options_key( $module_slug );
 		return get_option( $module_options_key, new stdClass() );
 	}
 
-	public static function get_module_option_by_key( string $module_slug, string $key ): string|array|bool {
+	public static function get_module_option_by_key( string $module_slug, string $key ): string|array|bool|null {
 		$module_options = self::get_module_options( $module_slug );
 		return $module_options->$key;
 	}
