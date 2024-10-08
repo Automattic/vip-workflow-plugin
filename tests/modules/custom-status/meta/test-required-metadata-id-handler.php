@@ -9,6 +9,7 @@ namespace VIPWorkflow\Tests;
 
 use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\CustomStatus\Meta\RequiredMetadataIdHandler;
+use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
 use WP_UnitTestCase;
 
 class RequiredMetadataIdHandlerTest extends WP_UnitTestCase {
@@ -23,6 +24,14 @@ class RequiredMetadataIdHandlerTest extends WP_UnitTestCase {
 		// in the admin web interface. Manually install them here. This avoid issues when a test creates or deletes
 		// a status and it's the only status existing, which can cause errors due to status restrictions.
 		CustomStatus::setup_install();
+	}
+
+	// tear down after class
+	protected function tearDown(): void {
+		parent::tearDown();
+
+		// Reset all module options
+		OptionsUtilities::reset_all_module_options();
 	}
 
 	public function test_remove_deleted_metadata_from_required_metadata() {

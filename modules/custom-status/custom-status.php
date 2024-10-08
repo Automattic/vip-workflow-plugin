@@ -125,8 +125,6 @@ class CustomStatus {
 	 * Also unregisters pending, in case the user doesn't want them.
 	 */
 	public static function register_custom_statuses(): void {
-		global $wp_post_statuses;
-
 		$custom_statuses = self::get_custom_statuses();
 
 		// Unfortunately, register_post_status() doesn't accept a

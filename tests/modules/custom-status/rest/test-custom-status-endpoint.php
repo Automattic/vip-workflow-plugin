@@ -9,6 +9,7 @@ namespace VIPWorkflow\Tests;
 
 use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\EditorialMetadata;
+use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
 use WP_REST_Request;
 
 /**
@@ -26,6 +27,14 @@ class CustomStatusRestApiTest extends RestTestCase {
 		// in the admin web interface. Manually install them here. This avoid issues when a test creates or deletes
 		// a status and it's the only status existing, which can cause errors due to status restrictions.
 		CustomStatus::setup_install();
+	}
+
+	// tear down after class
+	protected function tearDown(): void {
+		parent::tearDown();
+
+		// Reset all module options
+		OptionsUtilities::reset_all_module_options();
 	}
 
 	public function test_create_custom_status_with_optional_fields() {

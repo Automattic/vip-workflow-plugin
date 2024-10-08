@@ -81,6 +81,23 @@ class OptionsUtilities {
 	}
 
 	/**
+	 * Reset all module options, this will reset the plugin back to its default settings.
+	 *
+	 * It's meant for testing purposes only.
+	 *
+	 * @return void
+	 *
+	 * @access private
+	 */
+	public static function reset_all_module_options(): void {
+		$modules_to_delete = [ 'custom-status', 'editorial-metadata', 'settings' ];
+		foreach ( $modules_to_delete as $module_slug ) {
+			$module_options_key = self::get_module_options_key( $module_slug );
+			delete_option( $module_options_key );
+		}
+	}
+
+	/**
 	 * Given a module name, return the options key for the module
 	 *
 	 * @param string $module_slug The slug used for this module
