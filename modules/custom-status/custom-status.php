@@ -127,17 +127,13 @@ class CustomStatus {
 	public static function register_custom_statuses(): void {
 		global $wp_post_statuses;
 
-			// Users can delete the pending status if they want, so let's get rid of that
-			// It'll get re-added if the user hasn't "deleted" them
-			unset( $wp_post_statuses['pending'] );
+		$custom_statuses = self::get_custom_statuses();
 
-			$custom_statuses = self::get_custom_statuses();
-
-			// Unfortunately, register_post_status() doesn't accept a
-			// post type argument, so we have to register the post
-			// statuses for all post types. This results in
-			// all post statuses for a post type appearing at the top
-			// of manage posts if there is a post with the status
+		// Unfortunately, register_post_status() doesn't accept a
+		// post type argument, so we have to register the post
+		// statuses for all post types. This results in
+		// all post statuses for a post type appearing at the top
+		// of manage posts if there is a post with the status
 		foreach ( $custom_statuses as $status ) {
 			register_post_status( $status->slug, [
 				'label'                     => $status->name,
@@ -642,14 +638,17 @@ class CustomStatus {
 		// Reset our internal object cache
 		self::$custom_statuses_cache = [];
 
+		// Don't allow changing the name or slug of the Draft or pending status as they are core statuses
+		$banned_statuses = [ 'draft', 'pending' ];
+
 		// Prevent user from changing draft name or slug
-		if ( 'draft' === $old_status->slug
+		if ( in_array( $old_status->slug, $banned_statuses )
 		&& (
 			( isset( $args['name'] ) && $args['name'] !== $old_status->name )
 			||
 			( isset( $args['slug'] ) && $args['slug'] !== $old_status->slug )
 		) ) {
-			return new WP_Error( 'invalid', __( 'Changing the name and slug of "Draft" is not allowed', 'vip-workflow' ) );
+			return new WP_Error( 'restricted', __( 'Changing the name and slug of a restricted status ', 'vip-workflow' ) . '(' . $old_status->name . ') is not allowed.' );
 		}
 
 		// If the name was changed, we need to change the slug
@@ -727,8 +726,11 @@ class CustomStatus {
 
 		$old_status_slug = $old_status->slug;
 
-		if ( self::is_restricted_status( $old_status_slug ) || 'draft' === $old_status_slug ) {
-			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $old_status->name . ')' );
+		// Don't allow changing the name or slug of the Draft or pending status as they are core statuses
+		$banned_statuses = [ 'draft', 'pending' ];
+
+		if ( self::is_restricted_status( $old_status_slug ) || in_array( $old_status->slug, $banned_statuses ) ) {
+			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $old_status->name . ') cannot be deleted.' );
 		}
 
 		// Reset our internal object cache
@@ -736,7 +738,7 @@ class CustomStatus {
 
 		// Get the new status to reassign posts to, which would be the first custom status.
 		// In the event that the first custom status is being deleted, we'll reassign to the second custom status.
-		// Since draft cannot be deleted, we don't need to worry about ever getting index out of bounds.
+		// Since draft and pending review cannot be deleted, we don't need to worry about ever getting index out of bounds.
 		$custom_statuses = self::get_custom_statuses();
 		$new_status_slug = $custom_statuses[0]->slug;
 		if ( $old_status_slug === $new_status_slug ) {

@@ -13,6 +13,17 @@ class OptionsUtilities {
 	const OPTIONS_GROUP = 'vip_workflow_';
 	const OPTIONS_GROUP_NAME = 'vip_workflow_options';
 
+	// Its key to centralize these here, so we can easily update them in the future
+	private const DEFAULT_OPTIONS = [
+		'post_types'          => [
+			'post' => 'on',
+			'page' => 'on',
+		],
+		'publish_guard'       => 'on',
+		'email_address'       => '',
+		'webhook_url'         => '',
+	];
+
 	/**
 	 * Given a module name, return a set of saved module options
 	 *
@@ -21,7 +32,16 @@ class OptionsUtilities {
 	 */
 	public static function get_module_options( string $module_slug ): object|null {
 		$module_options_key = self::get_module_options_key( $module_slug );
-		return get_option( $module_options_key, new stdClass() );
+		$module_options = get_option( $module_options_key, new stdClass() );
+
+		// Ensure all default options are set
+		foreach ( self::DEFAULT_OPTIONS as $key => $value ) {
+			if ( ! isset( $module_options->$key ) ) {
+				$module_options->$key = $value;
+			}
+		}
+
+		return $module_options;
 	}
 
 	public static function get_module_option_by_key( string $module_slug, string $key ): string|array|bool|null {

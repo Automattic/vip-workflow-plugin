@@ -21,7 +21,13 @@ $message_slug = isset( $_REQUEST['message'] ) ? sanitize_title( $_REQUEST['messa
 		<h3>
 			<?php esc_html_e( 'Configure VIP Workflow settings.', 'vip-workflow' ); ?>
 			<?php if ( $message_slug && isset( $messages[ $message_slug ] ) ) { ?>
-				<?php printf( '<span class="vip-workflow-updated-message vip-workflow-message">%s</span>', esc_html( $messages[ $message_slug ] ) ); ?>
+				<?php
+				wp_admin_notice( esc_html( $messages[ $message_slug ] ), [
+					'type' => 'success',
+					'dismissible' => true,
+					'additional_classes' => [ 'inline', 'notice-alt' ],
+				] );
+				?>
 			<?php } ?>
 		</h3>
 	</div>

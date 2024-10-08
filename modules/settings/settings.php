@@ -17,7 +17,8 @@ class Settings {
 	 * Initialize the rest of the stuff in the class if the module is active
 	 */
 	public static function init(): void {
-		add_action( 'admin_menu', [ __CLASS__, 'add_admin_menu' ] );
+		// Ensures that the settings page shows up at the bottom of the menu list
+		add_action( 'admin_menu', [ __CLASS__, 'add_admin_menu' ], 50 );
 
 		add_action( 'admin_init', [ __CLASS__, 'helper_settings_validate_and_save' ], 100 );
 		add_action( 'admin_init', [ __CLASS__, 'register_settings' ] );
@@ -218,7 +219,6 @@ class Settings {
 	 * This method is called automatically/ doesn't need to be registered anywhere
 	 */
 	public static function helper_settings_validate_and_save(): bool {
-
 		if ( ! isset( $_POST['action'], $_POST['_wpnonce'], $_POST['option_page'], $_POST['_wp_http_referer'], $_POST['submit'] ) || ! is_admin() ) {
 			return false;
 		}
