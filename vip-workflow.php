@@ -6,8 +6,8 @@
  * Author: WordPress VIP
  * Text Domain: vip-workflow
  * Version: 0.3.0
- * Requires at least: 6.2
- * Requires PHP: 8.0
+ * Requires at least: 6.4
+ * Requires PHP: 8.1
  * License: GPL-3
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -23,11 +23,11 @@ if ( defined( 'VIP_WORKFLOW_LOADED' ) ) {
 define( 'VIP_WORKFLOW_LOADED', true );
 
 global $wp_version;
-if ( version_compare( phpversion(), '8.0', '<' ) || version_compare( $wp_version, '6.2', '<' ) ) {
+if ( version_compare( phpversion(), '8.1', '<' ) || version_compare( $wp_version, '6.4', '<' ) ) {
 		add_action( 'admin_notices', function () {
 			?>
 		<div class="notice notice-error">
-			<p><?php esc_html_e( 'VIP Workflow requires PHP 8.0+ and WordPress 6.2+.', 'vip-workflow' ); ?></p>
+			<p><?php esc_html_e( 'VIP Workflow requires PHP 8.1+ and WordPress 6.4+.', 'vip-workflow' ); ?></p>
 		</div>
 			<?php
 		}, 10, 0 );
