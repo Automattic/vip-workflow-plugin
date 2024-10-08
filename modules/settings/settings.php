@@ -7,8 +7,8 @@
  */
 namespace VIPWorkflow\Modules;
 
-use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
+use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 
 class Settings {
 	const SETTINGS_SLUG = 'vw-settings';
@@ -41,7 +41,7 @@ class Settings {
 	 * @access private
 	 */
 	public static function action_admin_enqueue_scripts(): void {
-		if ( self::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
+		if ( HelperUtilities::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
 			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/settings/settings.asset.php';
 			$dependencies = [ ...$asset_file['dependencies'], 'jquery' ];
 			wp_enqueue_script( 'vip-workflow-settings-js', VIP_WORKFLOW_URL . 'dist/modules/settings/settings.js', $dependencies, $asset_file['version'], true );
@@ -128,23 +128,6 @@ class Settings {
 		}
 
 		printf( '<p class="description" style="margin-top: 0.5rem">%s</p>', esc_html__( 'Enable workflow custom statuses on the above post types.', 'vip-workflow' ) );
-	}
-
-	/**
-	 * Whether or not the current page is our settings view. Determination is based on $pagenow, $_GET['page'], and if it's settings module or not.
-	 *
-	 * @return bool $is_settings_view Return true if it is
-	 */
-	public static function is_settings_view_loaded( string $slug ): bool {
-		global $pagenow;
-
-		// All of the settings views are based on admin.php and a $_GET['page'] parameter
-		if ( 'admin.php' != $pagenow || ! isset( $_GET['page'] ) ) {
-			return false;
-		}
-
-		// The current page better be in the array of registered settings view slugs
-		return $_GET['page'] === $slug;
 	}
 
 	/**

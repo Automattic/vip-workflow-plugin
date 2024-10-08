@@ -40,14 +40,14 @@ if ( ! function_exists( '_vw_wp_link_page' ) ) {
 		$post       = get_post();
 		$query_args = array();
 
-		if ( 1 == $i ) {
+		if ( 1 === $i ) {
 			$url = get_permalink();
 		// phpcs:ignore Universal.ControlStructures.DisallowLonelyIf.Found
 		} else {
 			// Check for all custom post statuses, not just draft & pending
-			if ( '' == get_option( 'permalink_structure' ) || in_array( $post->post_status, array_merge( $custom_statuses, array( 'pending' ) ) ) ) {
+			if ( '' === get_option( 'permalink_structure' ) || in_array( $post->post_status, array_merge( $custom_statuses, array( 'pending' ) ) ) ) {
 				$url = add_query_arg( 'page', $i, get_permalink() );
-			} elseif ( 'page' == get_option( 'show_on_front' ) && get_option( 'page_on_front' ) == $post->ID ) {
+			} elseif ( 'page' === get_option( 'show_on_front' ) && get_option( 'page_on_front' ) === $post->ID ) {
 				$url = trailingslashit( get_permalink() ) . user_trailingslashit( "$wp_rewrite->pagination_base/" . $i, 'single_paged' );
 			} else {
 				$url = trailingslashit( get_permalink() ) . user_trailingslashit( $i, 'single_paged' );

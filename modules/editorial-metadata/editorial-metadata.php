@@ -162,7 +162,7 @@ class EditorialMetadata {
 	 */
 	public static function action_admin_enqueue_scripts(): void {
 		// Load Javascript we need to use on the configuration views
-		if ( Settings::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
+		if ( HelperUtilities::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
 			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/editorial-metadata/editorial-metadata-configure.asset.php';
 			wp_enqueue_script( 'vip-workflow-editorial-metadata-configure', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-editorial-metadata-styles', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.css', [ 'wp-components' ], $asset_file['version'] );

@@ -59,6 +59,7 @@ require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/install-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/options-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/meta-cleanup-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/util.php';
+require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/core-hacks.php';
 
 // Modules
 require_once VIP_WORKFLOW_ROOT . '/modules/settings/settings.php';

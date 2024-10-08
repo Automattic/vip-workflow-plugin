@@ -29,7 +29,6 @@ class CustomStatusRestApiTest extends RestTestCase {
 		CustomStatus::setup_install();
 	}
 
-	// tear down after class
 	protected function tearDown(): void {
 		parent::tearDown();
 
