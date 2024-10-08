@@ -7,10 +7,9 @@ namespace VIPWorkflow\Modules\Shared\PHP;
 
 use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
+use WP_Post;
 
 use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
-
-use WP_Post;
 
 class CoreHacks {
 
