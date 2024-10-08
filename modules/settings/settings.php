@@ -141,7 +141,7 @@ class Settings {
 		$normalized_post_type_options = array();
 		$all_post_types               = array_keys( self::get_all_post_types() );
 		foreach ( $all_post_types as $post_type ) {
-			if ( ( isset( $module_post_types[ $post_type ] ) && 'on' == $module_post_types[ $post_type ] ) ) {
+			if ( ( isset( $module_post_types[ $post_type ] ) && 'on' === $module_post_types[ $post_type ] ) ) {
 				$normalized_post_type_options[ $post_type ] = 'on';
 			} else {
 				$normalized_post_type_options[ $post_type ] = 'off';
