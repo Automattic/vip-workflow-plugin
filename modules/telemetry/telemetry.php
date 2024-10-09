@@ -24,9 +24,9 @@ class Telemetry {
 
 		// Custom Status events
 		add_action( 'transition_post_status', [ __CLASS__, 'record_custom_status_change' ], 10, 3 );
-		add_action( 'vw_add_custom_status', [ __CLASS__, 'record_add_custom_status' ], 10, 2 );
+		add_action( 'vw_add_custom_status', [ __CLASS__, 'record_add_custom_status' ], 10, 3 );
 		add_action( 'vw_delete_custom_status', [ __CLASS__, 'record_delete_custom_status' ], 10, 2 );
-		add_action( 'vw_update_custom_status', [ __CLASS__, 'record_update_custom_status' ], 10, 3 );
+		add_action( 'vw_update_custom_status', [ __CLASS__, 'record_update_custom_status' ], 10, 2 );
 
 		// Notification events
 		add_action( 'vw_notification_status_change', [ __CLASS__, 'record_notification_sent' ], 10, 1 );
@@ -50,13 +50,13 @@ class Telemetry {
 			return;
 		}
 
-		if ( in_array( $new_status, [ $old_status, 'inherit', 'auto-draft', 'publish', 'draft' ] ) ) {
+		if ( in_array( $new_status, [ $old_status, 'inherit', 'auto-draft', 'publish' ] ) ) {
 			return;
 		}
 
 		self::$tracks->record_event( 'post_custom_status_changed', [
-			'new_status' => $new_status,
 			'old_status' => $old_status,
+			'new_status' => $new_status,
 			'post_id'    => $post->ID,
 		] );
 	}
@@ -64,41 +64,42 @@ class Telemetry {
 	/**
 	 * Record an event when a custom status is created
 	 *
-	 * @param string $term The term name
-	 * @param string $slug The term slug
+	 * @param int $term_id The term's ID
+	 * @param string $term_name The term's name
+	 * @param string $slug The term's slug
 	 */
-	public static function record_add_custom_status( string $term, string $slug ): void {
+
+	public static function record_add_custom_status( int $term_id, string $term_name, string $term_slug ): void {
 		self::$tracks->record_event( 'custom_status_created', [
-			'term' => $term,
-			'slug' => $slug,
+			'term_id' => $term_id,
+			'name'    => $term_name,
+			'slug'    => $term_slug,
 		] );
 	}
 
 	/**
 	 * Record an event when a custom status is deleted
 	 *
-	 * @param int $status_id The status ID
+	 * @param int $term_id The custom status term ID
 	 * @param string $slug The status slug
 	 */
-	public static function record_delete_custom_status( int $status_id, string $slug ): void {
+	public static function record_delete_custom_status( int $term_id, string $slug ): void {
 		self::$tracks->record_event( 'custom_status_deleted', [
-			'status_id' => $status_id,
-			'slug'      => $slug,
+			'term_id' => $term_id,
+			'slug'    => $slug,
 		] );
 	}
 
 	/**
 	 * Record an event when a custom status is updated
 	 *
-	 * @param int $status_id The status ID
+	 * @param int $term_id The custom status term ID
 	 * @param string $slug The status slug
-	 * @param int $position The status position
 	 */
-	public static function record_update_custom_status( int $status_id, string $slug, int $position ): void {
+	public static function record_update_custom_status( int $status_id, string $slug ): void {
 		self::$tracks->record_event( 'custom_status_changed', [
 			'status_id' => $status_id,
 			'slug'      => $slug,
-			'position'  => $position,
 		] );
 	}
 
@@ -124,34 +125,31 @@ class Telemetry {
 	 * @param string $new_version The new version
 	 */
 	public function record_admin_update( string $previous_version, string $new_version ): void {
-		// Get all custom statuses
-		$custom_statuses = CustomStatus::get_custom_statuses();
-		// Get supported post types
+		$custom_statuses      = CustomStatus::get_custom_statuses();
 		$supported_post_types = HelperUtilities::get_supported_post_types();
 
-		$published_posts     = 0;
 		$custom_status_posts = 0;
+
 		foreach ( $supported_post_types as $post_type ) {
-			// Get all posts count for each post type
+			// Get all posts count for this post type
 			$posts_count = wp_count_posts( $post_type );
 
-			// Only care about published and posts with custom status
-			$published_posts += (int) $posts_count->publish;
 			foreach ( $custom_statuses as $status ) {
-				$custom_status_posts += (int) $posts_count->{ $status->slug };
+				if ( isset( $posts_count->{ $status->slug } ) ) {
+					$custom_status_posts += (int) $posts_count->{ $status->slug };
+				}
 			}
 		}
 
-		self::$tracks->record_event( 'administration_update', [
+		self::$tracks->record_event( 'plugin_update', [
 			'previous_version'    => $previous_version,
 			'new_version'         => $new_version,
 			'custom_status_posts' => $custom_status_posts,
-			'published_posts'     => $published_posts,
 		] );
 	}
 
 	/**
-	 * Record an event when the settings are updated
+	 * Record presence of publish guard and webhook settings if toggled
 	 *
 	 * @param array $new_options The new options
 	 * @param array $old_options The old options
@@ -173,15 +171,10 @@ class Telemetry {
 	 */
 	protected function record_publish_guard_toggle( bool $enabled ): void {
 		if ( $enabled ) {
-			self::$tracks->record_event( 'publish_guard_enabled', [
-				'enabled' => $enabled,
-			] );
-			return;
+			self::$tracks->record_event( 'publish_guard_enabled' );
+		} else {
+			self::$tracks->record_event( 'publish_guard_disabled' );
 		}
-
-		self::$tracks->record_event( 'publish_guard_disabled', [
-			'enabled' => $enabled,
-		] );
 	}
 
 	/**
@@ -191,15 +184,10 @@ class Telemetry {
 	 */
 	protected function record_send_to_webhook_toggle( bool $enabled ): void {
 		if ( $enabled ) {
-			self::$tracks->record_event( 'send_to_webhook_enabled', [
-				'enabled' => $enabled,
-			] );
-			return;
+			self::$tracks->record_event( 'send_to_webhook_enabled' );
+		} else {
+			self::$tracks->record_event( 'send_to_webhook_disabled' );
 		}
-
-		self::$tracks->record_event( 'send_to_webhook_disabled', [
-			'enabled' => $enabled,
-		] );
 	}
 }
 

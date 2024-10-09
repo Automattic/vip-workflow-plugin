@@ -534,19 +534,19 @@ class CustomStatus {
 			return $inserted_term;
 		}
 
+		$term_id = $inserted_term['term_id'];
+
 		/**
 		 * Fires after a custom status is added to the database.
 		 *
-		 * @param string $term The status to add or update
-		 * @param string $slug The slug of the status
-		 * @param string $description Change the values of the inserted term
+		 * @param int $term_id The ID of the custom status.
+		 * @param string $term_name The name of the custom status.
+		 * @param string $slug The slug of the custom status.
 		 */
-		do_action( 'vw_add_custom_status', $term_name, $term_to_save['slug'], $term_to_save['description'] );
+		do_action( 'vw_add_custom_status', $term_id, $term_name, $term_to_save['slug'] );
 
 		// Reset our internal object cache
 		self::$custom_statuses_cache = [];
-
-		$term_id = $inserted_term['term_id'];
 
 		$position              = $args[ self::METADATA_POSITION_KEY ];
 		$required_metadata_ids = $args[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [];
@@ -656,19 +656,15 @@ class CustomStatus {
 			return $updated_term;
 		}
 
+		$slug = isset( $args['slug'] ) ? $args['slug'] : $old_status->slug;
+
 		/**
 		 * Fires after a custom status is updated in the database.
 		 *
-		 * @param int $status_id The ID of the status being updated
+		 * @param int $term_id The ID of the status being updated
 		 * @param string $slug The slug of the status being updated
-		 * @param int $position The position of the status being updated
 		 */
-		do_action(
-			'vw_update_custom_status',
-			$status_id,
-			isset( $args['slug'] ) ? $args['slug'] : $old_status->slug,
-			isset( $args['position'] ) ? $args['position'] : $old_status->position
-		);
+		do_action( 'vw_update_custom_status', $status_id, $slug );
 
 		$status_result = self::get_custom_status_by( 'id', $status_id );
 
@@ -726,7 +722,7 @@ class CustomStatus {
 		/**
 		 * Fires after a custom status is deleted from the database.
 		 *
-		 * @param int $status_id The ID of the status being deleted
+		 * @param int $term_id The ID of the status being deleted
 		 * @param string $old_status_slug The slug of the status being deleted
 		 */
 		do_action( 'vw_delete_custom_status', $status_id, $old_status_slug );
