@@ -6,7 +6,7 @@
  */
 namespace VIPWorkflow\Modules\Preview;
 
-use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Modules\CustomStatus;
 use WP_Error;
 
 class Token {
@@ -55,7 +55,7 @@ class Token {
 	 */
 	public static function validate_token( $token, $post_id ) {
 		$saved_tokens                = get_post_meta( $post_id, self::META_KEY, /* single */ false );
-		$is_post_using_custom_status = VIP_Workflow::instance()->custom_status->is_post_using_custom_status( $post_id );
+		$is_post_using_custom_status = CustomStatus::is_post_using_custom_status( $post_id );
 
 		if ( count( $saved_tokens ) > 0 && ! $is_post_using_custom_status ) {
 			// Clear all tokens if this post is no longer using a custom status and return false.

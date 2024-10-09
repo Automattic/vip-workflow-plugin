@@ -9,6 +9,7 @@ namespace VIPWorkflow\Modules;
 require_once __DIR__ . '/rest/editorial-metadata-endpoint.php';
 
 use VIPWorkflow\Modules\EditorialMetadata\REST\EditorialMetadataEndpoint;
+use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 use VIPWorkflow\Modules\Shared\PHP\InstallUtilities;
 use VIPWorkflow\VIP_Workflow;
 use WP_Error;
@@ -29,7 +30,7 @@ class EditorialMetadata {
 	private static $editorial_metadata_terms_cache = [];
 
 	public static function init(): void {
-		// Register the taxonomy we use for Editorial Metadata with WordPress core
+		// Register the taxonomy we use for Editorial Metadata with WordPress core, and ensure its registered before custom status
 		add_action( 'init', [ __CLASS__, 'register_editorial_metadata_taxonomy' ] );
 
 		// Register the post meta for each editorial metadata term
@@ -63,7 +64,7 @@ class EditorialMetadata {
 			$post_meta_key  = $term->meta[ self::METADATA_POSTMETA_KEY ];
 			$post_meta_args = self::get_postmeta_args( $term );
 
-			foreach ( VIP_Workflow::instance()->get_supported_post_types() as $post_type ) {
+			foreach ( HelperUtilities::get_supported_post_types() as $post_type ) {
 				register_post_meta( $post_type, $post_meta_key, $post_meta_args );
 			}
 		}
@@ -76,7 +77,7 @@ class EditorialMetadata {
 	 */
 	public static function register_editorial_metadata_taxonomy(): void {
 		// We need to make sure taxonomy is registered for all of the post types that support it
-		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
+		$supported_post_types = HelperUtilities::get_supported_post_types();
 
 		register_taxonomy( self::METADATA_TAXONOMY, $supported_post_types,
 			[
@@ -142,7 +143,7 @@ class EditorialMetadata {
 	public static function add_admin_menu(): void {
 		$menu_title = __( 'Editorial Metadata', 'vip-workflow' );
 
-		add_submenu_page( Custom_Status::SETTINGS_SLUG, $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ __CLASS__, 'render_settings_view' ] );
+		add_submenu_page( CustomStatus::SETTINGS_SLUG, $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ __CLASS__, 'render_settings_view' ] );
 	}
 
 	/**
@@ -161,7 +162,7 @@ class EditorialMetadata {
 	 */
 	public static function action_admin_enqueue_scripts(): void {
 		// Load Javascript we need to use on the configuration views
-		if ( VIP_Workflow::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
+		if ( HelperUtilities::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
 			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/editorial-metadata/editorial-metadata-configure.asset.php';
 			wp_enqueue_script( 'vip-workflow-editorial-metadata-configure', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-editorial-metadata-styles', VIP_WORKFLOW_URL . 'dist/modules/editorial-metadata/editorial-metadata-configure.css', [ 'wp-components' ], $asset_file['version'] );

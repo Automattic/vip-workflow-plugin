@@ -6,9 +6,8 @@
 
 namespace VIPWorkflow\Modules\CustomStatus\REST;
 
-use VIPWorkflow\Modules\Custom_Status;
+use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\EditorialMetadata;
-use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_REST_Request;
 use WP_Term;
@@ -92,7 +91,7 @@ class CustomStatusEndpoint {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
-						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
+						$term    = get_term( $term_id, CustomStatus::TAXONOMY_KEY );
 						return ( $term instanceof WP_Term );
 					},
 					'sanitize_callback' => function ( $param ) {
@@ -140,7 +139,7 @@ class CustomStatusEndpoint {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
-						$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
+						$term    = get_term( $term_id, CustomStatus::TAXONOMY_KEY );
 						return ( $term instanceof WP_Term );
 					},
 					'sanitize_callback' => function ( $param ) {
@@ -166,7 +165,7 @@ class CustomStatusEndpoint {
 						// validate each item in the array.
 						foreach ( $param as $position => $term_id ) {
 							$term_id = absint( $term_id );
-							$term    = get_term( $term_id, Custom_Status::TAXONOMY_KEY );
+							$term    = get_term( $term_id, CustomStatus::TAXONOMY_KEY );
 							if ( ! $term instanceof WP_Term ) {
 								return false;
 							}
@@ -205,15 +204,13 @@ class CustomStatusEndpoint {
 		$status_required_metadata_ids = $request->get_param( 'required_metadata_ids' );
 		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
-		$custom_status_module = VIP_Workflow::instance()->custom_status;
-
 		// Check that the name isn't numeric
 		if ( is_numeric( $status_name ) ) {
 			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the status.' );
 		}
 
 		// Check to make sure the name is not restricted
-		if ( $custom_status_module->is_restricted_status( strtolower( $status_name ) ) ) {
+		if ( CustomStatus::is_restricted_status( strtolower( $status_name ) ) ) {
 			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.' );
 		}
 
@@ -223,7 +220,7 @@ class CustomStatusEndpoint {
 		}
 
 		// Check to make sure the status doesn't already exist as another term because otherwise we'd get a fatal error
-		$term_exists = term_exists( $status_slug, Custom_Status::TAXONOMY_KEY );
+		$term_exists = term_exists( $status_slug, CustomStatus::TAXONOMY_KEY );
 
 		if ( $term_exists ) {
 			return new WP_Error( 'invalid', 'Status name conflicts with existing term. Please choose another.' );
@@ -237,7 +234,7 @@ class CustomStatusEndpoint {
 			'required_user_ids' => $status_required_user_ids,
 		];
 
-		$add_status_result = $custom_status_module->add_custom_status( $args );
+		$add_status_result = CustomStatus::add_custom_status( $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $add_status_result );
@@ -256,15 +253,13 @@ class CustomStatusEndpoint {
 		$status_required_metadata_ids = $request->get_param( 'required_metadata_ids' );
 		$status_required_user_ids = $request->get_param( 'required_user_ids' );
 
-		$custom_status_module = VIP_Workflow::instance()->custom_status;
-
 		// Check that the name isn't numeric
 		if ( is_numeric( $status_name ) ) {
 			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the status.' );
 		}
 
 		// Check to make sure the name is not restricted
-		if ( $custom_status_module->is_restricted_status( strtolower( $status_name ) ) ) {
+		if ( CustomStatus::is_restricted_status( strtolower( $status_name ) ) ) {
 			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.' );
 		}
 
@@ -274,15 +269,15 @@ class CustomStatusEndpoint {
 		}
 
 		// Check to make sure the status doesn't already exist
-		$custom_status_by_id   = $custom_status_module->get_custom_status_by( 'id', $term_id );
-		$custom_status_by_slug = $custom_status_module->get_custom_status_by( 'slug', $status_slug );
+		$custom_status_by_id   = CustomStatus::get_custom_status_by( 'id', $term_id );
+		$custom_status_by_slug = CustomStatus::get_custom_status_by( 'slug', $status_slug );
 
 		if ( $custom_status_by_slug && $custom_status_by_id && $custom_status_by_id->slug !== $status_slug ) {
 			return new WP_Error( 'invalid', 'Status already exists. Please choose another name.' );
 		}
 
 		// Check to make sure the status doesn't already exist as another term because otherwise we'd get a fatal error
-		$term_exists = term_exists( $status_slug, Custom_Status::TAXONOMY_KEY );
+		$term_exists = term_exists( $status_slug, CustomStatus::TAXONOMY_KEY );
 
 		// term_id from term_exists is a string, while term_id is an integer so not using strict comparison
 		if ( $term_exists && isset( $term_exists['term_id'] ) && $term_exists['term_id'] != $term_id ) {
@@ -298,7 +293,7 @@ class CustomStatusEndpoint {
 			'required_user_ids' => $status_required_user_ids,
 		];
 
-		$updated_status = $custom_status_module->update_custom_status( $term_id, $args );
+		$updated_status = CustomStatus::update_custom_status( $term_id, $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $updated_status );
@@ -312,15 +307,13 @@ class CustomStatusEndpoint {
 	public static function handle_delete_status( WP_REST_Request $request ) {
 		$term_id = $request->get_param( 'id' );
 
-		$custom_status_module = VIP_Workflow::instance()->custom_status;
-
 		// Check to make sure the status exists
-		$custom_status_by_id = $custom_status_module->get_custom_status_by( 'id', $term_id );
+		$custom_status_by_id = CustomStatus::get_custom_status_by( 'id', $term_id );
 		if ( ! $custom_status_by_id ) {
 			return new WP_Error( 'invalid', 'Status does not exist.' );
 		}
 
-		$delete_status_result = $custom_status_module->delete_custom_status( $term_id );
+		$delete_status_result = CustomStatus::delete_custom_status( $term_id );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $delete_status_result );
@@ -334,8 +327,6 @@ class CustomStatusEndpoint {
 	public static function handle_reorder_status( WP_REST_Request $request ) {
 		$status_order = $request->get_param( 'status_positions' );
 
-		$custom_status_module = VIP_Workflow::instance()->custom_status;
-
 		if ( ! is_array( $status_order ) ) {
 			return new WP_Error( 'invalid', 'Status order must be an array.' );
 		}
@@ -347,7 +338,7 @@ class CustomStatusEndpoint {
 				'position' => absint( $position ) + 1,
 			];
 
-			$update_status_result = $custom_status_module->update_custom_status( (int) $term_id, $args );
+			$update_status_result = CustomStatus::update_custom_status( (int) $term_id, $args );
 
 			// Stop the operation immediately if something has gone wrong, rather than silently continuing.
 			if ( is_wp_error( $update_status_result ) ) {
@@ -356,7 +347,7 @@ class CustomStatusEndpoint {
 		}
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
-		return rest_ensure_response( $custom_status_module->get_custom_statuses() );
+		return rest_ensure_response( CustomStatus::get_custom_statuses() );
 	}
 
 	// Utility functions

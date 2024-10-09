@@ -8,7 +8,9 @@ namespace VIPWorkflow\Modules;
 
 use WP_Post;
 
-use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
+use VIPWorkflow\Modules\Settings;
+use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
 use function VIPWorkflow\Modules\Shared\PHP\vw_draft_or_post_title;
 
 class Notifications {
@@ -31,7 +33,7 @@ class Notifications {
 	 * Set up and send post status change notification email
 	 */
 	public static function notification_status_change( string $new_status, string $old_status, WP_Post $post ): void {
-		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
+		$supported_post_types = HelperUtilities::get_supported_post_types();
 		if ( ! in_array( $post->post_type, $supported_post_types ) ) {
 			return;
 		}
@@ -89,33 +91,33 @@ class Notifications {
 
 			// Email subject and first line of body
 			// Set message subjects according to what action is being taken on the Post
-			if ( 'new' == $old_status || 'auto-draft' == $old_status ) {
+			if ( 'new' === $old_status || 'auto-draft' === $old_status ) {
 				$old_status_friendly_name = 'New';
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] New %2$s Created: "%3$s"', 'vip-workflow' ), $blogname, $subject_post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
 				$body .= sprintf( __( 'A new %1$s (#%2$s "%3$s") was created by %4$s %5$s.', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user->display_name, $current_user->user_email ) . "\r\n";
-			} elseif ( 'trash' == $new_status ) {
+			} elseif ( 'trash' === $new_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Trashed: "%3$s"', 'vip-workflow' ), $blogname, $subject_post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
 				$body .= sprintf( __( '%1$s #%2$s "%3$s" was moved to the trash by %4$s %5$s.', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
-			} elseif ( 'trash' == $old_status ) {
+			} elseif ( 'trash' === $old_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Restored (from Trash): "%3$s"', 'vip-workflow' ), $blogname, $subject_post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
 				$body .= sprintf( __( '%1$s #%2$s "%3$s" was restored from trash by %4$s %5$s.', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
-			} elseif ( 'future' == $new_status ) {
+			} elseif ( 'future' === $new_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Scheduled: "%3$s"' ), $blogname, $subject_post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email 6. scheduled date  */
 				$body .= sprintf( __( '%1$s #%2$s "%3$s" was scheduled by %4$s %5$s.  It will be published on %6$s' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email, self::get_scheduled_datetime( $post ) ) . "\r\n";
-			} elseif ( 'publish' == $new_status ) {
+			} elseif ( 'publish' === $new_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Published: "%3$s"', 'vip-workflow' ), $blogname, $subject_post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
 				$body .= sprintf( __( '%1$s #%2$s "%3$s" was published by %4$s %5$s.', 'vip-workflow' ), $post_type, $post_id, $post_title, $current_user_display_name, $current_user_email ) . "\r\n";
-			} elseif ( 'publish' == $old_status ) {
+			} elseif ( 'publish' === $old_status ) {
 				/* translators: 1: site name, 2: post type, 3. post title */
 				$subject = sprintf( __( '[%1$s] %2$s Unpublished: "%3$s"', 'vip-workflow' ), $blogname, $subject_post_type, $post_title );
 				/* translators: 1: post type, 2: post id, 3. post title, 4. user name, 5. user email */
@@ -179,11 +181,11 @@ class Notifications {
 	 */
 	public static function schedule_emails( string $action, WP_Post $post, string $subject, string $message, string $message_headers = '' ): void {
 		// Ensure the email address is set from settings.
-		if ( empty( VIP_Workflow::instance()->settings->module->options->email_address ) ) {
+		if ( empty( OptionsUtilities::get_options_by_key( 'email_address' ) ) ) {
 			return;
 		}
 
-		$email_recipients = [ VIP_Workflow::instance()->settings->module->options->email_address ];
+		$email_recipients = [ OptionsUtilities::get_options_by_key( 'email_address' ) ];
 
 		/**
 		 * Filter the email recipients
@@ -252,7 +254,7 @@ class Notifications {
 	 */
 	public static function schedule_webhook_notification( string $webhook_message, string $action, string $timestamp ): void {
 		// Ensure the webhook URL is set from settings.
-		if ( empty( VIP_Workflow::instance()->settings->module->options->webhook_url ) ) {
+		if ( empty( OptionsUtilities::get_options_by_key( 'webhook_url' ) ) ) {
 			return;
 		}
 
@@ -270,7 +272,7 @@ class Notifications {
 	 * @return bool True if the notification was sent successfully, false otherwise
 	 */
 	public static function send_to_webhook( string $message, string $message_type, string $timestamp ): bool {
-		$webhook_url = VIP_Workflow::instance()->settings->module->options->webhook_url;
+		$webhook_url = OptionsUtilities::get_options_by_key( 'webhook_url' );
 
 		// Set up the payload
 		$payload = [

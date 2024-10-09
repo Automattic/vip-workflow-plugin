@@ -9,7 +9,8 @@
 // Require composer dependencies.
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
-$_tests_dir = getenv( 'WP_TESTS_DIR' );
+$_wp_tests_dir = getenv( 'WP_TESTS_DIR' );
+$_tests_dir    = $_wp_tests_dir ? $_wp_tests_dir : getenv( 'WP_PHPUNIT__DIR' );
 
 if ( ! $_tests_dir ) {
 	$_tests_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress-tests-lib';
@@ -38,9 +39,8 @@ function _manually_load_plugin() {
 
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
-// Add TestCase classes.
-require_once __DIR__ . '/workflow-test-case.php';
-require_once __DIR__ . '/rest-test-case.php';
+// Start up the WP testing environment.
+require "{$_tests_dir}/includes/bootstrap.php";
 
 // Allow wp_mail() in tests from a valid domain name
 tests_add_filter(
@@ -50,5 +50,6 @@ tests_add_filter(
 	}
 );
 
-// Start up the WP testing environment.
-require "{$_tests_dir}/includes/bootstrap.php";
+// Add TestCase classes.
+require_once __DIR__ . '/workflow-test-case.php';
+require_once __DIR__ . '/rest-test-case.php';

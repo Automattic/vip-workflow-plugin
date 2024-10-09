@@ -1,6 +1,6 @@
 <?php
 /**
- * class Custom_Status
+ * class CustomStatus
  * Custom statuses make it simple to define the different stages in your publishing workflow.
  */
 
@@ -14,21 +14,17 @@ require_once __DIR__ . '/meta/required-user-id-handler.php';
 require_once __DIR__ . '/meta/required-metadata-id-handler.php';
 require_once __DIR__ . '/meta/position-handler.php';
 
+use VIPWorkflow\Modules\Shared\PHP\InstallUtilities;
+use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
 use VIPWorkflow\Modules\CustomStatus\REST\CustomStatusEndpoint;
-use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Modules\Shared\PHP\Module;
+use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
+
 use WP_Error;
 use WP_Query;
-
-use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
 use WP_Term;
 use WP_Post;
 
-class Custom_Status extends Module {
-
-	public $module;
-
-	private $custom_statuses_cache = [];
+class CustomStatus {
 
 	// This is taxonomy name used to store all our custom statuses
 	const TAXONOMY_KEY = 'vw_post_status';
@@ -42,116 +38,41 @@ class Custom_Status extends Module {
 	const METADATA_REQ_USER_IDS_KEY = 'required_user_ids';
 	const METADATA_REQ_USERS_KEY = 'required_users';
 
-	/**
-	 * Register the module with VIP Workflow but don't do anything else
-	 */
-	public function __construct() {
+	private static $custom_statuses_cache = [];
 
-		$this->module_url = $this->get_module_url( __FILE__ );
-		// Register the module with VIP Workflow
-		$args         = [
-			'module_url'        => $this->module_url,
-			'slug'              => 'custom-status',
-			'configure_page_cb' => 'print_configure_view',
-		];
-		$this->module = VIP_Workflow::instance()->register_module( 'custom_status', $args );
-	}
-
-	/**
-	 * Initialize the Custom_Status class if the module is active
-	 */
-	public function init() {
-		// Register the custom status taxonomy
-		$this->register_custom_status_taxonomy();
+	public static function init(): void {
+		// Register the taxonomy we use with WordPress core, and ensure it's registered after editorial metadata
+		add_action( 'init', [ __CLASS__, 'register_custom_status_taxonomy' ] );
 
 		// Register the custom statuses in core
-		$this->register_custom_statuses();
+		add_action( 'init', [ __CLASS__, 'register_custom_statuses' ] );
+
+		// Setup custom statuses on first install
+		add_action( 'init', [ __CLASS__, 'setup_install' ] );
 
 		// Register our settings
-		if ( ! $this->disable_custom_statuses_for_post_type() ) {
+		if ( ! HelperUtilities::is_current_post_type_unsupported() ) {
 			// Load CSS and JS resources for the admin page
-			add_action( 'admin_enqueue_scripts', [ $this, 'action_admin_enqueue_scripts' ] );
+			add_action( 'admin_enqueue_scripts', [ __CLASS__, 'action_admin_enqueue_scripts' ] );
 
 			// Assets for block editor UI.
-			add_action( 'enqueue_block_editor_assets', [ $this, 'load_scripts_for_block_editor' ] );
+			add_action( 'enqueue_block_editor_assets', [ __CLASS__, 'load_scripts_for_block_editor' ] );
 
 			// Assets for iframed block editor and editor UI.
-			add_action( 'enqueue_block_editor_assets', [ $this, 'load_styles_for_block_editor' ] );
+			add_action( 'enqueue_block_editor_assets', [ __CLASS__, 'load_styles_for_block_editor' ] );
 		}
 
-		add_action( 'admin_print_scripts', [ $this, 'post_admin_header' ] );
+		add_action( 'admin_print_scripts', [ __CLASS__, 'post_admin_header' ] );
 
 		// Add custom statuses to the post states.
-		add_filter( 'display_post_states', [ $this, 'add_status_to_post_states' ], 10, 2 );
+		add_filter( 'display_post_states', [ __CLASS__, 'add_status_to_post_states' ], 10, 2 );
 
 		// Register sidebar menu
-		add_action( 'admin_menu', [ $this, 'add_admin_menu' ], 6 /* Prior to default registration of sub-pages */ );
-
-		// These seven-ish methods are hacks for fixing bugs in WordPress core
-		add_filter( 'wp_insert_post_data', [ $this, 'maybe_keep_post_name_empty' ], 10, 2 );
-		add_filter( 'pre_wp_unique_post_slug', [ $this, 'fix_unique_post_slug' ], 10, 6 );
-		add_filter( 'preview_post_link', [ $this, 'fix_preview_link_part_one' ] );
-		add_filter( 'post_link', [ $this, 'fix_preview_link_part_two' ], 10, 3 );
-		add_filter( 'page_link', [ $this, 'fix_preview_link_part_two' ], 10, 3 );
-		add_filter( 'post_type_link', [ $this, 'fix_preview_link_part_two' ], 10, 3 );
-		add_filter( 'preview_post_link', [ $this, 'fix_preview_link_part_three' ], 11, 2 );
-		add_filter( 'get_sample_permalink', [ $this, 'fix_get_sample_permalink' ], 10, 5 );
-		add_filter( 'get_sample_permalink_html', [ $this, 'fix_get_sample_permalink_html' ], 10, 5 );
-		add_filter( 'post_row_actions', [ $this, 'fix_post_row_actions' ], 10, 2 );
-		add_filter( 'page_row_actions', [ $this, 'fix_post_row_actions' ], 10, 2 );
-
-		// Pagination for custom post statuses when previewing posts
-		add_filter( 'wp_link_pages_link', [ $this, 'modify_preview_link_pagination_url' ], 10, 2 );
+		add_action( 'admin_menu', [ __CLASS__, 'add_admin_menu' ], 6 /* Prior to default registration of sub-pages */ );
 
 		// Add server-side controls to block post status movements that are prohihibited by workflow rules
-		add_filter( 'wp_insert_post_data', [ $this, 'maybe_block_post_update' ], 1000, 4 );
-		add_filter( 'user_has_cap', [ $this, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
-	}
-
-	/**
-	 * Create the default set of custom statuses the first time the module is loaded
-	 */
-	public function install() {
-
-		$default_terms = [
-			[
-				'name'        => __( 'Pitch', 'vip-workflow' ),
-				'slug'        => 'pitch',
-				'description' => __( 'Idea proposed; waiting for acceptance.', 'vip-workflow' ),
-				'position'    => 1,
-			],
-			[
-				'name'        => __( 'Assigned', 'vip-workflow' ),
-				'slug'        => 'assigned',
-				'description' => __( 'Post idea assigned to writer.', 'vip-workflow' ),
-				'position'    => 2,
-			],
-			[
-				'name'        => __( 'In Progress', 'vip-workflow' ),
-				'slug'        => 'in-progress',
-				'description' => __( 'Writer is working on the post.', 'vip-workflow' ),
-				'position'    => 3,
-			],
-			[
-				'name'        => __( 'Draft', 'vip-workflow' ),
-				'slug'        => 'draft',
-				'description' => __( 'Post is a draft; not ready for review or publication.', 'vip-workflow' ),
-				'position'    => 4,
-			],
-			[
-				'name'               => __( 'Pending Review' ),
-				'slug'               => 'pending',
-				'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
-				'position'           => 5,
-			],
-		];
-
-		// Okay, now add the default statuses to the db if they don't already exist
-		foreach ( $default_terms as $term ) {
-			if ( ! term_exists( $term['slug'], self::TAXONOMY_KEY ) ) {
-				$this->add_custom_status( $term );
-			}
-		}
+		add_filter( 'wp_insert_post_data', [ __CLASS__, 'maybe_block_post_update' ], 1000, 4 );
+		add_filter( 'user_has_cap', [ __CLASS__, 'remove_or_add_publish_capability_for_user' ], 10, 3 );
 	}
 
 	/**
@@ -161,7 +82,7 @@ class Custom_Status extends Module {
 	 */
 	public static function register_custom_status_taxonomy(): void {
 		// We need to make sure taxonomy is registered for all of the post types that support it
-		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
+		$supported_post_types = HelperUtilities::get_supported_post_types();
 
 		register_taxonomy( self::TAXONOMY_KEY, $supported_post_types,
 			[
@@ -179,20 +100,14 @@ class Custom_Status extends Module {
 	 * Makes the call to register_post_status to register the user's custom statuses.
 	 * Also unregisters pending, in case the user doesn't want them.
 	 */
-	public function register_custom_statuses() {
-		global $wp_post_statuses;
+	public static function register_custom_statuses(): void {
+		$custom_statuses = self::get_custom_statuses();
 
-			// Users can delete the pending status if they want, so let's get rid of that
-			// It'll get re-added if the user hasn't "deleted" them
-			unset( $wp_post_statuses['pending'] );
-
-			$custom_statuses = $this->get_custom_statuses();
-
-			// Unfortunately, register_post_status() doesn't accept a
-			// post type argument, so we have to register the post
-			// statuses for all post types. This results in
-			// all post statuses for a post type appearing at the top
-			// of manage posts if there is a post with the status
+		// Unfortunately, register_post_status() doesn't accept a
+		// post type argument, so we have to register the post
+		// statuses for all post types. This results in
+		// all post statuses for a post type appearing at the top
+		// of manage posts if there is a post with the status
 		foreach ( $custom_statuses as $status ) {
 			register_post_status( $status->slug, [
 				'label'                     => $status->name,
@@ -206,57 +121,88 @@ class Custom_Status extends Module {
 		}
 	}
 
+
 	/**
-	 * Whether custom post statuses should be disabled for this post type.
-	 * Used to stop custom statuses from being registered for post types that don't support them.
+	 * Load default custom statuses the first time the module is loaded
 	 *
-	 * @return bool
+	 * @access private
 	 */
-	public function disable_custom_statuses_for_post_type( $post_type = null ) {
-		global $pagenow;
+	public static function setup_install(): void {
+		InstallUtilities::install_if_first_run( self::SETTINGS_SLUG, function () {
+			$default_terms = [
+				[
+					'name'        => __( 'Pitch', 'vip-workflow' ),
+					'slug'        => 'pitch',
+					'description' => __( 'Idea proposed; waiting for acceptance.', 'vip-workflow' ),
+					'position'    => 1,
+				],
+				[
+					'name'        => __( 'Assigned', 'vip-workflow' ),
+					'slug'        => 'assigned',
+					'description' => __( 'Post idea assigned to writer.', 'vip-workflow' ),
+					'position'    => 2,
+				],
+				[
+					'name'        => __( 'In Progress', 'vip-workflow' ),
+					'slug'        => 'in-progress',
+					'description' => __( 'Writer is working on the post.', 'vip-workflow' ),
+					'position'    => 3,
+				],
+				[
+					'name'        => __( 'Draft', 'vip-workflow' ),
+					'slug'        => 'draft',
+					'description' => __( 'Post is a draft; not ready for review or publication.', 'vip-workflow' ),
+					'position'    => 4,
+				],
+				[
+					'name'               => __( 'Pending Review' ),
+					'slug'               => 'pending',
+					'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
+					'position'           => 5,
+				],
+			];
 
-		// Only allow deregistering on 'edit.php' and 'post.php'
-		if ( ! in_array( $pagenow, [ 'edit.php', 'post.php', 'post-new.php' ] ) ) {
-			return false;
-		}
-
-		if ( is_null( $post_type ) ) {
-			$post_type = $this->get_current_post_type();
-		}
-
-		$supported_post_types = VIP_Workflow::instance()->get_supported_post_types();
-
-		if ( $post_type && ! in_array( $post_type, $supported_post_types ) ) {
-			return true;
-		}
-
-		return false;
+			// Add the custom statuses if the slugs don't conflict
+			foreach ( $default_terms as $term ) {
+				if ( ! term_exists( $term['slug'], self::TAXONOMY_KEY ) ) {
+					self::add_custom_status( $term );
+				}
+			}
+		});
 	}
 
-	public function add_admin_menu() {
+	/**
+	 * Register admin sidebar menu
+	 *
+	 * @access private
+	 */
+	public static function add_admin_menu(): void {
 		$menu_title = __( 'VIP Workflow', 'vip-workflow' );
 
-		add_menu_page( $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ] );
+		add_menu_page( $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ __CLASS__, 'render_settings_view' ] );
 	}
 
-	public function configure_page_cb() {
-		// do nothing
+	/**
+	 * Primary configuration page for custom status class, which is also the main entry point for configuring the plugin
+	 */
+	public static function render_settings_view(): void {
+		include_once __DIR__ . '/views/manage-workflow.php';
 	}
 
 	/**
 	 * Enqueue resources that we need in the admin settings page
+	 *
+	 * @access private
 	 */
-	public function action_admin_enqueue_scripts() {
+	public static function action_admin_enqueue_scripts(): void {
 		// Load Javascript we need to use on the configuration views
-		if ( VIP_Workflow::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
+		if ( HelperUtilities::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
 			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-configure.asset.php';
 			wp_enqueue_script( 'vip-workflow-custom-status-configure', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.js', $asset_file['dependencies'], $asset_file['version'], true );
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
-			$custom_statuses = $this->get_custom_statuses_with_editorial_metadata();
-
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'custom_statuses'    => $custom_statuses,
+				'custom_statuses'    => self::modify_custom_statuses_with_editorial_metadata(),
 				'editorial_metadatas' => EditorialMetadata::get_editorial_metadata_terms(),
 				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
 				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
@@ -264,7 +210,7 @@ class Custom_Status extends Module {
 		}
 
 		// Custom javascript to modify the post status dropdown where it shows up
-		if ( $this->is_whitelisted_page() ) {
+		if ( self::is_whitelisted_page() ) {
 			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status.asset.php';
 			$dependencies = [ ...$asset_file['dependencies'], 'jquery', 'post' ];
 			wp_enqueue_script( 'vip_workflow-custom_status', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status.js', $dependencies, $asset_file['version'], true );
@@ -281,55 +227,60 @@ class Custom_Status extends Module {
 		}
 	}
 
-	public function load_scripts_for_block_editor() {
+	/**
+	 * Enqueue resources that we need in the admin settings page
+	 *
+	 * @access private
+	 */
+	public static function load_scripts_for_block_editor(): void {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 		wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-		$publish_guard_enabled = ( 'on' === VIP_Workflow::instance()->settings->module->options->publish_guard ) ? true : false;
-
-		$custom_statuses = $this->get_custom_statuses_with_editorial_metadata();
+		$publish_guard_enabled = ( 'on' === OptionsUtilities::get_options_by_key( 'publish_guard' ) ) ? true : false;
 
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
 			'current_user_id'          => get_current_user_id(),
 			'is_publish_guard_enabled' => $publish_guard_enabled,
-			'status_terms'             => $custom_statuses,
-			'supported_post_types'     => VIP_Workflow::instance()->get_supported_post_types(),
+			'status_terms'             => self::modify_custom_statuses_with_editorial_metadata(),
+			'supported_post_types'     => HelperUtilities::get_supported_post_types(),
 		] );
 	}
 
 	/**
-	 * Get the custom statuses, with the editorial metadatas populated under meta.
+	 * Modify the custom statuses to include the editorial metadatas for UI purposes.
 	 *
-	 * This function is only necessary until the big refactor is done. After that, it should not be necessary.
+	 * This isn't done anywhere else due to the taxonomies being registered at different times.
+	 * In addition, registering the taxonomies in the wrong order can cause the manage posts page to break
+	 * as well as the default status for a post itself.
 	 *
-	 * @return array $custom_statuses The custom statuses with editorial metadatas
+	 * @return array $custom_statuses The custom statuses with the editorial metadatas included
 	 */
-	private function get_custom_statuses_with_editorial_metadata() {
+	private static function modify_custom_statuses_with_editorial_metadata(): array {
+		// map the editorial metadatas to their respective term_id so the term_id can be used to get the full object quickly.
 		$editorial_metadatas = EditorialMetadata::get_editorial_metadata_terms();
-		$custom_statuses = array_map( function ( $status ) use ( $editorial_metadatas ) {
-			if ( [] !== $status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ) {
-				$meta_fields = array_values( array_filter( array_map( function ( $metadata_id ) use ( $editorial_metadatas ) {
-					// look up the metadata_id in the editorial_metadatas array, to match by term_id
-					$terms = array_values( array_filter( $editorial_metadatas, function ( $editorial_metadata ) use ( $metadata_id ) {
-						return $editorial_metadata->term_id === $metadata_id;
-					} ) );
+		$editorial_metadatas = array_combine( array_column( $editorial_metadatas, 'term_id' ), $editorial_metadatas );
 
-					if ( [] !== $terms ) {
-						return $terms[0];
-					} else {
-						return false;
-					}
-				}, $status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ) ) );
-				$status->meta[ self::METADATA_REQ_EDITORIALS_KEY ] = $meta_fields;
+		$custom_statuses = self::get_custom_statuses();
+
+		// Add the required editorial metadata to the custom statuses for UI purposes
+		foreach ( $custom_statuses as $status ) {
+			$required_metadata_ids = $status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [];
+			$required_metadatas = [];
+			foreach ( $required_metadata_ids as $metadata_id ) {
+				$required_metadatas[] = $editorial_metadatas[ $metadata_id ];
 			}
-
-			return $status;
-		}, $this->get_custom_statuses() );
+			$status->meta[ self::METADATA_REQ_EDITORIALS_KEY ] = $required_metadatas;
+		}
 
 		return $custom_statuses;
 	}
 
-	public function load_styles_for_block_editor() {
+	/**
+	 * Enqueue resources that we need in the block editor
+	 *
+	 * @access private
+	 */
+	public static function load_styles_for_block_editor(): void {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 
 		wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.css', [], $asset_file['version'] );
@@ -338,14 +289,16 @@ class Custom_Status extends Module {
 	/**
 	 * Check whether custom status stuff should be loaded on this page
 	 */
-	public function is_whitelisted_page() {
+	public static function is_whitelisted_page(): bool {
 		global $pagenow;
 
-		if ( ! in_array( $this->get_current_post_type(), VIP_Workflow::instance()->get_supported_post_types() ) ) {
+		$current_post_type = HelperUtilities::get_current_post_type();
+
+		if ( ! in_array( $current_post_type, HelperUtilities::get_supported_post_types() ) ) {
 			return false;
 		}
 
-		$post_type_obj = get_post_type_object( $this->get_current_post_type() );
+		$post_type_obj = get_post_type_object( $current_post_type );
 
 		if ( ! current_user_can( $post_type_obj->cap->edit_posts ) ) {
 			return false;
@@ -358,20 +311,20 @@ class Custom_Status extends Module {
 	/**
 	 * Adds all necessary javascripts to make custom statuses work
 	 */
-	public function post_admin_header() {
+	public static function post_admin_header(): void {
 		global $post, $pagenow;
 
-		if ( $this->disable_custom_statuses_for_post_type() ) {
+		if ( HelperUtilities::is_current_post_type_unsupported() ) {
 			return;
 		}
 
-		// Get current user
+		// Set the current user, so we can check if they can publish posts
 		wp_get_current_user();
 
 		// Only add the script to Edit Post and Edit Page pages -- don't want to bog down the rest of the admin with unnecessary javascript
-		if ( $this->is_whitelisted_page() ) {
+		if ( self::is_whitelisted_page() ) {
 
-			$custom_statuses = $this->get_custom_statuses();
+			$custom_statuses = self::get_custom_statuses();
 
 			// $selected can be empty, but must be set because it's used as a JS variable
 			$selected      = '';
@@ -414,7 +367,7 @@ class Custom_Status extends Module {
 				];
 			}
 
-			$post_type_obj = get_post_type_object( $this->get_current_post_type() );
+			$post_type_obj = get_post_type_object( HelperUtilities::get_current_post_type() );
 
 			// Now, let's print the JS vars
 			?>
@@ -434,11 +387,11 @@ class Custom_Status extends Module {
 	 *
 	 * @return array $allcaps All capabilities for the user
 	 */
-	public function maybe_block_post_update( $data ) {
-		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
+	public static function maybe_block_post_update( array $data ): array|bool {
+		$status_slugs = wp_list_pluck( self::get_custom_statuses(), 'slug' );
 
 		// Ignore if it's not a post status and post type we support
-		if ( ! in_array( $data['post_type'], VIP_Workflow::instance()->get_supported_post_types() ) ) {
+		if ( ! in_array( $data['post_type'], HelperUtilities::get_supported_post_types() ) ) {
 			return $data;
 		}
 
@@ -457,7 +410,7 @@ class Custom_Status extends Module {
 			return $data;
 		}
 
-		$prior_post_status = $this->get_custom_status_by( 'slug', $prior_post_status_slug );
+		$prior_post_status = self::get_custom_status_by( 'slug', $prior_post_status_slug );
 		$required_user_ids = $prior_post_status->meta[ self::METADATA_REQ_USER_IDS_KEY ] ?? [];
 
 		if ( $required_user_ids && ! in_array( get_current_user_id(), $required_user_ids, true ) ) {
@@ -478,7 +431,7 @@ class Custom_Status extends Module {
 	 *
 	 * @return array $allcaps All capabilities for the user
 	 */
-	public function remove_or_add_publish_capability_for_user( $allcaps, $cap, $args ) {
+	public static function remove_or_add_publish_capability_for_user( array $allcaps, array $cap, array $args ): array {
 		global $post;
 
 		$supported_publish_caps_map = [
@@ -487,12 +440,12 @@ class Custom_Status extends Module {
 		];
 
 		// Bail early if publish guard is off, or the post is already published, or the post is not available
-		if ( 'off' === VIP_Workflow::instance()->settings->module->options->publish_guard || ! $post || 'publish' === $post->post_status ) {
+		if ( ! $post || 'off' === OptionsUtilities::get_options_by_key( 'publish_guard' ) || 'publish' === $post->post_status ) {
 			return $allcaps;
 		}
 
 		// Bail early if the post type is not supported or if its a not supported capability for this guard
-		if ( ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) || ! isset( $supported_publish_caps_map[ $post->post_type ] ) ) {
+		if ( ! in_array( $post->post_type, HelperUtilities::get_supported_post_types() ) || ! isset( $supported_publish_caps_map[ $post->post_type ] ) ) {
 			return $allcaps;
 		}
 
@@ -502,7 +455,7 @@ class Custom_Status extends Module {
 			return $allcaps;
 		}
 
-		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
+		$custom_statuses = self::get_custom_statuses();
 		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
 
 		// Bail early if the post is not using a custom status
@@ -528,7 +481,7 @@ class Custom_Status extends Module {
 	 * @param string $meta The metadata that failed to save
 	 * @return WP_Error The WP_Error object
 	 */
-	private function generate_error_and_delete_bad_data( int $term_id, string $meta ): WP_Error {
+	private static function generate_error_and_delete_bad_data( int $term_id, string $meta ): WP_Error {
 		// Trigger the deletion of the metadata associated with the status
 		do_action( 'vw_delete_custom_status_meta', $term_id );
 		wp_delete_term( $term_id, self::TAXONOMY_KEY );
@@ -556,10 +509,10 @@ class Custom_Status extends Module {
 	 *
 	 * @return object|WP_Error $inserted_term The newly inserted term object or a WP_Error object
 	 */
-	public function add_custom_status( array $args ): WP_Term|WP_Error {
+	public static function add_custom_status( array $args ): WP_Term|WP_Error {
 		if ( ! isset( $args['position'] ) ) {
 			// get the existing statuses, ordered by position
-			$custom_statuses = $this->get_custom_statuses();
+			$custom_statuses = self::get_custom_statuses();
 
 			// get the last status position
 			$last_position = $custom_statuses[ array_key_last( $custom_statuses ) ]->meta[ self::METADATA_POSITION_KEY ];
@@ -582,7 +535,7 @@ class Custom_Status extends Module {
 		}
 
 		// Reset our internal object cache
-		$this->custom_statuses_cache = [];
+		self::$custom_statuses_cache = [];
 
 		$term_id = $inserted_term['term_id'];
 
@@ -594,20 +547,20 @@ class Custom_Status extends Module {
 
 		$position_meta_result = update_term_meta( $term_id, self::METADATA_POSITION_KEY, $position );
 		if ( is_wp_error( $position_meta_result ) ) {
-			return $this->generate_error_and_delete_bad_data( $term_id, 'position' );
+			return self::generate_error_and_delete_bad_data( $term_id, 'position' );
 		}
 
 		$required_metadata_ids_result = update_term_meta( $term_id, self::METADATA_REQ_EDITORIAL_IDS_KEY, $required_metadata_ids );
 		if ( is_wp_error( $required_metadata_ids_result ) ) {
-			return $this->generate_error_and_delete_bad_data( $term_id, 'required editorial metadata fields' );
+			return self::generate_error_and_delete_bad_data( $term_id, 'required editorial metadata fields' );
 		}
 
 		$required_user_ids_result = update_term_meta( $term_id, self::METADATA_REQ_USER_IDS_KEY, $required_user_ids );
 		if ( is_wp_error( $required_user_ids_result ) ) {
-			return $this->generate_error_and_delete_bad_data( $term_id, 'required users' );
+			return self::generate_error_and_delete_bad_data( $term_id, 'required users' );
 		}
 
-		$term_result = $this->get_custom_status_by( 'id', $term_id );
+		$term_result = self::get_custom_status_by( 'id', $term_id );
 
 		return $term_result;
 	}
@@ -619,8 +572,8 @@ class Custom_Status extends Module {
 	 * @param array $args Any arguments to be updated
 	 * @return object $updated_status Newly updated status object
 	 */
-	public function update_custom_status( int $status_id, array $args = [] ): WP_Term|WP_Error {
-		$old_status = $this->get_custom_status_by( 'id', $status_id );
+	public static function update_custom_status( int $status_id, array $args = [] ): WP_Term|WP_Error {
+		$old_status = self::get_custom_status_by( 'id', $status_id );
 		if ( is_wp_error( $old_status ) ) {
 			return $old_status;
 		} else if ( ! $old_status ) {
@@ -628,16 +581,17 @@ class Custom_Status extends Module {
 		}
 
 		// Reset our internal object cache
-		$this->custom_statuses_cache = [];
+		self::$custom_statuses_cache = [];
 
 		// Prevent user from changing draft name or slug
-		if ( 'draft' === $old_status->slug
+		if ( self::is_restricted_status( $old_status->slug )
 		&& (
 			( isset( $args['name'] ) && $args['name'] !== $old_status->name )
 			||
 			( isset( $args['slug'] ) && $args['slug'] !== $old_status->slug )
 		) ) {
-			return new WP_Error( 'invalid', __( 'Changing the name and slug of "Draft" is not allowed', 'vip-workflow' ) );
+			// translators: %s: Post status, like "Draft"
+			return new WP_Error( 'restricted', sprintf( __( 'Changing the name and slug of a restricted status (%s) is not allowed.', 'vip-workflow' ), $old_status->name ) );
 		}
 
 		// If the name was changed, we need to change the slug
@@ -646,9 +600,9 @@ class Custom_Status extends Module {
 		}
 
 		// Reassign posts to new status slug if the slug changed and isn't restricted
-		if ( isset( $args['slug'] ) && $args['slug'] != $old_status->slug && ! $this->is_restricted_status( $old_status->slug ) ) {
+		if ( isset( $args['slug'] ) && $args['slug'] != $old_status->slug && ! self::is_restricted_status( $old_status->slug ) ) {
 			$new_status        = $args['slug'];
-			$reassigned_result = $this->reassign_post_status( $old_status->slug, $new_status );
+			$reassigned_result = self::reassign_post_status( $old_status->slug, $new_status );
 			// If the reassignment failed, return the error
 			if ( is_wp_error( $reassigned_result ) ) {
 				return $reassigned_result;
@@ -687,13 +641,13 @@ class Custom_Status extends Module {
 		$updated_term = wp_update_term( $status_id, self::TAXONOMY_KEY, $term_fields_to_update );
 
 		// Reset status cache again, as reassign_post_status() will recache prior statuses
-		$this->custom_statuses_cache = [];
+		self::$custom_statuses_cache = [];
 
 		if ( is_wp_error( $updated_term ) ) {
 			return $updated_term;
 		}
 
-		$status_result = $this->get_custom_status_by( 'id', $status_id );
+		$status_result = self::get_custom_status_by( 'id', $status_id );
 
 		return $status_result;
 	}
@@ -704,9 +658,9 @@ class Custom_Status extends Module {
 	 * Partly a wrapper for the wp_delete_term function.
 	 * BUT, also reassigns posts that currently have the deleted status assigned.
 	 */
-	public function delete_custom_status( int $status_id ): bool|WP_Error {
+	public static function delete_custom_status( int $status_id ): bool|WP_Error {
 		// Get slug for the old status
-		$old_status = $this->get_custom_status_by( 'id', $status_id );
+		$old_status = self::get_custom_status_by( 'id', $status_id );
 		if ( is_wp_error( $old_status ) ) {
 			return $old_status;
 		} else if ( ! $old_status ) {
@@ -715,23 +669,24 @@ class Custom_Status extends Module {
 
 		$old_status_slug = $old_status->slug;
 
-		if ( $this->is_restricted_status( $old_status_slug ) || 'draft' === $old_status_slug ) {
-			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $old_status->name . ')' );
+		if ( self::is_restricted_status( $old_status_slug ) ) {
+			// translators: %s: Post status, like "Draft"
+			return new WP_Error( 'restricted', sprintf( __( 'Restricted status (%s) cannot be deleted.', 'vip-workflow' ), $old_status->name ) );
 		}
 
 		// Reset our internal object cache
-		$this->custom_statuses_cache = [];
+		self::$custom_statuses_cache = [];
 
 		// Get the new status to reassign posts to, which would be the first custom status.
 		// In the event that the first custom status is being deleted, we'll reassign to the second custom status.
-		// Since draft cannot be deleted, we don't need to worry about ever getting index out of bounds.
-		$custom_statuses = $this->get_custom_statuses();
+		// Since draft and pending review cannot be deleted, we don't need to worry about ever getting index out of bounds.
+		$custom_statuses = self::get_custom_statuses();
 		$new_status_slug = $custom_statuses[0]->slug;
 		if ( $old_status_slug === $new_status_slug ) {
 			$new_status_slug = $custom_statuses[1]->slug;
 		}
 
-		$reassigned_result = $this->reassign_post_status( $old_status_slug, $new_status_slug );
+		$reassigned_result = self::reassign_post_status( $old_status_slug, $new_status_slug );
 		// If the reassignment failed, return the error
 		if ( is_wp_error( $reassigned_result ) ) {
 			return $reassigned_result;
@@ -746,16 +701,16 @@ class Custom_Status extends Module {
 		}
 
 		// Reset status cache again, as reassign_post_status() will recache prior statuses
-		$this->custom_statuses_cache = [];
+		self::$custom_statuses_cache = [];
 
 		// Re-order the positions after deletion
-		$custom_statuses = $this->get_custom_statuses();
+		$custom_statuses = self::get_custom_statuses();
 
 		$current_postition = 1;
 
 		// save each status with the new position
 		foreach ( $custom_statuses as $status ) {
-			$this->update_custom_status( $status->term_id, [ 'position' => $current_postition ] );
+			self::update_custom_status( $status->term_id, [ 'position' => $current_postition ] );
 
 			++$current_postition;
 		}
@@ -769,14 +724,14 @@ class Custom_Status extends Module {
 	 * @param array|string $statuses
 	 * @return array $statuses All of the statuses
 	 */
-	public function get_custom_statuses(): array {
-		if ( $this->disable_custom_statuses_for_post_type() ) {
-			return $this->get_core_post_statuses();
+	public static function get_custom_statuses(): array {
+		if ( HelperUtilities::is_current_post_type_unsupported() ) {
+			return self::get_core_statuses();
 		}
 
 		// Internal object cache for repeat requests
-		if ( ! empty( $this->custom_statuses_cache ) ) {
-			return $this->custom_statuses_cache;
+		if ( ! empty( self::$custom_statuses_cache ) ) {
+			return self::$custom_statuses_cache;
 		}
 
 		$statuses = get_terms( [
@@ -800,7 +755,7 @@ class Custom_Status extends Module {
 		}, $statuses );
 
 		// Set the internal object cache
-		$this->custom_statuses_cache = $statuses;
+		self::$custom_statuses_cache = $statuses;
 
 		return $statuses;
 	}
@@ -812,7 +767,7 @@ class Custom_Status extends Module {
 	 * @param int|string $value The value to search for
 	 * @return WP_Term|false $status The object for the matching status
 	 */
-	public function get_custom_status_by( string $field, int|string $value ): WP_Term|false {
+	public static function get_custom_status_by( string $field, int|string $value ): WP_Term|false {
 		// We only support id, slug and name for lookup.
 		if ( ! in_array( $field, [ 'id', 'slug', 'name' ] ) ) {
 			return false;
@@ -837,15 +792,39 @@ class Custom_Status extends Module {
 	}
 
 	/**
+	 * Get the core statuses that are used when the post type is unsupported
+	 *
+	 * Note: This is necessary because a new post does not have a post type available, and that causes a whole host of problems.
+	 *
+	 * @return array $default_terms The default statuses
+	 */
+	public static function get_core_statuses(): array {
+		$default_terms = [
+			[
+				'name'        => __( 'Draft', 'vip-workflow' ),
+				'slug'        => 'draft',
+				'description' => __( 'Post is a draft; not ready for review or publication.', 'vip-workflow' ),
+			],
+			[
+				'name'               => __( 'Pending Review' ),
+				'slug'               => 'pending',
+				'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
+			],
+		];
+
+		return $default_terms;
+	}
+
+	/**
 	 * Assign new statuses to posts using value provided. Returns true if successful, or a WP_Error describing an error otherwise.
 	 *
 	 * @param string $old_status Slug for the old status
 	 * @param string $new_status Slug for the new status
 	 * @return true|WP_Error
 	 */
-	public function reassign_post_status( string $old_status, string $new_status ): bool|WP_Error {
+	public static function reassign_post_status( string $old_status, string $new_status ): bool|WP_Error {
 		$old_status_post_ids = ( new WP_Query( [
-			'post_type'      => VIP_Workflow::instance()->get_supported_post_types(),
+			'post_type'      => HelperUtilities::get_supported_post_types(),
 			'post_status'    => $old_status,
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
@@ -894,8 +873,8 @@ class Custom_Status extends Module {
 	 *
 	 * @return array $post_states
 	 */
-	public function add_status_to_post_states( array $post_states, WP_Post $post ) {
-		if ( ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types(), true ) ) {
+	public static function add_status_to_post_states( array $post_states, WP_Post $post ): array {
+		if ( ! in_array( $post->post_type, HelperUtilities::get_supported_post_types(), true ) ) {
 			// Return early if this post type doesn't support custom statuses.
 			return $post_states;
 		}
@@ -926,9 +905,11 @@ class Custom_Status extends Module {
 	 * @param string $slug Slug of the status
 	 * @return bool $restricted True if restricted, false if not
 	 */
-	public function is_restricted_status( $slug ) {
+	public static function is_restricted_status( string $slug ): bool {
 
 		switch ( $slug ) {
+			case 'draft':
+			case 'pending':
 			case 'publish':
 			case 'private':
 			case 'future':
@@ -947,397 +928,24 @@ class Custom_Status extends Module {
 	}
 
 	/**
-	 * Primary configuration page for custom status class, which is also the main entry point for configuring the plugin
-	 */
-	public function render_settings_view() {
-		include_once __DIR__ . '/views/manage-workflow.php';
-	}
-
-	/**
-	 * Given a post ID, return true if the extended post status allows for publishing.
-	 *
-	 * @param int $post_id The post ID being queried.
-	 * @return bool True if the post should not be published based on the extended post status, false otherwise.
-	 */
-	public function workflow_is_publish_blocked( $post_id ) {
-		$post = get_post( $post_id );
-
-		if ( null === $post ) {
-			return false;
-		}
-
-		$custom_statuses = $this->get_custom_statuses();
-		$status_slugs    = wp_list_pluck( $custom_statuses, 'slug' );
-
-		if ( ! in_array( $post->post_status, $status_slugs ) || ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
-			// Post is not using a custom status, or is not a supported post type
-			return false;
-		}
-
-		$status_before_publish = $custom_statuses[ array_key_last( $custom_statuses ) ];
-
-		if ( $status_before_publish->slug === $post->post_status ) {
-			// Post is in the last status, so it can be published
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	/**
 	 * Given a post ID, return true if the post type is supported and using a custom status, false otherwise.
 	 *
 	 * @param int $post_id The post ID being queried.
 	 * @return bool True if the post is using a custom status, false otherwise.
 	 */
-	public function is_post_using_custom_status( $post_id ) {
+	public static function is_post_using_custom_status( int $post_id ): bool {
 		$post = get_post( $post_id );
 
 		if ( null === $post ) {
 			return false;
 		}
 
-		$custom_post_types = VIP_Workflow::instance()->get_supported_post_types();
-		$custom_statuses   = $this->get_custom_statuses();
+		$custom_post_types = HelperUtilities::get_supported_post_types();
+		$custom_statuses   = self::get_custom_statuses();
 		$status_slugs      = wp_list_pluck( $custom_statuses, 'slug' );
 
 		return in_array( $post->post_type, $custom_post_types ) && in_array( $post->post_status, $status_slugs );
 	}
-
-	// Hacks for custom statuses to work with core
-
-	/**
-	 * A new hack! hack! hack! until core better supports custom statuses`
-	 *
-	 * If the post_name is set, set it, otherwise keep it empty
-	 *
-	 * @see https://github.com/Automattic/Edit-Flow/issues/523
-	 * @see https://github.com/Automattic/Edit-Flow/issues/633
-	 */
-	public function maybe_keep_post_name_empty( $data, $postarr ) {
-		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
-
-		// Ignore if it's not a post status and post type we support
-		if ( ! in_array( $data['post_status'], $status_slugs )
-		|| ! in_array( $data['post_type'], VIP_Workflow::instance()->get_supported_post_types() ) ) {
-			return $data;
-		}
-
-		// If the post_name was intentionally set, set the post_name
-		if ( ! empty( $postarr['post_name'] ) ) {
-			$data['post_name'] = sanitize_title( $postarr['post_name'] );
-			return $data;
-		}
-
-		// Otherwise, keep the post_name empty
-		$data['post_name'] = '';
-
-		return $data;
-	}
-
-	/**
-	 * A new hack! hack! hack! until core better supports custom statuses`
-	 *
-	 * `wp_unique_post_slug` is used to set the `post_name`. When a custom status is used, WordPress will try
-	 * really hard to set `post_name`, and we leverage `wp_unique_post_slug` to prevent it being set
-	 *
-	 * @see: https://github.com/WordPress/WordPress/blob/396647666faebb109d9cd4aada7bb0c7d0fb8aca/wp-includes/post.php#L3932
-	*/
-	public function fix_unique_post_slug( $override_slug, $slug, $post_ID, $post_status, $post_type, $post_parent ) {
-		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
-
-		if ( ! in_array( $post_status, $status_slugs )
-		|| ! in_array( $post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
-			return null;
-		}
-
-		$post = get_post( $post_ID );
-
-		if ( empty( $post ) ) {
-			return null;
-		}
-
-		if ( $post->post_name ) {
-			return $slug;
-		}
-
-		return '';
-	}
-
-
-	/**
-	 * Another hack! hack! hack! until core better supports custom statuses
-	 *
-	 * The preview link for an unpublished post should always be ?p=
-	 */
-	public function fix_preview_link_part_one( $preview_link ) {
-		global $pagenow;
-
-		$post = get_post( get_the_ID() );
-
-		// Only modify if we're using a pre-publish status on a supported custom post type
-		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
-		if ( ! $post
-		|| ! is_admin()
-		|| 'post.php' != $pagenow
-		|| ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() )
-		|| strpos( $preview_link, 'preview_id' ) !== false
-		|| 'sample' === $post->filter ) {
-			return $preview_link;
-		}
-
-		return $this->get_preview_link( $post );
-	}
-
-	/**
-	 * Another hack! hack! hack! until core better supports custom statuses
-	 *
-	 * The preview link for an unpublished post should always be ?p=
-	 * The code used to trigger a post preview doesn't also apply the 'preview_post_link' filter
-	 * So we can't do a targeted filter. Instead, we can even more hackily filter get_permalink
-	 * @see http://core.trac.wordpress.org/ticket/19378
-	 */
-	public function fix_preview_link_part_two( $permalink, $post, $sample ) {
-		global $pagenow;
-
-		if ( is_int( $post ) ) {
-			$post = get_post( $post );
-		}
-
-		//Should we be doing anything at all?
-		if ( ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
-			return $permalink;
-		}
-
-		//Is this published?
-		if ( in_array( $post->post_status, $this->published_statuses ) ) {
-			return $permalink;
-		}
-
-		//Are we overriding the permalink? Don't do anything
-		// phpcs:ignore:WordPress.Security.NonceVerification.Missing
-		if ( isset( $_POST['action'] ) && 'sample-permalink' === $_POST['action'] ) {
-			return $permalink;
-		}
-
-		//Are we previewing the post from the normal post screen?
-		if ( ( 'post.php' === $pagenow || 'post-new.php' === $pagenow )
-		// phpcs:ignore:WordPress.Security.NonceVerification.Missing
-		&& ! isset( $_POST['wp-preview'] ) ) {
-			return $permalink;
-		}
-
-		//If it's a sample permalink, not a preview
-		if ( $sample ) {
-			return $permalink;
-		}
-
-		return $this->get_preview_link( $post );
-	}
-
-	/**
-	 * Another hack! hack! hack! until core better supports custom statuses
-	 *
-	 * The preview link for a saved unpublished post with a custom status returns a 'preview_nonce'
-	 * in it and needs to be removed when previewing it to return a viewable preview link.
-	 * @see https://github.com/Automattic/Edit-Flow/issues/513
-	 */
-	public function fix_preview_link_part_three( $preview_link, $query_args ) {
-		$autosave = wp_get_post_autosave( $query_args->ID, get_current_user_id() );
-		if ( $autosave ) {
-			foreach ( array_intersect( array_keys( _wp_post_revision_fields( $query_args ) ), array_keys( _wp_post_revision_fields( $autosave ) ) ) as $field ) {
-				if ( normalize_whitespace( $query_args->$field ) != normalize_whitespace( $autosave->$field ) ) {
-					// Pass through, it's a personal preview.
-					return $preview_link;
-				}
-			}
-		}
-		return remove_query_arg( [ 'preview_nonce' ], $preview_link );
-	}
-
-	/**
-	 * Fix get_sample_permalink. Previously the 'editable_slug' filter was leveraged
-	 * to correct the sample permalink a user could edit on post.php. Since 4.4.40
-	 * the `get_sample_permalink` filter was added which allows greater flexibility in
-	 * manipulating the slug. Critical for cases like editing the sample permalink on
-	 * hierarchical post types.
-	 *
-	 * @param string  $permalink Sample permalink
-	 * @param int     $post_id   Post ID
-	 * @param string  $title     Post title
-	 * @param string  $name      Post name (slug)
-	 * @param WP_Post $post      Post object
-	 * @return string $link Direct link to complete the action
-	 */
-	public function fix_get_sample_permalink( $permalink, $post_id, $title, $name, $post ) {
-
-		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
-
-		if ( ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
-			return $permalink;
-		}
-
-		remove_filter( 'get_sample_permalink', [ $this, 'fix_get_sample_permalink' ], 10, 5 );
-
-		$new_name  = ! is_null( $name ) ? $name : $post->post_name;
-		$new_title = ! is_null( $title ) ? $title : $post->post_title;
-
-		$post              = get_post( $post_id );
-		$status_before     = $post->post_status;
-		$post->post_status = 'draft';
-
-		$permalink = get_sample_permalink( $post, $title, sanitize_title( $new_name ? $new_name : $new_title, $post->ID ) );
-
-		$post->post_status = $status_before;
-
-		add_filter( 'get_sample_permalink', [ $this, 'fix_get_sample_permalink' ], 10, 5 );
-
-		return $permalink;
-	}
-
-	/**
-	 * Hack to work around post status check in get_sample_permalink_html
-	 *
-	 *
-	 * The get_sample_permalink_html checks the status of the post and if it's
-	 * a draft generates a certain permalink structure.
-	 * We need to do the same work it's doing for custom statuses in order
-	 * to support this link
-	 * @see https://core.trac.wordpress.org/browser/tags/4.5.2/src/wp-admin/includes/post.php#L1296
-	 *
-	 * @param string  $return    Sample permalink HTML markup.
-	 * @param int     $post_id   Post ID.
-	 * @param string  $new_title New sample permalink title.
-	 * @param string  $new_slug  New sample permalink slug.
-	 * @param WP_Post $post      Post object.
-	 */
-	public function fix_get_sample_permalink_html( $permalink, $post_id, $new_title, $new_slug, $post ) {
-		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
-
-		if ( ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
-			return $permalink;
-		}
-
-		remove_filter( 'get_sample_permalink_html', [ $this, 'fix_get_sample_permalink_html' ], 10, 5 );
-
-		$post->post_status     = 'draft';
-		$sample_permalink_html = get_sample_permalink_html( $post, $new_title, $new_slug );
-
-		add_filter( 'get_sample_permalink_html', [ $this, 'fix_get_sample_permalink_html' ], 10, 5 );
-
-		return $sample_permalink_html;
-	}
-
-
-	/**
-	 * Fixes a bug where post-pagination doesn't work when previewing a post with a custom status
-	 * @link https://github.com/Automattic/Edit-Flow/issues/192
-	 *
-	 * This filter only modifies output if `is_preview()` is true
-	 *
-	 * Used by `wp_link_pages_link` filter
-	 *
-	 * @param $link
-	 * @param $i
-	 *
-	 * @return string
-	 */
-	public function modify_preview_link_pagination_url( $link, $i ) {
-
-		// Use the original $link when not in preview mode
-		if ( ! is_preview() ) {
-			return $link;
-		}
-
-		// Get an array of valid custom status slugs
-		$custom_statuses = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
-
-		// Apply original link filters from core `wp_link_pages()`
-		$r = apply_filters( 'wp_link_pages_args', [
-			'link_before' => '',
-			'link_after'  => '',
-			'pagelink'    => '%',
-		]);
-
-		// _wp_link_page() && _vw_wp_link_page() produce an opening link tag ( <a href=".."> )
-		// This is necessary to replicate core behavior:
-		$link = $r['link_before'] . str_replace( '%', $i, $r['pagelink'] ) . $r['link_after'];
-		$link = _vw_wp_link_page( $i, $custom_statuses ) . $link . '</a>';
-
-
-		return $link;
-	}
-
-	/**
-	 * Get the proper preview link for a post
-	 */
-	private function get_preview_link( $post ) {
-
-		if ( 'page' === $post->post_type ) {
-			$args = [
-				'page_id' => $post->ID,
-			];
-		} elseif ( 'post' === $post->post_type ) {
-			$args = [
-				'p'       => $post->ID,
-				'preview' => 'true',
-			];
-		} else {
-			$args = [
-				'p'         => $post->ID,
-				'post_type' => $post->post_type,
-			];
-		}
-
-		$args['preview_id'] = $post->ID;
-		return add_query_arg( $args, home_url( '/' ) );
-	}
-
-	/**
-	 * Another hack! hack! hack! until core better supports custom statuses
-	 *
-	 * The preview link for an unpublished post should always be ?p=, even in the list table
-	 * @see http://core.trac.wordpress.org/ticket/19378
-	 */
-	public function fix_post_row_actions( $actions, $post ) {
-		global $pagenow;
-
-		// Only modify if we're using a pre-publish status on a supported custom post type
-		$status_slugs = wp_list_pluck( $this->get_custom_statuses(), 'slug' );
-		if ( 'edit.php' != $pagenow
-		|| ! in_array( $post->post_status, $status_slugs )
-		|| ! in_array( $post->post_type, VIP_Workflow::instance()->get_supported_post_types() ) ) {
-			return $actions;
-		}
-
-		// 'view' is only set if the user has permission to post
-		if ( empty( $actions['view'] ) ) {
-			return $actions;
-		}
-
-		if ( 'page' === $post->post_type ) {
-			$args = [
-				'page_id' => $post->ID,
-			];
-		} elseif ( 'post' === $post->post_type ) {
-			$args = [
-				'p' => $post->ID,
-			];
-		} else {
-			$args = [
-				'p'         => $post->ID,
-				'post_type' => $post->post_type,
-			];
-		}
-		$args['preview'] = 'true';
-		$preview_link    = add_query_arg( $args, home_url( '/' ) );
-
-		/* translators: %s: post title */
-		$actions['view'] = '<a href="' . esc_url( $preview_link ) . '" title="' . esc_attr( sprintf( __( 'Preview &#8220;%s&#8221;' ), $post->post_title ) ) . '" rel="permalink">' . __( 'Preview' ) . '</a>';
-		return $actions;
-	}
 }
 
+CustomStatus::init();

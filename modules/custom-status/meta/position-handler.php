@@ -7,7 +7,7 @@
 
 namespace VIPWorkflow\Modules\CustomStatus\Meta;
 
-use VIPWorkflow\Modules\Custom_Status;
+use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\Shared\PHP\MetaCleanupUtilities;
 use WP_Term;
 
@@ -29,9 +29,9 @@ class PositionHandler {
 	 * @return array The updated meta keys
 	 */
 	public static function add_position( array $term_meta, WP_Term $custom_status ): array {
-		$position = MetaCleanupUtilities::get_int( $custom_status->term_id, Custom_Status::METADATA_POSITION_KEY );
+		$position = MetaCleanupUtilities::get_int( $custom_status->term_id, CustomStatus::METADATA_POSITION_KEY );
 
-		$term_meta[ Custom_Status::METADATA_POSITION_KEY ] = $position;
+		$term_meta[ CustomStatus::METADATA_POSITION_KEY ] = $position;
 
 		return $term_meta;
 	}
@@ -43,7 +43,7 @@ class PositionHandler {
 	 * @return void
 	 */
 	public static function delete_position( int $term_id ): void {
-		delete_term_meta( $term_id, Custom_Status::METADATA_POSITION_KEY );
+		delete_term_meta( $term_id, CustomStatus::METADATA_POSITION_KEY );
 	}
 }
 

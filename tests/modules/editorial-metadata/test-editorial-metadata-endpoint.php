@@ -41,8 +41,6 @@ class EditorialMetadataRestApiTest extends RestTestCase {
 		$this->assertEquals( 'A test metadata for testing', $created_term->description );
 		$this->assertEquals( 'text', $created_term->meta['type'] );
 		$this->assertEquals( 'vw_editorial_meta_text_' . $term_id, $created_term->meta['postmeta_key'] );
-
-		EditorialMetadata::delete_editorial_metadata_term( $term_id );
 	}
 
 	public function test_update_editorial_metadata() {
@@ -74,8 +72,6 @@ class EditorialMetadataRestApiTest extends RestTestCase {
 		$this->assertEquals( 'Test Description 2!', $updated_term->description );
 		$this->assertEquals( 'text', $updated_term->meta['type'] );
 		$this->assertEquals( 'vw_editorial_meta_text_' . $term_id, $updated_term->meta['postmeta_key'] );
-
-		EditorialMetadata::delete_editorial_metadata_term( $term_id );
 	}
 
 	public function test_delete_editorial_metadata() {

@@ -10,9 +10,10 @@ namespace VIPWorkflow\Modules;
 require_once __DIR__ . '/token.php';
 require_once __DIR__ . '/rest/preview-endpoint.php';
 
+use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\Preview\PreviewEndpoint;
-use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Preview\Token;
+use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 use WP_Query;
 
 class Preview {
@@ -43,10 +44,8 @@ class Preview {
 		if ( $post_id ) {
 			$generate_preview_url = PreviewEndpoint::get_url( $post_id );
 		}
-
-		$custom_status_module = VIP_Workflow::instance()->custom_status;
-		$custom_status_slugs  = wp_list_pluck( $custom_status_module->get_custom_statuses(), 'slug' );
-		$custom_post_types    = VIP_Workflow::instance()->get_supported_post_types();
+		$custom_status_slugs  = wp_list_pluck( CustomStatus::get_custom_statuses(), 'slug' );
+		$custom_post_types    = HelperUtilities::get_supported_post_types();
 
 		wp_localize_script( 'vip-workflow-preview-script', 'VW_PREVIEW', [
 			'custom_post_types'    => $custom_post_types,

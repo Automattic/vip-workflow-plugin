@@ -7,7 +7,7 @@
 
 namespace VIPWorkflow\Modules\Preview;
 
-use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\Preview;
 use WP_Error;
 use WP_REST_Request;
@@ -88,7 +88,7 @@ class PreviewEndpoint {
 		$expiration_value = $request->get_param( 'expiration' );
 		$is_one_time_use  = $request->get_param( 'is_one_time_use' );
 
-		if ( ! VIP_Workflow::instance()->custom_status->is_post_using_custom_status( $post_id ) ) {
+		if ( ! CustomStatus::is_post_using_custom_status( $post_id ) ) {
 			$post_status = get_post_status( $post_id );
 
 			if ( 'publish' === $post_status ) {

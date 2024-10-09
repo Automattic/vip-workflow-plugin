@@ -7,9 +7,8 @@
 
 namespace VIPWorkflow\Modules\CustomStatus\Meta;
 
-use VIPWorkflow\Modules\Custom_Status;
+use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\EditorialMetadata;
-use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\MetaCleanupUtilities;
 
 use WP_Term;
@@ -35,22 +34,18 @@ class RequiredMetadataIdHandler {
 	 * @return array The updated meta keys
 	 */
 	public static function add_required_metadata_ids( array $term_meta, WP_Term $custom_status ): array {
-		$metadata_ids = MetaCleanupUtilities::get_array( $custom_status->term_id, Custom_Status::METADATA_REQ_EDITORIAL_IDS_KEY );
+		$metadata_ids = MetaCleanupUtilities::get_array( $custom_status->term_id, CustomStatus::METADATA_REQ_EDITORIAL_IDS_KEY );
 
-		$term_meta[ Custom_Status::METADATA_REQ_EDITORIAL_IDS_KEY ] = $metadata_ids;
+		$term_meta[ CustomStatus::METADATA_REQ_EDITORIAL_IDS_KEY ] = $metadata_ids;
 
 		// Reset the metadata array to be empty, so that it can be filled with the actual metadata only.
-		$term_meta[ Custom_Status::METADATA_REQ_EDITORIALS_KEY ] = [];
+		$term_meta[ CustomStatus::METADATA_REQ_EDITORIALS_KEY ] = [];
 
-		// This is done this way until the big refactor is in. This should be optimized further.
 		foreach ( $metadata_ids as $metadata_id ) {
 			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_id );
 			if ( $editorial_metadata ) {
-				$term_meta[ Custom_Status::METADATA_REQ_EDITORIALS_KEY ][] = $editorial_metadata;
+				$term_meta[ CustomStatus::METADATA_REQ_EDITORIALS_KEY ][] = $editorial_metadata;
 			}
-
-			// The else case for removing the IDs is not there, as until the refactor is done this will cause issues.
-			// After the refactor, this should be added in for safety.
 		}
 
 		return $term_meta;
@@ -63,7 +58,7 @@ class RequiredMetadataIdHandler {
 	 * @return void
 	 */
 	public static function delete_required_metadata( int $term_id ): void {
-		delete_term_meta( $term_id, Custom_Status::METADATA_REQ_EDITORIAL_IDS_KEY );
+		delete_term_meta( $term_id, CustomStatus::METADATA_REQ_EDITORIAL_IDS_KEY );
 	}
 
 	/**
@@ -73,9 +68,9 @@ class RequiredMetadataIdHandler {
 	 * @return void
 	 */
 	public static function remove_deleted_metadata_from_required_metadata( int $deleted_meta_id ): void {
-		$custom_statuses = VIP_Workflow::instance()->custom_status->get_custom_statuses();
+		$custom_statuses = CustomStatus::get_custom_statuses();
 
-		MetaCleanupUtilities::cleanup_id( $custom_statuses, $deleted_meta_id, /* id_to_replace */ null, Custom_Status::METADATA_REQ_EDITORIAL_IDS_KEY );
+		MetaCleanupUtilities::cleanup_id( $custom_statuses, $deleted_meta_id, /* id_to_replace */ null, CustomStatus::METADATA_REQ_EDITORIAL_IDS_KEY );
 	}
 }
 
