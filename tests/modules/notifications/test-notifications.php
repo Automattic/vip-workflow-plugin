@@ -62,13 +62,11 @@ class NotificationsTest extends WP_UnitTestCase {
 			];
 		}, 10, 3 );
 
-		OptionsUtilities::update_module_option_key( Settings::SETTINGS_SLUG, 'webhook_url', 'https://webhook.site/this-url-doesnt-exist' );
+		OptionsUtilities::update_module_option_key( Settings::SETTINGS_SLUG, 'webhook_url', 'https://webhook.site/this-url-doesnt-exist', Settings::DEFAULT_SETTINGS_OPTIONS );
 
 		$response = Notifications::send_to_webhook( 'Test Message', 'status-change', '2024-09-19 00:26:50' );
 
 		$this->assertTrue( $response );
-
-		OptionsUtilities::update_module_option_key( Settings::SETTINGS_SLUG, 'webhook_url', '' );
 	}
 
 	public function test_send_to_webhook_error_path() {
@@ -77,12 +75,10 @@ class NotificationsTest extends WP_UnitTestCase {
 			return new WP_Error( 'http_request_failed', 'Error Message' );
 		}, 10, 3 );
 
-		OptionsUtilities::update_module_option_key( Settings::SETTINGS_SLUG, 'webhook_url', 'https://webhook.site/this-url-doesnt-exist' );
+		OptionsUtilities::update_module_option_key( Settings::SETTINGS_SLUG, 'webhook_url', 'https://webhook.site/this-url-doesnt-exist', Settings::DEFAULT_SETTINGS_OPTIONS );
 
 		$response = Notifications::send_to_webhook( 'Test Message', 'status-change', '2024-09-19 00:26:50' );
 
 		$this->assertFalse( $response );
-
-		OptionsUtilities::update_module_option_key( Settings::SETTINGS_SLUG, 'webhook_url', '' );
 	}
 }

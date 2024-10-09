@@ -15,22 +15,18 @@ use WP_UnitTestCase;
 class RequiredMetadataIdHandlerTest extends WP_UnitTestCase {
 
 	/**
-	 * Before each test, ensure default custom statuses are available.
+	 * Before each test, ensure default custom statuses are available and reset all module options.
 	 */
 	protected function setUp(): void {
 		parent::setUp();
+
+		// Reset all module options
+		OptionsUtilities::reset_all_module_options();
 
 		// Normally custom statuses are installed on 'admin_init', which is only run when a page is accessed
 		// in the admin web interface. Manually install them here. This avoid issues when a test creates or deletes
 		// a status and it's the only status existing, which can cause errors due to status restrictions.
 		CustomStatus::setup_install();
-	}
-
-	protected function tearDown(): void {
-		parent::tearDown();
-
-		// Reset all module options
-		OptionsUtilities::reset_all_module_options();
 	}
 
 	public function test_remove_deleted_metadata_from_required_metadata() {

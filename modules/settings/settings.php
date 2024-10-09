@@ -13,6 +13,17 @@ use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 class Settings {
 	const SETTINGS_SLUG = 'vw-settings';
 
+	// Its key to centralize these, so we can easily update them in the future
+	const DEFAULT_SETTINGS_OPTIONS = [
+		'post_types'          => [
+			'post' => 'on',
+			'page' => 'on',
+		],
+		'publish_guard'       => 'on',
+		'email_address'       => '',
+		'webhook_url'         => '',
+	];
+
 	/**
 	 * Initialize the rest of the stuff in the class if the module is active
 	 */
@@ -223,7 +234,8 @@ class Settings {
 
 		$new_options = self::settings_validate( $new_options );
 
-		OptionsUtilities::update_module_options( self::SETTINGS_SLUG, $new_options );
+		// Blend the new options with the old options, including any new options that may have been added
+		OptionsUtilities::update_module_options( $new_options );
 
 		// Redirect back to the settings page that was submitted without any previous messages
 		$goback = add_query_arg( 'message', 'settings-updated', remove_query_arg( [ 'message' ], wp_get_referer() ) );

@@ -14,31 +14,23 @@ class OptionsUtilities {
 	const OPTIONS_GROUP = 'vip_workflow_';
 	const OPTIONS_GROUP_NAME = 'vip_workflow_options';
 
-	// Its key to centralize these here, so we can easily update them in the future
-	private const DEFAULT_OPTIONS = [
-		'post_types'          => [
-			'post' => 'on',
-			'page' => 'on',
-		],
-		'publish_guard'       => 'on',
-		'email_address'       => '',
-		'webhook_url'         => '',
-	];
-
 	/**
 	 * Given a module name, return a set of saved module options
 	 *
 	 * @param string $module_slug The slug used for this module
+	 * @param array $default_options The default options for the module
 	 * @return object The set of saved module options for this module, or an empty stdClass if none are found
 	 */
-	public static function get_module_options( string $module_slug ): object|null {
+	public static function get_module_options( string $module_slug, array $default_options = [] ): object|null {
 		$module_options_key = self::get_module_options_key( $module_slug );
 		$module_options = get_option( $module_options_key, new stdClass() );
 
-		// Ensure all default options are set
-		foreach ( self::DEFAULT_OPTIONS as $key => $value ) {
-			if ( ! isset( $module_options->$key ) ) {
-				$module_options->$key = $value;
+		if ( [] !== $module_options ) {
+			// Ensure all default options are set
+			foreach ( $default_options as $key => $value ) {
+				if ( ! isset( $module_options->$key ) ) {
+					$module_options->$key = $value;
+				}
 			}
 		}
 
@@ -54,20 +46,23 @@ class OptionsUtilities {
 	 * @return string|array|boolean|null The value of the key, or null if it doesn't exist
 	 */
 	public static function get_options_by_key( string $key ): string|array|bool|null {
-		$module_options = self::get_module_options( Settings::SETTINGS_SLUG );
+		$module_options = self::get_module_options( Settings::SETTINGS_SLUG, Settings::DEFAULT_SETTINGS_OPTIONS );
 		return $module_options->$key;
 	}
 
 	/**
-	 * Update a module option, using the module's name and the key
+	 * Update a module option, using the module's name and the key.
+	 *
+	 * Note: This method is used to update a single key in the module options, so it will override the entire options object.
 	 *
 	 * @param string $module_slug The slug used for this module
 	 * @param string $key The option key
 	 * @param string $value The option value
+	 * @param array $default_options The default options for the module
 	 * @return bool True if the option was updated, false otherwise.
 	 */
-	public static function update_module_option_key( string $module_slug, string $key, string $value ): bool {
-		$module_options       = self::get_module_options( $module_slug );
+	public static function update_module_option_key( string $module_slug, string $key, string $value, array $default_options = [] ): bool {
+		$module_options       = self::get_module_options( $module_slug, $default_options );
 		$module_options->$key = $value;
 
 		$module_options_key = self::get_module_options_key( $module_slug );
@@ -77,13 +72,12 @@ class OptionsUtilities {
 	/**
 	 * Update a module options, using the module's name
 	 *
-	 * @param string $module_slug The slug used for this module
 	 * @param object $new_options The new options to save
 	 * @return bool True if the options were updated, false otherwise.
 	 */
-	public static function update_module_options( string $module_slug, array $new_options ): bool {
-		$module_options_key = self::get_module_options_key( $module_slug );
-		$old_options       = self::get_module_options( $module_slug );
+	public static function update_module_options( array $new_options ): bool {
+		$module_options_key = self::get_module_options_key( Settings::SETTINGS_SLUG );
+		$old_options       = self::get_module_options( Settings::SETTINGS_SLUG, Settings::DEFAULT_SETTINGS_OPTIONS );
 		$new_options = (object) array_merge( (array) $old_options, $new_options );
 
 		return update_option( $module_options_key, $new_options );
