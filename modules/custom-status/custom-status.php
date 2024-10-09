@@ -236,7 +236,7 @@ class Custom_Status extends Module {
 	public function add_admin_menu() {
 		$menu_title = __( 'VIP Workflow', 'vip-workflow' );
 
-		add_menu_page( $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ], VIP_WORKFLOW_URL . 'modules/shared/img/workflow-icon.svg' );
+		add_menu_page( $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ $this, 'render_settings_view' ] );
 	}
 
 	public function configure_page_cb() {
@@ -299,6 +299,8 @@ class Custom_Status extends Module {
 
 	/**
 	 * Get the custom statuses, with the editorial metadatas populated under meta.
+	 *
+	 * This function is only necessary until the big refactor is done. After that, it should not be necessary.
 	 *
 	 * @return array $custom_statuses The custom statuses with editorial metadatas
 	 */
