@@ -13,6 +13,8 @@ use function VIPWorkflow\Modules\Shared\PHP\_vw_wp_link_page;
 
 class CoreHacks {
 
+	private const PUBLISHED_STATUSES = [ 'publish', 'future', 'private' ];
+
 	public static function init(): void {
 		// These seven-ish methods are hacks for fixing bugs in WordPress core
 		add_filter( 'wp_insert_post_data', [ __CLASS__, 'maybe_keep_post_name_empty' ], 10, 2 );
@@ -156,7 +158,7 @@ class CoreHacks {
 		}
 
 		//Is this published?
-		if ( in_array( $post->post_status, CustomStatus::PUBLISHED_STATUSES ) ) {
+		if ( in_array( $post->post_status, self::PUBLISHED_STATUSES ) ) {
 			return $permalink;
 		}
 

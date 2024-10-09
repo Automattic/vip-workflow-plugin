@@ -181,11 +181,11 @@ class Notifications {
 	 */
 	public static function schedule_emails( string $action, WP_Post $post, string $subject, string $message, string $message_headers = '' ): void {
 		// Ensure the email address is set from settings.
-		if ( empty( OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'email_address' ) ) ) {
+		if ( empty( OptionsUtilities::get_options_by_key( 'email_address' ) ) ) {
 			return;
 		}
 
-		$email_recipients = [ OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'email_address' ) ];
+		$email_recipients = [ OptionsUtilities::get_options_by_key( 'email_address' ) ];
 
 		/**
 		 * Filter the email recipients
@@ -254,7 +254,7 @@ class Notifications {
 	 */
 	public static function schedule_webhook_notification( string $webhook_message, string $action, string $timestamp ): void {
 		// Ensure the webhook URL is set from settings.
-		if ( empty( OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'webhook_url' ) ) ) {
+		if ( empty( OptionsUtilities::get_options_by_key( 'webhook_url' ) ) ) {
 			return;
 		}
 
@@ -272,7 +272,7 @@ class Notifications {
 	 * @return bool True if the notification was sent successfully, false otherwise
 	 */
 	public static function send_to_webhook( string $message, string $message_type, string $timestamp ): bool {
-		$webhook_url = OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'webhook_url' );
+		$webhook_url = OptionsUtilities::get_options_by_key( 'webhook_url' );
 
 		// Set up the payload
 		$payload = [

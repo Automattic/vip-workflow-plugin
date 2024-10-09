@@ -34,14 +34,9 @@ class CustomStatus {
 	// The metadata keys for the custom status term
 	const METADATA_POSITION_KEY = 'position';
 	const METADATA_REQ_EDITORIAL_IDS_KEY = 'required_metadata_ids';
+	const METADATA_REQ_EDITORIALS_KEY = 'required_metadatas';
 	const METADATA_REQ_USER_IDS_KEY = 'required_user_ids';
 	const METADATA_REQ_USERS_KEY = 'required_users';
-
-	const PUBLISHED_STATUSES = array(
-		'publish',
-		'future',
-		'private',
-	);
 
 	private static $custom_statuses_cache = [];
 
@@ -56,7 +51,7 @@ class CustomStatus {
 		add_action( 'init', [ __CLASS__, 'setup_install' ] );
 
 		// Register our settings
-		if ( ! self::disable_custom_statuses_for_post_type() ) {
+		if ( ! HelperUtilities::is_current_post_type_unsupported() ) {
 			// Load CSS and JS resources for the admin page
 			add_action( 'admin_enqueue_scripts', [ __CLASS__, 'action_admin_enqueue_scripts' ] );
 
@@ -126,63 +121,6 @@ class CustomStatus {
 		}
 	}
 
-	/**
-	 * Whether custom post statuses should be disabled for this post type.
-	 * Used to stop custom statuses from being registered for post types that don't support them.
-	 *
-	 * @return bool
-	 */
-	public static function disable_custom_statuses_for_post_type( ?string $post_type = null ): bool {
-		global $pagenow;
-
-		// Only allow deregistering on 'edit.php' and 'post.php'
-		if ( ! in_array( $pagenow, [ 'edit.php', 'post.php', 'post-new.php' ] ) ) {
-			return false;
-		}
-
-		if ( is_null( $post_type ) ) {
-			$post_type = self::get_current_post_type();
-		}
-
-		$supported_post_types = HelperUtilities::get_supported_post_types();
-
-		if ( $post_type && ! in_array( $post_type, $supported_post_types ) ) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Checks for the current post type
-	 *
-	 * @return string|null $post_type The post type we've found, or null if no post type
-	 */
-	public static function get_current_post_type(): ?string {
-		global $post, $typenow, $pagenow, $current_screen;
-		//get_post() needs a variable
-		$post_id = isset( $_REQUEST['post'] ) ? (int) $_REQUEST['post'] : false;
-
-		if ( $post && $post->post_type ) {
-			$post_type = $post->post_type;
-		} elseif ( $typenow ) {
-			$post_type = $typenow;
-		} elseif ( $current_screen && ! empty( $current_screen->post_type ) ) {
-			$post_type = $current_screen->post_type;
-		} elseif ( isset( $_REQUEST['post_type'] ) ) {
-			$post_type = sanitize_key( $_REQUEST['post_type'] );
-		} elseif ( 'post.php' === $pagenow
-		&& $post_id
-		&& ! empty( get_post( $post_id )->post_type ) ) {
-			$post_type = get_post( $post_id )->post_type;
-		} elseif ( 'edit.php' === $pagenow && empty( $_REQUEST['post_type'] ) ) {
-			$post_type = 'post';
-		} else {
-			$post_type = null;
-		}
-
-		return $post_type;
-	}
 
 	/**
 	 * Load default custom statuses the first time the module is loaded
@@ -299,7 +237,7 @@ class CustomStatus {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/custom-status/custom-status-block.asset.php';
 		wp_enqueue_script( 'vip-workflow-block-custom-status-script', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-block.js', $asset_file['dependencies'], $asset_file['version'], true );
 
-		$publish_guard_enabled = ( 'on' === OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'publish_guard' ) ) ? true : false;
+		$publish_guard_enabled = ( 'on' === OptionsUtilities::get_options_by_key( 'publish_guard' ) ) ? true : false;
 
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
 			'current_user_id'          => get_current_user_id(),
@@ -326,7 +264,7 @@ class CustomStatus {
 	public static function is_whitelisted_page(): bool {
 		global $pagenow;
 
-		$current_post_type = self::get_current_post_type();
+		$current_post_type = HelperUtilities::get_current_post_type();
 
 		if ( ! in_array( $current_post_type, HelperUtilities::get_supported_post_types() ) ) {
 			return false;
@@ -348,7 +286,7 @@ class CustomStatus {
 	public static function post_admin_header(): void {
 		global $post, $pagenow;
 
-		if ( self::disable_custom_statuses_for_post_type() ) {
+		if ( HelperUtilities::is_current_post_type_unsupported() ) {
 			return;
 		}
 
@@ -401,7 +339,7 @@ class CustomStatus {
 				];
 			}
 
-			$post_type_obj = get_post_type_object( self::get_current_post_type() );
+			$post_type_obj = get_post_type_object( HelperUtilities::get_current_post_type() );
 
 			// Now, let's print the JS vars
 			?>
@@ -474,7 +412,7 @@ class CustomStatus {
 		];
 
 		// Bail early if publish guard is off, or the post is already published, or the post is not available
-		if ( ! $post || 'off' === OptionsUtilities::get_module_option_by_key( Settings::SETTINGS_SLUG, 'publish_guard' ) || 'publish' === $post->post_status ) {
+		if ( ! $post || 'off' === OptionsUtilities::get_options_by_key( 'publish_guard' ) || 'publish' === $post->post_status ) {
 			return $allcaps;
 		}
 
@@ -617,17 +555,15 @@ class CustomStatus {
 		// Reset our internal object cache
 		self::$custom_statuses_cache = [];
 
-		// Don't allow changing the name or slug of the Draft or pending status as they are core statuses
-		$banned_statuses = [ 'draft', 'pending' ];
-
 		// Prevent user from changing draft name or slug
-		if ( in_array( $old_status->slug, $banned_statuses )
+		if ( self::is_restricted_status( $old_status->slug )
 		&& (
 			( isset( $args['name'] ) && $args['name'] !== $old_status->name )
 			||
 			( isset( $args['slug'] ) && $args['slug'] !== $old_status->slug )
 		) ) {
-			return new WP_Error( 'restricted', __( 'Changing the name and slug of a restricted status ', 'vip-workflow' ) . '(' . $old_status->name . ') is not allowed.' );
+			// translators: %s: Post status, like "Draft"
+			return new WP_Error( 'restricted', sprintf( __( 'Changing the name and slug of a restricted status (%s) is not allowed.', 'vip-workflow' ), $old_status->name ) );
 		}
 
 		// If the name was changed, we need to change the slug
@@ -705,11 +641,9 @@ class CustomStatus {
 
 		$old_status_slug = $old_status->slug;
 
-		// Don't allow changing the name or slug of the Draft or pending status as they are core statuses
-		$banned_statuses = [ 'draft', 'pending' ];
-
-		if ( self::is_restricted_status( $old_status_slug ) || in_array( $old_status->slug, $banned_statuses ) ) {
-			return new WP_Error( 'restricted', __( 'Restricted status ', 'vip-workflow' ) . '(' . $old_status->name . ') cannot be deleted.' );
+		if ( self::is_restricted_status( $old_status_slug ) ) {
+			// translators: %s: Post status, like "Draft"
+			return new WP_Error( 'restricted', sprintf( __( 'Restricted status (%s) cannot be deleted.', 'vip-workflow' ), $old_status->name ) );
 		}
 
 		// Reset our internal object cache
@@ -763,8 +697,8 @@ class CustomStatus {
 	 * @return array $statuses All of the statuses
 	 */
 	public static function get_custom_statuses(): array {
-		if ( self::disable_custom_statuses_for_post_type() ) {
-			return self::get_core_post_statuses();
+		if ( HelperUtilities::is_current_post_type_unsupported() ) {
+			return self::get_core_statuses();
 		}
 
 		// Internal object cache for repeat requests
@@ -799,29 +733,6 @@ class CustomStatus {
 	}
 
 	/**
-	 * Get core's 'draft' and 'pending' post statuses, but include our special attributes
-	 *
-	 * @return array
-	 */
-	private static function get_core_post_statuses(): array {
-
-		return array(
-			(object) array(
-				'name'        => __( 'Draft' ),
-				'description' => '',
-				'slug'        => 'draft',
-				'position'    => 1,
-			),
-			(object) array(
-				'name'        => __( 'Pending Review' ),
-				'description' => '',
-				'slug'        => 'pending',
-				'position'    => 2,
-			),
-		);
-	}
-
-	/**
 	 * Returns the a single status object based on ID, title, or slug
 	 *
 	 * @param string $field The field to search by
@@ -850,6 +761,30 @@ class CustomStatus {
 		}
 
 		return $custom_status;
+	}
+
+	/**
+	 * Get the core statuses that are used when the post type is unsupported
+	 *
+	 * Note: This is necessary because a new post does not have a post type available, and that causes a whole host of problems.
+	 *
+	 * @return array $default_terms The default statuses
+	 */
+	public static function get_core_statuses(): array {
+		$default_terms = [
+			[
+				'name'        => __( 'Draft', 'vip-workflow' ),
+				'slug'        => 'draft',
+				'description' => __( 'Post is a draft; not ready for review or publication.', 'vip-workflow' ),
+			],
+			[
+				'name'               => __( 'Pending Review' ),
+				'slug'               => 'pending',
+				'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
+			],
+		];
+
+		return $default_terms;
 	}
 
 	/**
@@ -945,6 +880,8 @@ class CustomStatus {
 	public static function is_restricted_status( string $slug ): bool {
 
 		switch ( $slug ) {
+			case 'draft':
+			case 'pending':
 			case 'publish':
 			case 'private':
 			case 'future':

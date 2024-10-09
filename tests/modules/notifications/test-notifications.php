@@ -51,15 +51,15 @@ class NotificationsTest extends WP_UnitTestCase {
 	public function test_send_to_webhook_happy_path() {
 		// Hook in and return a known response
 		add_filter( 'pre_http_request', function () {
-			return array(
-				'headers'     => array(),
-				'cookies'     => array(),
+			return [
+				'headers'     => [],
+				'cookies'     => [],
 				'filename'    => null,
 				'response'    => 200,
 				'status_code' => 200,
 				'success'     => 1,
 				'body'        => 'All Done',
-			);
+			];
 		}, 10, 3 );
 
 		OptionsUtilities::update_module_option_key( Settings::SETTINGS_SLUG, 'webhook_url', 'https://webhook.site/this-url-doesnt-exist' );

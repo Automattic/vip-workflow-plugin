@@ -7,6 +7,7 @@
 
 namespace VIPWorkflow\Modules\Shared\PHP;
 
+use VIPWorkflow\Modules\Settings;
 use stdClass;
 
 class OptionsUtilities {
@@ -44,8 +45,16 @@ class OptionsUtilities {
 		return $module_options;
 	}
 
-	public static function get_module_option_by_key( string $module_slug, string $key ): string|array|bool|null {
-		$module_options = self::get_module_options( $module_slug );
+	/**
+	 * Get a specific key in the options, stored in the setings options.
+	 *
+	 * By default, it assumes the settings is the module that's being references as all the options are stored there.
+	 *
+	 * @param string $key The key to get
+	 * @return string|array|boolean|null The value of the key, or null if it doesn't exist
+	 */
+	public static function get_options_by_key( string $key ): string|array|bool|null {
+		$module_options = self::get_module_options( Settings::SETTINGS_SLUG );
 		return $module_options->$key;
 	}
 
@@ -103,7 +112,7 @@ class OptionsUtilities {
 	 * @param string $module_slug The slug used for this module
 	 * @return string the options key for the module
 	 */
-	public static function get_module_options_key( string $module_slug ): string {
+	public static function get_module_options_key( string $module_slug = Settings::SETTINGS_SLUG ): string {
 		// Transform module settings slug into a slugified name, e.g. 'vw-editorial-metadata' => 'editorial_metadata'
 		$module_options_name = str_replace( 'vw-', '', $module_slug );
 		$module_options_name = str_replace( '-', '_', $module_options_name );
@@ -117,7 +126,7 @@ class OptionsUtilities {
 	 * @param string $module_slug The slug used for this module
 	 * @return string the options key for the module with the '_general' suffix
 	 */
-	public static function get_module_options_general_key( string $module_slug ): string {
+	public static function get_module_options_general_key( string $module_slug = Settings::SETTINGS_SLUG ): string {
 		$module_options_key = self::get_module_options_key( $module_slug );
 		return $module_options_key . '_general';
 	}

@@ -33,8 +33,8 @@ $message_slug = isset( $_REQUEST['message'] ) ? sanitize_title( $_REQUEST['messa
 	</div>
 
 	<form class="basic-settings" action="<?php echo esc_url( menu_page_url( Settings::SETTINGS_SLUG, false ) ); ?>" method="post">
-		<?php settings_fields( OptionsUtilities::get_module_options_key( Settings::SETTINGS_SLUG ) ); ?>
-		<?php do_settings_sections( OptionsUtilities::get_module_options_key( Settings::SETTINGS_SLUG ) ); ?>
+		<?php settings_fields( OptionsUtilities::get_module_options_key() ); ?>
+		<?php do_settings_sections( OptionsUtilities::get_module_options_key() ); ?>
 
 		<p class="submit"><?php submit_button( null, 'primary', 'submit', false ); ?></p>
 	</form>
