@@ -41,8 +41,8 @@ class CustomStatus {
 	private static $custom_statuses_cache = [];
 
 	public static function init(): void {
-		// Register the taxonomy we use with WordPress core
-		add_action( 'init', [ __CLASS__, 'register_custom_status_taxonomy' ] );
+		// Register the taxonomy we use with WordPress core, and ensure it's registered after editorial metadata
+		add_action( 'init', [ __CLASS__, 'register_custom_status_taxonomy' ], 50 );
 
 		// Register the custom statuses in core
 		add_action( 'init', [ __CLASS__, 'register_custom_statuses' ] );
