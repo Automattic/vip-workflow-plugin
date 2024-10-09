@@ -31,7 +31,7 @@ class EditorialMetadata {
 
 	public static function init(): void {
 		// Register the taxonomy we use for Editorial Metadata with WordPress core, and ensure its registered before custom status
-		add_action( 'init', [ __CLASS__, 'register_editorial_metadata_taxonomy' ], 10 );
+		add_action( 'init', [ __CLASS__, 'register_editorial_metadata_taxonomy' ] );
 
 		// Register the post meta for each editorial metadata term
 		add_action( 'init', [ __CLASS__, 'register_editorial_metadata_terms_as_post_meta' ] );

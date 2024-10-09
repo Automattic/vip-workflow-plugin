@@ -42,7 +42,7 @@ class CustomStatus {
 
 	public static function init(): void {
 		// Register the taxonomy we use with WordPress core, and ensure it's registered after editorial metadata
-		add_action( 'init', [ __CLASS__, 'register_custom_status_taxonomy' ], 50 );
+		add_action( 'init', [ __CLASS__, 'register_custom_status_taxonomy' ] );
 
 		// Register the custom statuses in core
 		add_action( 'init', [ __CLASS__, 'register_custom_statuses' ] );
@@ -202,7 +202,7 @@ class CustomStatus {
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'custom_statuses'    => self::get_custom_statuses(),
+				'custom_statuses'    => self::modify_custom_statuses_with_editorial_metadata(),
 				'editorial_metadatas' => EditorialMetadata::get_editorial_metadata_terms(),
 				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
 				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
@@ -227,7 +227,6 @@ class CustomStatus {
 		}
 	}
 
-
 	/**
 	 * Enqueue resources that we need in the admin settings page
 	 *
@@ -242,9 +241,38 @@ class CustomStatus {
 		wp_localize_script( 'vip-workflow-block-custom-status-script', 'VW_CUSTOM_STATUSES', [
 			'current_user_id'          => get_current_user_id(),
 			'is_publish_guard_enabled' => $publish_guard_enabled,
-			'status_terms'             => self::get_custom_statuses(),
+			'status_terms'             => self::modify_custom_statuses_with_editorial_metadata(),
 			'supported_post_types'     => HelperUtilities::get_supported_post_types(),
 		] );
+	}
+
+	/**
+	 * Modify the custom statuses to include the editorial metadatas for UI purposes.
+	 *
+	 * This isn't done anywhere else due to the taxonomies being registered at different times.
+	 * In addition, registering the taxonomies in the wrong order can cause the manage posts page to break
+	 * as well as the default status for a post itself.
+	 *
+	 * @return array $custom_statuses The custom statuses with the editorial metadatas included
+	 */
+	private static function modify_custom_statuses_with_editorial_metadata(): array {
+		// map the editorial metadatas to their respective term_id so the term_id can be used to get the full object quickly.
+		$editorial_metadatas = EditorialMetadata::get_editorial_metadata_terms();
+		$editorial_metadatas = array_combine( array_column( $editorial_metadatas, 'term_id' ), $editorial_metadatas );
+
+		$custom_statuses = self::get_custom_statuses();
+
+		// Add the required editorial metadata to the custom statuses for UI purposes
+		foreach ( $custom_statuses as $status ) {
+			$required_metadata_ids = $status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [];
+			$required_metadatas = [];
+			foreach ( $required_metadata_ids as $metadata_id ) {
+				$required_metadatas[] = $editorial_metadatas[ $metadata_id ];
+			}
+			$status->meta[ self::METADATA_REQ_EDITORIALS_KEY ] = $required_metadatas;
+		}
+
+		return $custom_statuses;
 	}
 
 	/**
