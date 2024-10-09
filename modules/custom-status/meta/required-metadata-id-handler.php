@@ -48,6 +48,9 @@ class RequiredMetadataIdHandler {
 			if ( $editorial_metadata ) {
 				$term_meta[ Custom_Status::METADATA_REQ_EDITORIALS_KEY ][] = $editorial_metadata;
 			}
+
+			// The else case for removing the IDs is not there, as until the refactor is done this will cause issues.
+			// After the refactor, this should be added in for safety.
 		}
 
 		return $term_meta;
