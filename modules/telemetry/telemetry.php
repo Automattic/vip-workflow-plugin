@@ -6,7 +6,6 @@ use Automattic\VIP\Telemetry\Tracks;
 use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 use WP_Post;
-use WP_User;
 
 class Telemetry {
 	/**

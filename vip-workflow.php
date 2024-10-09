@@ -71,12 +71,10 @@ require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/util.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/core-hacks.php';
 
 // Modules - Telemetry
-if ( class_exists( 'Automattic\VIP\Telemetry\Tracks' ) ) {
+if ( class_exists( '\Automattic\VIP\Telemetry\Tracks' ) ) {
 	// Telemetry is only initialized if the Telemetry library is available on VIP's platform
 	require_once VIP_WORKFLOW_ROOT . '/modules/telemetry/telemetry.php';
 }
-
-require_once VIP_WORKFLOW_ROOT . '/modules/telemetry/telemetry.php';
 
 // Modules - Settings
 require_once VIP_WORKFLOW_ROOT . '/modules/settings/settings.php';
