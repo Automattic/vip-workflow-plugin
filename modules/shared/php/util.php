@@ -2,7 +2,7 @@
 
 namespace VIPWorkflow\Modules\Shared\PHP;
 
-if ( ! function_exists( 'vw_draft_or_post_title' ) ) :
+if ( ! function_exists( 'vw_draft_or_post_title' ) ) {
 	/**
 	 * Copy of core's _draft_or_post_title without the filters
 	 *
@@ -15,7 +15,7 @@ if ( ! function_exists( 'vw_draft_or_post_title' ) ) :
 		$post = get_post( $post_id );
 		return ! empty( $post->post_title ) ? $post->post_title : __( '(no title)', 'vip-workflow' );
 	}
-endif;
+}
 
 /**
  * This function is necessary to make post preview pagination work with custom post statuses
@@ -38,16 +38,16 @@ if ( ! function_exists( '_vw_wp_link_page' ) ) {
 	function _vw_wp_link_page( $i, $custom_statuses ) {
 		global $wp_rewrite;
 		$post       = get_post();
-		$query_args = array();
+		$query_args = [];
 
-		if ( 1 == $i ) {
+		if ( 1 === $i ) {
 			$url = get_permalink();
 		// phpcs:ignore Universal.ControlStructures.DisallowLonelyIf.Found
 		} else {
 			// Check for all custom post statuses, not just draft & pending
-			if ( '' == get_option( 'permalink_structure' ) || in_array( $post->post_status, array_merge( $custom_statuses, array( 'pending' ) ) ) ) {
+			if ( '' === get_option( 'permalink_structure' ) || in_array( $post->post_status, array_merge( $custom_statuses, [ 'pending' ] ) ) ) {
 				$url = add_query_arg( 'page', $i, get_permalink() );
-			} elseif ( 'page' == get_option( 'show_on_front' ) && get_option( 'page_on_front' ) == $post->ID ) {
+			} elseif ( 'page' === get_option( 'show_on_front' ) && get_option( 'page_on_front' ) === $post->ID ) {
 				$url = trailingslashit( get_permalink() ) . user_trailingslashit( "$wp_rewrite->pagination_base/" . $i, 'single_paged' );
 			} else {
 				$url = trailingslashit( get_permalink() ) . user_trailingslashit( $i, 'single_paged' );

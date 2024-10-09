@@ -29,6 +29,7 @@
 		https://github.com/PHPCompatibility/PHPCompatibility#sniffing-your-code-for-compatibility-with-specific-php-versions -->
 	<config name="testVersion" value="8.0-"/>
 
+	<rule ref="VariableAnalysis"/>
 	<rule ref="WordPress-Extra"/>
 	<rule ref="WordPress-VIP-Go">
 		<!-- These disallow anonymous functions as action callbacks -->
@@ -52,10 +53,6 @@
 		<!-- Localization is done in a legacy manner in some places, and its been left as is for now -->
 		<exclude name="WordPress.WP.I18n.InterpolatedVariableSingular" />
 		<exclude name="WordPress.WP.I18n.InterpolatedVariablePlural" />
-		<exclude name="WordPress.WP.I18n.MissingSingularPlaceholder" />
-		<exclude name="WordPress.WP.I18n.NonSingularStringLiteralText" />
-		<!-- This rule is hard to solve given the heavy use of JS in the PHP code right now -->
-		<exclude name="Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure" />
 	</rule>
 
 </ruleset>

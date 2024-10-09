@@ -9,23 +9,25 @@
   },
   "require": {
     "composer/installers": "~1.0",
-    "php": ">=8.0"
+    "php": ">=8.1"
   },
   "require-dev": {
-		"phpcompatibility/phpcompatibility-wp": "2.1.4",
-		"phpunit/phpunit": "9.6.13",
-		"yoast/phpunit-polyfills": "2.0.0",
-    "automattic/vipwpcs": "^3.0"
+    "phpcompatibility/phpcompatibility-wp": "2.1.4",
+    "phpunit/phpunit": "9.6.13",
+    "yoast/phpunit-polyfills": "^3.0",
+    "automattic/vipwpcs": "^3.0",
+    "sirbrillig/phpcs-variable-analysis": "^2.11",
+    "wp-phpunit/wp-phpunit": "^6.6"
   },
   "scripts": {
     "cs": "@php ./vendor/bin/phpcs -p -s -v -n . --standard=\"phpcs.xml.dist\" --extensions=php --ignore=\"/vendor/*,/node_modules/*\"",
     "cbf": "@php ./vendor/bin/phpcbf -p -s -v -n . --standard=\"phpcs.xml.dist\" --extensions=php --ignore=\"/vendor/*,/node_modules/*\"",
-		"test": "wp-env run tests-cli --env-cwd=wp-content/plugins/vip-workflow-plugin ./vendor/bin/phpunit -c phpunit.xml.dist",
-		"test-multisite": "wp-env run tests-cli --env-cwd=wp-content/plugins/vip-workflow-plugin /bin/bash -c 'WP_MULTISITE=1 ./vendor/bin/phpunit'",
-		"test-watch": [
-			"Composer\\Config::disableProcessTimeout",
-			"nodemon -w ./ --ignore vendor/ -e php --exec 'composer run test'"
-		]
+    "test": "wp-env run tests-cli --env-cwd=wp-content/plugins/vip-workflow-plugin ./vendor/bin/phpunit -c phpunit.xml.dist",
+    "test-multisite": "wp-env run tests-cli --env-cwd=wp-content/plugins/vip-workflow-plugin /bin/bash -c 'WP_MULTISITE=1 ./vendor/bin/phpunit'",
+    "test-watch": [
+      "Composer\\Config::disableProcessTimeout",
+      "nodemon -w ./ --ignore vendor/ -e php --exec 'composer run test'"
+    ]
   },
   "config": {
     "allow-plugins": {

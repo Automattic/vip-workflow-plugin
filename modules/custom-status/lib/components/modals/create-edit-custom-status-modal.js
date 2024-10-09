@@ -1,15 +1,43 @@
 import apiFetch from '@wordpress/api-fetch';
-import { Button, Modal, TextControl, TextareaControl, Tooltip } from '@wordpress/components';
+import {
+	Button,
+	__experimentalHStack as HStack,
+	Modal,
+	RadioControl,
+	__experimentalSpacer as Spacer,
+	TextControl,
+	TextareaControl,
+	Tooltip,
+} from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import ErrorNotice from '../../../../shared/js/components/error-notice';
+import MetadataSelectFormTokenField from '../metadata-select-form-token-field';
+import UserSelectFormTokenField from '../user-select-form-token-field';
 
-export default function CreateEditCustomStatusModal( { customStatus, onCancel, onSuccess } ) {
-	const [ error, setError ] = useState( null );
+export default function CreateEditCustomStatusModal( {
+	customStatus,
+	editorialMetadatas,
+	onCancel,
+	onSuccess,
+} ) {
+	// Custom status properties
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
+	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.meta?.required_users || [] );
+	const [ requiredMetadatas, setRequiredMetadatas ] = useState(
+		customStatus?.meta?.required_metadatas || []
+	);
+
+	const [ metadatas, setMetadatas ] = useState( editorialMetadatas );
+
+	// Modal properties
+	const [ error, setError ] = useState( null );
 	const [ isRequesting, setIsRequesting ] = useState( false );
+	const [ areRestrictedUsersSet, setAreRestrictedUsersSet ] = useState(
+		requiredUsers.length > 0 ? 'specific' : 'all'
+	);
 
 	let titleText;
 	if ( customStatus ) {
@@ -19,13 +47,21 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 	}
 
 	const handleSave = async () => {
-		const data = {
-			name,
-			description,
-		};
+		const data = { name, description };
+
+		if ( areRestrictedUsersSet === 'specific' ) {
+			const userIds = requiredUsers.map( user => user.id );
+			data.required_user_ids = userIds;
+		}
+
+		if ( requiredMetadatas.length > 0 ) {
+			const metadataIds = requiredMetadatas.map( metadata => metadata.term_id );
+			data.required_metadata_ids = metadataIds;
+		}
 
 		try {
 			setIsRequesting( true );
+
 			const result = await apiFetch( {
 				url:
 					VW_CUSTOM_STATUS_CONFIGURE.url_edit_status + ( customStatus ? customStatus.term_id : '' ),
@@ -55,31 +91,63 @@ export default function CreateEditCustomStatusModal( { customStatus, onCancel, o
 		>
 			{ error && <ErrorNotice errorMessage={ error } setError={ setError } /> }
 			<TextControl
-				help={ __( 'The name is used to identify the custom status.', 'vip-workflow' ) }
 				label={ __( 'Name', 'vip-workflow' ) }
+				help={ __( 'Visible to all users involved in the publishing process.', 'vip-workflow' ) }
 				onChange={ setName }
 				value={ name }
 			/>
 			<TextareaControl
-				help={ __(
-					'The description is primarily for administrative use, to give you some context on what the custom status is to be used for.',
-					'vip-workflow'
-				) }
 				label={ __( 'Description', 'vip-workflow' ) }
+				help={ __( 'Only visible to you and other administrators.', 'vip-workflow' ) }
 				onChange={ setDescription }
 				value={ description }
 			/>
-			<Tooltip
-				text={
-					customStatus
-						? __( 'Update the custom status', 'vip-workflow' )
-						: __( 'Save the new custom status', 'vip-workflow' )
-				}
-			>
-				<Button variant="primary" onClick={ handleSave } disabled={ isRequesting }>
-					{ customStatus ? __( 'Update', 'vip-workflow' ) : __( 'Save', 'vip-workflow' ) }
-				</Button>
-			</Tooltip>
+			<Spacer />
+			<MetadataSelectFormTokenField
+				label={ __(
+					'What editorial fields are required to advance to the next status?',
+					'vip-workflow'
+				) }
+				editorialMetadatas={ metadatas }
+				requiredMetadatas={ requiredMetadatas }
+				onMetadatasChanged={ setRequiredMetadatas }
+			/>
+			<RadioControl
+				label="Who can advance to the next status?"
+				selected={ areRestrictedUsersSet }
+				options={ [
+					{ label: 'All users', value: 'all' },
+					{ label: 'Only specific users', value: 'specific' },
+				] }
+				onChange={ value => {
+					setAreRestrictedUsersSet( value );
+					if ( value === 'all' ) {
+						setRequiredUsers( [] );
+					}
+				} }
+			/>
+			<Spacer />
+			{ areRestrictedUsersSet !== 'all' && (
+				<UserSelectFormTokenField
+					label={ '' }
+					requiredUsers={ requiredUsers }
+					onUsersChanged={ setRequiredUsers }
+				/>
+			) }
+
+			<HStack justify="right" style={ { marginTop: '16px' } }>
+				<Tooltip
+					text={
+						customStatus
+							? __( 'Update the custom status', 'vip-workflow' )
+							: __( 'Save the new custom status', 'vip-workflow' )
+					}
+				>
+					<Button variant="primary" onClick={ handleSave } disabled={ isRequesting }>
+						{ customStatus ? __( 'Update', 'vip-workflow' ) : __( 'Save', 'vip-workflow' ) }
+					</Button>
+				</Tooltip>
+			</HStack>
 		</Modal>
 	);
 }

@@ -7,124 +7,93 @@
  */
 namespace VIPWorkflow\Modules;
 
-use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Modules\Shared\PHP\Module;
+use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
+use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 
-class Settings extends Module {
+class Settings {
+	const SETTINGS_SLUG = 'vw-settings';
 
-	public $module;
-
-	/**
-	 * Register the module with VIP Workflow but don't do anything else
-	 */
-	public function __construct() {
-		// Register the module with VIP Workflow
-		$this->module_url = $this->get_module_url( __FILE__ );
-		$args             = array(
-			'title'             => __( 'Settings', 'vip-workflow' ),
-			'short_description' => __( 'Configure VIP Workflow settings.', 'vip-workflow' ),
-			'module_url'        => $this->module_url,
-			'slug'              => 'settings',
-			'default_options'   => array(
-				'post_types'          => [
-					'post' => 'on',
-					'page' => 'on',
-				],
-				'publish_guard'       => 'on',
-				'always_notify_admin' => 'on',
-				'send_to_webhook'     => 'off',
-				'webhook_url'         => '',
-			),
-			'configure_page_cb' => 'print_default_settings',
-		);
-		$this->module     = VIP_Workflow::instance()->register_module( 'settings', $args );
-	}
+	// Its key to centralize these, so we can easily update them in the future
+	const DEFAULT_SETTINGS_OPTIONS = [
+		'post_types'    => [
+			'post' => 'on',
+			'page' => 'on',
+		],
+		'publish_guard' => 'on',
+		'email_address' => '',
+		'webhook_url'   => '',
+	];
 
 	/**
 	 * Initialize the rest of the stuff in the class if the module is active
 	 */
-	public function init() {
-		add_action( 'admin_init', array( $this, 'helper_settings_validate_and_save' ), 100 );
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
+	public static function init(): void {
+		// Ensures that the settings page shows up at the bottom of the menu list
+		add_action( 'admin_menu', [ __CLASS__, 'add_admin_menu' ], 50 );
 
-		add_action( 'admin_print_styles', array( $this, 'action_admin_print_styles' ) );
-		add_action( 'admin_print_scripts', array( $this, 'action_admin_print_scripts' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'action_admin_enqueue_scripts' ) );
+		add_action( 'admin_init', [ __CLASS__, 'helper_settings_validate_and_save' ], 100 );
+		add_action( 'admin_init', [ __CLASS__, 'register_settings' ] );
+
+		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'action_admin_enqueue_scripts' ] );
 	}
 
 	/**
-	 * Add settings JS to the settings page
+	 * Add the settings page to the admin menu
 	 */
-	public function action_admin_enqueue_scripts() {
-		if ( $this->is_whitelisted_settings_view() ) {
-			wp_enqueue_script( 'vip-workflow-settings-js', $this->module_url . 'lib/settings.js', array( 'jquery' ), VIP_WORKFLOW_VERSION, true );
+	public static function add_admin_menu(): void {
+		$menu_title = __( 'Settings', 'vip-workflow' );
+
+		add_submenu_page( CustomStatus::SETTINGS_SLUG, $menu_title, $menu_title, 'manage_options', self::SETTINGS_SLUG, [ __CLASS__, 'render_settings_view' ] );
+	}
+
+	/**
+	 * Enqueue resources that we need in the admin settings page
+	 *
+	 * @access private
+	 */
+	public static function action_admin_enqueue_scripts(): void {
+		if ( HelperUtilities::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
+			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/settings/settings.asset.php';
+			$dependencies = [ ...$asset_file['dependencies'], 'jquery' ];
+			wp_enqueue_script( 'vip-workflow-settings-js', VIP_WORKFLOW_URL . 'dist/modules/settings/settings.js', $dependencies, $asset_file['version'], true );
 		}
-	}
-
-	/**
-	 * Add settings styles to the settings page
-	 */
-	public function action_admin_print_styles() {
-		wp_enqueue_style( 'vip_workflow-settings-css', $this->module_url . 'lib/settings.css', false, VIP_WORKFLOW_VERSION );
-	}
-
-	/**
-	 * Extra data we need on the page for transitions, etc.
-	 */
-	public function action_admin_print_scripts() {
-		?>
-		<script type="text/javascript">
-			var vw_admin_url = '<?php echo esc_url( get_admin_url() ); ?>';
-		</script>
-			<?php
 	}
 
 	/**
 	 * Register the settings for the module
 	 */
-	public function register_settings() {
-		add_settings_section( $this->module->options_group_name . '_general', false, '__return_false', $this->module->options_group_name );
+	public static function register_settings(): void {
+		$settings_section_id   = OptionsUtilities::get_module_options_general_key();
+		$settings_section_page = OptionsUtilities::get_module_options_key();
 
-		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ $this, 'helper_option_custom_post_type' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-		add_settings_field( 'publish_guard', __( 'Publish Guard', 'vip-workflow' ), [ $this, 'settings_publish_guard' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+		add_settings_section( $settings_section_id, false, '__return_false', $settings_section_page );
 
-		add_settings_field( 'always_notify_admin', __( 'Always notify blog admin', 'vip-workflow' ), [ $this, 'settings_always_notify_admin_option' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
-		add_settings_field( 'send_to_webhook', __( 'Send to Webhook', 'vip-workflow' ), [ $this, 'settings_send_to_webhook' ], $this->module->options_group_name, $this->module->options_group_name . '_general' );
+		add_settings_field( 'post_types', __( 'Use on these post types:', 'vip-workflow' ), [ __CLASS__, 'helper_option_custom_post_type' ], $settings_section_page, $settings_section_id );
+		add_settings_field( 'publish_guard', __( 'Publish Guard', 'vip-workflow' ), [ __CLASS__, 'settings_publish_guard' ], $settings_section_page, $settings_section_id );
 
-		// Hide the Webhook URL field by default if "Send to Webhook" is disabled
-		$webhook_url_class = 'on' === $this->module->options->send_to_webhook ? '' : 'hidden';
-
-		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ $this, 'settings_webhook_url' ], $this->module->options_group_name, $this->module->options_group_name . '_general', [ 'class' => $webhook_url_class ] );
+		add_settings_field( 'email_address', __( 'Email Address', 'vip-workflow' ), [ __CLASS__, 'settings_email_address' ], $settings_section_page, $settings_section_id );
+		add_settings_field( 'webhook_url', __( 'Webhook URL', 'vip-workflow' ), [ __CLASS__, 'settings_webhook_url' ], $settings_section_page, $settings_section_id );
 	}
 
 	/**
 	 * Adds Settings page for VIP Workflow.
 	 */
-	public function print_default_settings() {
-		?>
-		<form class="basic-settings" action="<?php echo esc_url( menu_page_url( $this->module->settings_slug, false ) ); ?>" method="post">
-			<?php settings_fields( $this->module->options_group_name ); ?>
-			<?php do_settings_sections( $this->module->options_group_name ); ?>
-			<?php
-				echo '<input id="vip_workflow_module_name" name="vip_workflow_module_name" type="hidden" value="' . esc_attr( $this->module->name ) . '" />';
-			?>
-			<p class="submit"><?php submit_button( null, 'primary', 'submit', false ); ?></p>
-		</form>
-			<?php
+	public static function render_settings_view(): void {
+		include_once __DIR__ . '/views/settings.php';
 	}
 
 	/**
 	 * Option for whether the publish guard feature should be enabled
 	 */
-	public function settings_publish_guard() {
+	public static function settings_publish_guard(): void {
 		$options = [
 			'off' => __( 'Disabled', 'vip-workflow' ),
 			'on'  => __( 'Enabled', 'vip-workflow' ),
 		];
-		echo '<select id="publish_guard" name="' . esc_attr( $this->module->options_group_name ) . '[publish_guard]">';
+		echo '<select id="publish_guard" name="' . esc_attr( OptionsUtilities::get_module_options_key() ) . '[publish_guard]">';
 		foreach ( $options as $value => $label ) {
 			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->publish_guard, $value );
+			echo selected( OptionsUtilities::get_options_by_key( 'publish_guard' ), $value );
 			echo '>' . esc_html( $label ) . '</option>';
 		}
 		echo '</select>';
@@ -133,48 +102,19 @@ class Settings extends Module {
 	}
 
 	/**
-	 * Option for whether the blog admin email address should be always notified or not
+	 * Option to set an email address to send notifications to
 	 */
-	public function settings_always_notify_admin_option() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="always_notify_admin" name="' . esc_attr( $this->module->options_group_name ) . '[always_notify_admin]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->always_notify_admin, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-
-		printf( '<p class="description">%s</p>', esc_html__( 'Always email the blog administator address when posts change custom statuses.', 'vip-workflow' ) );
-	}
-
-	/**
-	 * Option to enable sending notifications to Slack
-	 */
-	public function settings_send_to_webhook() {
-		$options = [
-			'off' => __( 'Disabled', 'vip-workflow' ),
-			'on'  => __( 'Enabled', 'vip-workflow' ),
-		];
-		echo '<select id="send_to_webhook" name="' . esc_attr( $this->module->options_group_name ) . '[send_to_webhook]">';
-		foreach ( $options as $value => $label ) {
-			echo '<option value="' . esc_attr( $value ) . '"';
-			echo selected( $this->module->options->send_to_webhook, $value );
-			echo '>' . esc_html( $label ) . '</option>';
-		}
-		echo '</select>';
-
-		printf( '<p class="description">%s</p>', esc_html__( 'Notify a webhook URL when posts change custom statuses.', 'vip-workflow' ) );
+	public static function settings_email_address(): void {
+		printf( '<input type="text" id="email_address" name="%s[email_address]" value="%s" />', esc_attr( OptionsUtilities::get_module_options_key() ), esc_attr( OptionsUtilities::get_options_by_key( 'email_address' ) ) );
+		printf( '<p class="description">%s</p>', esc_html__( 'Notify via email, when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
 	 * Option to set the Slack webhook URL
 	 */
-	public function settings_webhook_url() {
-		printf( '<input type="text" id="webhook_url" name="%s[webhook_url]" value="%s" />', esc_attr( $this->module->options_group_name ), esc_attr( $this->module->options->webhook_url ) );
+	public static function settings_webhook_url(): void {
+		printf( '<input type="text" id="webhook_url" name="%s[webhook_url]" value="%s" />', esc_attr( OptionsUtilities::get_module_options_key() ), esc_attr( OptionsUtilities::get_options_by_key( 'webhook_url' ) ) );
+		printf( '<p class="description">%s</p>', esc_html__( 'Notify a webhook URL when posts change custom statuses.', 'vip-workflow' ) );
 	}
 
 	/**
@@ -182,22 +122,21 @@ class Settings extends Module {
 	 *
 	 * @param array $args An array of arguments to pass to the function
 	 */
-	public function helper_option_custom_post_type( $args = array() ) {
+	public static function helper_option_custom_post_type( $args = [] ): void {
 
-		$all_post_types = array(
+		$all_post_types = [
 			'post' => __( 'Posts' ),
 			'page' => __( 'Pages' ),
-		);
+		];
 
 		foreach ( $all_post_types as $post_type => $title ) {
 			echo '<label for="' . esc_attr( $post_type ) . '">';
 			echo '<input id="' . esc_attr( $post_type ) . '" name="'
-			. esc_attr( $this->module->options_group_name ) . '[post_types][' . esc_attr( $post_type ) . ']"';
-			if ( isset( $this->module->options->post_types[ $post_type ] ) ) {
-				checked( $this->module->options->post_types[ $post_type ], 'on' );
+			. esc_attr( OptionsUtilities::get_module_options_key() ) . '[post_types][' . esc_attr( $post_type ) . ']"';
+			$the_post_types = OptionsUtilities::get_options_by_key( 'post_types' );
+			if ( isset( $the_post_types[ $post_type ] ) ) {
+				checked( $the_post_types[ $post_type ], 'on' );
 			}
-			// Defining post_type_supports in the functions.php file or similar should disable the checkbox
-			disabled( post_type_supports( $post_type, $this->module->post_type_support ), true );
 			echo ' type="checkbox" />&nbsp;&nbsp;&nbsp;' . esc_html( $title ) . '</label>';
 			echo '<br />';
 		}
@@ -206,33 +145,62 @@ class Settings extends Module {
 	}
 
 	/**
+	 * Cleans up the 'on' and 'off' for post types on a given module (so we don't get warnings all over)
+	 * For every post type that doesn't explicitly have the 'on' value, turn it 'off'
+	 *
+	 * @param array $module_post_types Current state of post type options for the module
+	 * @return array $normalized_post_type_options The setting for each post type, normalized based on rules
+	 */
+	private static function clean_post_type_options( $module_post_types = [] ): array {
+		$normalized_post_type_options = [];
+		$all_post_types               = array_keys( self::get_all_post_types() );
+		foreach ( $all_post_types as $post_type ) {
+			if ( ( isset( $module_post_types[ $post_type ] ) && 'on' === $module_post_types[ $post_type ] ) ) {
+				$normalized_post_type_options[ $post_type ] = 'on';
+			} else {
+				$normalized_post_type_options[ $post_type ] = 'off';
+			}
+		}
+		return $normalized_post_type_options;
+	}
+
+	/**
+	 * Gets an array of allowed post types for a module
+	 *
+	 * @return array post-type-slug => post-type-label
+	 */
+	private static function get_all_post_types(): array {
+		$allowed_post_types = [
+			'post' => __( 'Post' ),
+			'page' => __( 'Page' ),
+		];
+
+		return $allowed_post_types;
+	}
+
+	/**
 	 * Validate input from the end user
 	 */
-	public function settings_validate( $new_options ) {
-
+	public static function settings_validate( $new_options ): array {
 		// Whitelist validation for the post type options
 		if ( ! isset( $new_options['post_types'] ) ) {
 			$new_options['post_types'] = [];
 		}
-		$new_options['post_types'] = $this->clean_post_type_options( $new_options['post_types'], $this->module->post_type_support );
+		$new_options['post_types'] = self::clean_post_type_options( $new_options['post_types'] );
 
 		// Whitelist validation for the 'publish_guard' optoins
 		if ( ! isset( $new_options['publish_guard'] ) || 'on' != $new_options['publish_guard'] ) {
 			$new_options['publish_guard'] = 'off';
 		}
 
-		// Whitelist validation for the 'always_notify_admin' options
-		if ( ! isset( $new_options['always_notify_admin'] ) || 'on' != $new_options['always_notify_admin'] ) {
-			$new_options['always_notify_admin'] = 'off';
-		}
-
-		// White list validation for the 'send_to_slack' option
-		if ( ! isset( $new_options['send_to_webhook'] ) || 'on' != $new_options['send_to_webhook'] ) {
-			$new_options['send_to_webhook'] = 'off';
+		// White list validation for the 'email_address' option
+		if ( ! isset( $new_options['email_address'] ) || ! filter_var( $new_options['email_address'], FILTER_VALIDATE_EMAIL ) ) {
+			$new_options['email_address'] = '';
+		} else {
+			$new_options['email_address'] = sanitize_email( $new_options['email_address'] );
 		}
 
 		// White list validation for the 'slack_webhook_url' option
-		$new_options['webhook_url'] = trim( $new_options['webhook_url'] );
 		if ( ! isset( $new_options['webhook_url'] ) || esc_url_raw( $new_options['webhook_url'] ) !== $new_options['webhook_url'] ) {
 			$new_options['webhook_url'] = '';
 		} else {
@@ -247,31 +215,28 @@ class Settings extends Module {
 	 * Validation and sanitization on the settings field
 	 * This method is called automatically/ doesn't need to be registered anywhere
 	 */
-	public function helper_settings_validate_and_save() {
-
-		if ( ! isset( $_POST['action'], $_POST['_wpnonce'], $_POST['option_page'], $_POST['_wp_http_referer'], $_POST['vip_workflow_module_name'], $_POST['submit'] ) || ! is_admin() ) {
+	public static function helper_settings_validate_and_save(): bool {
+		if ( ! isset( $_POST['action'], $_POST['_wpnonce'], $_POST['option_page'], $_POST['_wp_http_referer'], $_POST['submit'] ) || ! is_admin() ) {
 			return false;
 		}
 
-		$module_name = sanitize_key( $_POST['vip_workflow_module_name'] );
-
-		if ( 'update' != $_POST['action']
-		|| VIP_Workflow::instance()->$module_name->module->options_group_name != $_POST['option_page'] ) {
+		if ( 'update' !== $_POST['action']
+		|| OptionsUtilities::get_module_options_key() !== $_POST['option_page'] ) {
 			return false;
 		}
 
-		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'], VIP_Workflow::instance()->$module_name->module->options_group_name . '-options' ) ) {
+		if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), OptionsUtilities::get_module_options_key() . '-options' ) ) {
 			wp_die( esc_html__( 'Cheatin&#8217; uh?' ) );
 		}
 
-		$new_options = ( isset( $_POST[ VIP_Workflow::instance()->$module_name->module->options_group_name ] ) ) ? $_POST[ VIP_Workflow::instance()->$module_name->module->options_group_name ] : array();
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validation and sanitization is done in the settings_validate method
+		$new_options = ( isset( $_POST[ OptionsUtilities::get_module_options_key() ] ) ) ? $_POST[ OptionsUtilities::get_module_options_key() ] : [];
 
-		// Only call the validation callback if it exists?
-		if ( method_exists( VIP_Workflow::instance()->$module_name, 'settings_validate' ) ) {
-			$new_options = VIP_Workflow::instance()->$module_name->settings_validate( $new_options );
-		}
+		$new_options = self::settings_validate( $new_options );
+		$old_options = (array) OptionsUtilities::get_module_options( self::SETTINGS_SLUG );
 
-		$old_options = (array) VIP_Workflow::instance()->$module_name->module->options;
+		// Blend the new options with the old options, including any new options that may have been added
+		OptionsUtilities::update_module_options( $new_options );
 
 		/**
 		 * Fires before saving the settings for all modules
@@ -281,13 +246,11 @@ class Settings extends Module {
 		 */
 		do_action( 'vw_save_settings', $new_options, $old_options );
 
-		// Cast our object and save the data.
-		$new_options = (object) array_merge( (array) $old_options, $new_options );
-		VIP_Workflow::instance()->update_all_module_options( VIP_Workflow::instance()->$module_name->module->name, $new_options );
-
 		// Redirect back to the settings page that was submitted without any previous messages
-		$goback = add_query_arg( 'message', 'settings-updated', remove_query_arg( array( 'message' ), wp_get_referer() ) );
+		$goback = add_query_arg( 'message', 'settings-updated', remove_query_arg( [ 'message' ], wp_get_referer() ) );
 		wp_safe_redirect( $goback );
 		exit;
 	}
 }
+
+Settings::init();

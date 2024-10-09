@@ -6,15 +6,14 @@
 
 namespace VIPWorkflow\Modules\EditorialMetadata\REST;
 
-use VIPWorkflow\Modules\Editorial_Metadata;
-use VIPWorkflow\VIP_Workflow;
+use VIPWorkflow\Modules\EditorialMetadata;
 use WP_Error;
 use WP_REST_Request;
 use WP_Term;
 
 defined( 'ABSPATH' ) || exit;
 
-class EditEditorialMetadata {
+class EditorialMetadataEndpoint {
 	/**
 	 * Initialize the class
 	 */
@@ -45,7 +44,7 @@ class EditEditorialMetadata {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$param = trim( $param );
-						return ! empty( $param ) && in_array( $param, Editorial_Metadata::SUPPORTED_METADATA_TYPES );
+						return ! empty( $param ) && in_array( $param, EditorialMetadata::SUPPORTED_METADATA_TYPES );
 					},
 					'sanitize_callback' => function ( $param ) {
 						return trim( $param );
@@ -81,7 +80,7 @@ class EditEditorialMetadata {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
-						$term    = get_term( $term_id, Editorial_Metadata::METADATA_TAXONOMY );
+						$term    = get_term( $term_id, EditorialMetadata::METADATA_TAXONOMY );
 						return ( $term instanceof WP_Term );
 					},
 					'sanitize_callback' => function ( $param ) {
@@ -109,7 +108,7 @@ class EditEditorialMetadata {
 					'required'          => true,
 					'validate_callback' => function ( $param ) {
 						$term_id = absint( $param );
-						$term    = get_term( $term_id, Editorial_Metadata::METADATA_TAXONOMY );
+						$term    = get_term( $term_id, EditorialMetadata::METADATA_TAXONOMY );
 						return ( $term instanceof WP_Term );
 					},
 					'sanitize_callback' => function ( $param ) {
@@ -136,9 +135,7 @@ class EditEditorialMetadata {
 		$editorial_metadata_name        = sanitize_text_field( $request->get_param( 'name' ) );
 		$editorial_metadata_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$editorial_metadata_description = $request->get_param( 'description' );
-		$editorial_metadata_type         = $request->get_param( 'type' );
-
-		$editorial_metadata_module = VIP_Workflow::instance()->editorial_metadata;
+		$editorial_metadata_type        = $request->get_param( 'type' );
 
 		// Check that the name isn't numeric
 		if ( is_numeric( $editorial_metadata_name ) ) {
@@ -151,7 +148,7 @@ class EditEditorialMetadata {
 		}
 
 		// Check to make sure the editorial metadata doesn't already exist as another term because otherwise we'd get a fatal error
-		$term_exists = term_exists( $editorial_metadata_slug, Editorial_Metadata::METADATA_TAXONOMY );
+		$term_exists = term_exists( $editorial_metadata_slug, EditorialMetadata::METADATA_TAXONOMY );
 
 		if ( $term_exists ) {
 			return new WP_Error( 'invalid', 'Editorial metadata name conflicts with existing term. Please choose another.' );
@@ -164,7 +161,7 @@ class EditEditorialMetadata {
 			'name'        => $editorial_metadata_name,
 		];
 
-		$add_editorial_metadata_result = $editorial_metadata_module->insert_editorial_metadata_term( $args );
+		$add_editorial_metadata_result = EditorialMetadata::insert_editorial_metadata_term( $args );
 
 		return rest_ensure_response( $add_editorial_metadata_result );
 	}
@@ -180,8 +177,6 @@ class EditEditorialMetadata {
 		$editorial_metadata_slug        = sanitize_title( $request->get_param( 'name' ) );
 		$editorial_metadata_description = $request->get_param( 'description' );
 
-		$editorial_metadata_module = VIP_Workflow::instance()->editorial_metadata;
-
 		// Check that the name isn't numeric
 		if ( is_numeric( $editorial_metadata_name ) ) {
 			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the editorial metadata.' );
@@ -193,16 +188,16 @@ class EditEditorialMetadata {
 		}
 
 		// Check to make sure the editorial metadata doesn't already exist
-		$editorial_metadata_by_id = $editorial_metadata_module->get_editorial_metadata_term_by( 'id', $term_id );
+		$editorial_metadata_by_id = EditorialMetadata::get_editorial_metadata_term_by( 'id', $term_id );
 
-		$editorial_metadata_by_slug = $editorial_metadata_module->get_editorial_metadata_term_by( 'slug', $editorial_metadata_slug );
+		$editorial_metadata_by_slug = EditorialMetadata::get_editorial_metadata_term_by( 'slug', $editorial_metadata_slug );
 
 		if ( $editorial_metadata_by_slug && $editorial_metadata_by_id && $editorial_metadata_by_id->slug !== $editorial_metadata_slug ) {
 			return new WP_Error( 'invalid', 'Editorial Metadata already exists. Please choose another name.' );
 		}
 
 		// Check to make sure the editorial metadata doesn't already exist as another term because otherwise we'd get a fatal error
-		$term_exists = term_exists( $editorial_metadata_slug, Editorial_Metadata::METADATA_TAXONOMY );
+		$term_exists = term_exists( $editorial_metadata_slug, EditorialMetadata::METADATA_TAXONOMY );
 
 		// term_id from term_exists is a string, while term_id is an integer so not using strict comparison
 		if ( $term_exists && isset( $term_exists['term_id'] ) && $term_exists['term_id'] != $term_id ) {
@@ -216,8 +211,7 @@ class EditEditorialMetadata {
 			'name'        => $editorial_metadata_name,
 		];
 
-		// ToDo: Ensure that we don't do an update when the name, description and type are the same as the current editorial metadata
-		$update_editorial_metadata_result = $editorial_metadata_module->update_editorial_metadata_term( $term_id, $args );
+		$update_editorial_metadata_result = EditorialMetadata::update_editorial_metadata_term( $term_id, $args );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $update_editorial_metadata_result );
@@ -230,16 +224,13 @@ class EditEditorialMetadata {
 	 */
 	public static function handle_delete_editorial_metadata( WP_REST_Request $request ) {
 		$term_id = $request->get_param( 'id' );
-
-		$editorial_metadata_module = VIP_Workflow::instance()->editorial_metadata;
-
 		// Check to make sure the editorial metadata exists
-		$editorial_metadata_by_id = $editorial_metadata_module->get_editorial_metadata_term_by( 'id', $term_id );
+		$editorial_metadata_by_id = EditorialMetadata::get_editorial_metadata_term_by( 'id', $term_id );
 		if ( ! $editorial_metadata_by_id ) {
 			return new WP_Error( 'invalid', 'Editorial Metadata does not exist.' );
 		}
 
-		$delete_editorial_metadata_result = $editorial_metadata_module->delete_editorial_metadata_term( $term_id );
+		$delete_editorial_metadata_result = EditorialMetadata::delete_editorial_metadata_term( $term_id );
 
 		// Regardless of an error being thrown, the result will be returned so the client can handle it.
 		return rest_ensure_response( $delete_editorial_metadata_result );
@@ -252,7 +243,9 @@ class EditEditorialMetadata {
 	 *
 	 * @return string The CRUD URL
 	 */
-	public static function get_crud_url() {
+	public static function get_url() {
 		return rest_url( sprintf( '%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'editorial-metadata/' ) );
 	}
 }
+
+EditorialMetadataEndpoint::init();

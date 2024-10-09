@@ -11,7 +11,10 @@ domReady( () => {
 	if ( workflowManagerRoot ) {
 		const root = createRoot( workflowManagerRoot );
 		root.render(
-			<WorkflowManager customStatuses={ VW_CUSTOM_STATUS_CONFIGURE.custom_statuses } />
+			<WorkflowManager
+				customStatuses={ VW_CUSTOM_STATUS_CONFIGURE.custom_statuses }
+				editorialMetadatas={ VW_CUSTOM_STATUS_CONFIGURE.editorial_metadatas }
+			/>
 		);
 	}
 } );

@@ -1,6 +1,6 @@
-----
+---
 ### :warning: This plugin is currently in Beta. It is designed to run on [WordPress VIP](https://wpvip.com). This beta release is not intended for use on a production environment.
-----
+---
 
 # WordPress VIP Workflow Plugin (Beta)
 
@@ -12,26 +12,29 @@ This plugin is currently developed for use on WordPress sites hosted on [WordPre
 
 - [Try it out](#try-it-out)
 - [Installation](#installation)
-	- [Install via `git subtree`](#install-via-git-subtree)
-	- [Install via ZIP file](#install-via-zip-file)
-	- [Plugin activation](#plugin-activation)
+  - [Install via `git subtree`](#install-via-git-subtree)
+  - [Install via ZIP file](#install-via-zip-file)
+  - [Plugin activation](#plugin-activation)
 - [Usage](#usage)
-	- [Admin](#admin)
-	- [Publish Guard](#admin)
-	- [Editorial Experience](#editorial-experience)
-		- [Guided Status Movements](#guided-status-movements)
-		- [Preview Links](#preview-links)
-		- [Editorial Metadata](#editorial-metadata)
-- [Limitations](#limitations)
-	- [Editorial Metadata](#editorial-metadata-1)
+  - [Admin](#admin)
+  - [Notifications](#notifications)
+  - [Publish Guard](#publish-guard)
+  - [Editorial Experience](#editorial-experience)
+    - [Guided Status Movements](#guided-status-movements)
+    - [Preview Links](#preview-links)
+    - [Editorial Metadata](#editorial-metadata)
 - [Code Filters](#code-filters)
-	- [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
-	- [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
-	- [`vw_preview_expiration_options`](#vw_preview_expiration_options)
+  - [`vw_notification_ignored_statuses`](#vw_notification_ignored_statuses)
+  - [`vw_notification_email_recipients`](#vw_notification_email_recipients)
+  - [`vw_notification_email_subject`](#vw_notification_email_subject)
+  - [`vw_notification_email_message`](#vw_notification_email_message)
+  - [`vw_notification_email_headers`](#vw_notification_email_headers)
+  - [`vw_notification_send_to_webhook_payload`](#vw_notification_send_to_webhook_payload)
+  - [`vw_preview_expiration_options`](#vw_preview_expiration_options)
 - [Development](#development)
-	- [Building the plugin](#building-the-plugin)
-	- [Using Hot Module Replacement](#using-hot-module-replacement)
-	- [Tests](#tests)
+  - [Building the plugin](#building-the-plugin)
+  - [Using Hot Module Replacement](#using-hot-module-replacement)
+  - [Tests](#tests)
 - [Credits](#credits)
 
 ## Try it out
@@ -94,7 +97,13 @@ Note that, these statuses are also available in the quick edit experience on the
 
 The plugin doesn't expect any specific configuration, so your first step is to set up statuses that reflect your workflow. You may notice that the steps are listed in a linear order. The plugin assumes a linear workflow where content is moving from creation to publish.
 
-The plugin also sends notifications when a post's status changes. By default, email notifications are turned on for the blog admin. Additional email recipients can be configured. You can also set up webhook notifications under settings.
+You can also specify which types of content use custom statuses. If a post does not use custom statuses, it will use the standard WordPress publishing flow.
+
+### Notifications
+
+VIP Workflow has the ability to send email and/or webhook notifications when a post's status changes. By default, these are off as no email address or webhook is provided out of the box. You set up webhook and/or email notifications under Admin -> VIP Workflow -> Settings.
+
+Additional filters are available here to customize the notifications that are sent.
 
 ### Publish Guard
 
@@ -128,12 +137,6 @@ Anybody with a preview link (including not logged-in users) will be able to view
 
 VIP Workflow adds a "Editorial Metadata" section to the post sidebar, which allows for additional data to be included with the post such as "Needs Legal Review". This can be managed under the plugin's settings, to get a visual for all of the configured editorial metadata fields.
 
-## Limitations
-
-### Editorial Metadata
-
-A post type that's supported at first, and then unsupported is used to make posts, then those posts will still show editorial metadata fields.
-
 ## Code Filters
 
 ### `vw_notification_ignored_statuses`
@@ -163,6 +166,102 @@ add_filter( 'vw_notification_ignored_statuses', function ( $ignored_statuses, $p
 }, 10, 2 );
 ```
 
+### `vw_notification_email_recipients`
+
+Change the recipients that receive an email notification, when the status of a post changes. By default, it is set to the configured email address under Admin -> VIP Workflow -> Settings.
+
+```php
+/**
+* Filter the email recipients
+*
+* @param array $email_recipients Array of email recipients
+* @param string $action Action being taken, eg. status-change
+* @param WP_Post $post Post object
+*/
+apply_filters( 'vw_notification_email_recipients', $email_recipients, $action, $post );
+```
+
+For example, this filter can be used to send email notifications to more than just 1 recipients especially for special statuses:
+
+```php
+add_filter( 'vw_notification_email_recipients', function ( $email_recipients, $action, $post  ) {
+  if ( $post->post_status === 'legal-review' ) {
+    $email_recipients[] = 'saul.goodman@sgoodmanassoc.com';
+  }
+
+  return $email_recipients;
+}, 10, 2 );
+```
+
+### `vw_notification_email_subject`
+
+Change the subject of the email that recipients receive, when the status of a post changes.
+
+```php
+/**
+* Filter the email subject
+*
+* @param string $subject Subject of the email
+* @param string $action Action being taken, eg. status-change
+* @param WP_Post $post Post object
+*/
+apply_filters( 'vw_notification_email_subject', $subject, $action, $post );
+```
+
+For example, this filter can be used to set a standardized subject regardless of what the status is:
+
+```php
+add_filter( 'vw_notification_email_subject', function ( $subject, $action, $post  ) {
+  return __( 'Content Status Update' );
+}, 10, 2 );
+```
+
+### `vw_notification_email_message`
+
+Change the message of the email that recipients receive, when the status of a post changes.
+
+```php
+/**
+* Filter the email message
+*
+* @param string $message Body of the email
+* @param string $action Action being taken, eg. status-change
+* @param WP_Post $post Post object
+*/
+apply_filters( 'vw_notification_email_message', $message, $action, $post );
+```
+
+For example, this filter can be used to replace the signature that the plugin adds to the footer of the email with a company one instead:
+
+```php
+add_filter( 'vw_notification_email_message', function ( $message, $action, $post  ) {
+  return str_replace( 'You are receiving this email because a notification was configured via the VIP Workflow Plugin.', 'You are receiving this email as part of ACME Corp.', $message);
+}, 10, 2 );
+```
+
+### `vw_notification_email_headers`
+
+Change the headers used for the email that recipients receive, when the status of a post changes. By default, they are the standard headers set by wp_mail.
+
+```php
+/**
+* Filter the email recipients
+*
+* @param array $message_headers Message headers
+* @param string $action Action being taken, eg. status-change
+* @param WP_Post $post Post object
+*/
+apply_filters( 'vw_notification_email_headers', $message_headers, $post );
+```
+
+For example, this filter can be used to send HTML formatted email notifications instead of the default plain text formatted email notifications:
+
+```php
+add_filter( 'vw_notification_email_headers', function ( $message_headers, $action, $post  ) {
+  return [ 'Content-Type: text/html; charset=UTF-8' ];
+}, 10, 2 );
+```
+
 ### `vw_notification_send_to_webhook_payload`
 
 Change the payload sent to the webhook, when the status of a post changes. By default, it is as follows:
@@ -180,22 +279,19 @@ Change the payload sent to the webhook, when the status of a post changes. By de
 * Filter the payload before sending it to the webhook
 *
 * @param array $payload Payload to be sent to the webhook
-* @param string $action Action being taken
-* @param WP_User $user User who is taking the action
-* @param WP_Post $post Post that the action is being taken on
 */
 
-apply_filters( 'vw_notification_send_to_webhook_payload', $payload, $action, $user, $post );
+apply_filters( 'vw_notification_send_to_webhook_payload', $payload );
 ```
 
 For example, this filter can be used to customize the payload so that it's compatible with Slack's [incoming webhooks](https://api.slack.com/messaging/webhooks):
 
 ```php
-add_filter( 'vw_notification_send_to_webhook_payload', function ( $payload, $action, $user, $post ) {
+add_filter( 'vw_notification_send_to_webhook_payload', function ( $payload ) {
     return [
         'text' => $payload['data'],
     ];
-}, 10, 4 );
+}, 10, 1 );
 ```
 
 ### `vw_preview_expiration_options`
@@ -273,17 +369,17 @@ React hot reloading is supported. A few configuration steps are required for the
 1. Set `define( 'SCRIPT_DEBUG', true );` in your `wp-config.php` or `vip-config.php`. At the time of writing, this is [a `wp-scripts` limitation](https://github.com/WordPress/gutenberg/blob/9e07a75/packages/scripts/README.md?plain=1#L390).
 2. Run `npm run dev:hot`. If you're running WordPress on a non-localhost hostname, e.g. on `vip dev-env`, you may also need to specify the hostname:
 
-    ```bash
-    HOST=mysite.vipdev.lndo.site npm run dev:hot
-    ```
+   ```bash
+   HOST=mysite.vipdev.lndo.site npm run dev:hot
+   ```
 
-    This can also be specified using a `.env` configuration file:
+   This can also be specified using a `.env` configuration file:
 
-    ```
-    HOST=mysite.vipdev.lndo.site
-    ```
+   ```
+   HOST=mysite.vipdev.lndo.site
+   ```
 
-    If you use `wp-env`, you should be able to skip specifying `HOST` manually.
+   If you use `wp-env`, you should be able to skip specifying `HOST` manually.
 
 3. If HMR is not working and you're developing out of a new component tree, you may also need to opt-in to hot module reloading via [`module.hot.accept()`](https://github.com/Automattic/vip-workflow-plugin/blob/e058354/modules/custom-status/lib/custom-status-configure.js#L19-L21)
 
@@ -302,6 +398,7 @@ composer run test
 This plugin has been based on the wonderful [EditFlow](https://github.com/Automattic/Edit-Flow) plugin developed by Daniel Bachhuber, Scott Bressler, Mohammad Jangda, and others.
 
 <!-- Links -->
+
 [media-generate-preview-link-custom-expiration]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link-custom-expiration.gif
 [media-generate-preview-link]: https://github.com/Automattic/vip-workflow-plugin/blob/media/generate-preview-link.gif
 [media-guided-status-movements]: https://github.com/Automattic/vip-workflow-plugin/blob/media/guided-status-movements.gif

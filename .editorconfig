@@ -20,6 +20,8 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+indent_size = 2
+indent_style = space
 
 [*.txt]
 end_of_line = crlf

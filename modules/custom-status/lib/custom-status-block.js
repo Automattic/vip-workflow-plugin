@@ -21,6 +21,7 @@ const CustomSaveButtonSidebar = ( {
 	postType,
 	savedStatus,
 	editedStatus,
+	metaFields,
 	isUnsavedPost,
 	isSavingPost,
 	onUpdateStatus,
@@ -28,17 +29,26 @@ const CustomSaveButtonSidebar = ( {
 	const isTinyViewport = useViewportMatch( 'small', '<' );
 	const isWideViewport = useViewportMatch( 'wide', '>=' );
 
-	const isCustomSaveButtonVisible = useMemo(
-		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, savedStatus ),
-		[ isUnsavedPost, postType, savedStatus ]
-	);
+	const isRestrictedStatus = useMemo( () => {
+		const currentStatusTerm = getCurrentStatusTerm( savedStatus );
+		return isStatusRestrictedFromMovement( currentStatusTerm, metaFields );
+	}, [ savedStatus, metaFields ] );
 
-	const isCustomSaveButtonDisabled = isSavingPost;
+	const isCustomSaveButtonVisible = useMemo(
+		() => isCustomSaveButtonEnabled( isUnsavedPost, postType, savedStatus, isRestrictedStatus ),
+		[ isUnsavedPost, postType, savedStatus, isRestrictedStatus ]
+	);
 
 	// Selectively remove the native save button when publish guard and workflow statuses are in use
 	useEffect( () => {
 		if ( VW_CUSTOM_STATUSES.is_publish_guard_enabled ) {
 			const editor = document.querySelector( '#editor' );
+
+			// The editor class may not exist in some contexts, e.g. the site editor
+			// This disables this whole functionality, so it doesn't break anything.
+			if ( ! editor ) {
+				return;
+			}
 
 			if ( isCustomSaveButtonVisible ) {
 				editor.classList.add( 'disable-native-save-button' );
@@ -51,6 +61,7 @@ const CustomSaveButtonSidebar = ( {
 	}, [ isCustomSaveButtonVisible ] );
 
 	const nextStatusTerm = useMemo( () => getNextStatusTerm( savedStatus ), [ savedStatus ] );
+	const isCustomSaveButtonDisabled = isSavingPost || isRestrictedStatus;
 
 	useInterceptPluginSidebar(
 		`${ pluginName }/${ sidebarName }`,
@@ -66,7 +77,10 @@ const CustomSaveButtonSidebar = ( {
 		}
 	);
 
-	const buttonText = getCustomSaveButtonText( nextStatusTerm, isWideViewport );
+	const buttonText = getCustomSaveButtonText( nextStatusTerm, isRestrictedStatus, isWideViewport );
+	const tooltipText = isRestrictedStatus
+		? __( 'Requirements for advancing have not been met.', 'vip-workflow' )
+		: buttonText;
 
 	const InnerSaveButton = (
 		<CustomInnerSaveButton
@@ -88,7 +102,7 @@ const CustomSaveButtonSidebar = ( {
 
 			{ /* Custom save button in the toolbar */ }
 			{ isCustomSaveButtonVisible && (
-				<PluginSidebar name={ sidebarName } title={ buttonText } icon={ InnerSaveButton }>
+				<PluginSidebar name={ sidebarName } title={ tooltipText } icon={ InnerSaveButton }>
 					{ /* ToDo: Use this space to show approve/reject UI or other sidebar controls */ }
 					{ null }
 				</PluginSidebar>
@@ -118,6 +132,8 @@ const mapSelectProps = select => {
 		// The status from the current post in the editor. Changes immediately when editPost() is dispatched in the UI,
 		// before the post is updated in the backend.
 		editedStatus: getEditedPostAttribute( 'status' ),
+
+		metaFields: getEditedPostAttribute( 'meta' ),
 
 		postType: getCurrentPostType(),
 		isSavingPost: isSavingPost(),
@@ -160,7 +176,7 @@ const CustomInnerSaveButton = ( { buttonText, isSavingPost, isDisabled, isTinyVi
 
 // Utility methods
 
-const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
+const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug, isRestrictedStatus ) => {
 	if ( isUnsavedPost ) {
 		// Show native "Save" for new posts
 		return false;
@@ -172,10 +188,10 @@ const isCustomSaveButtonEnabled = ( isUnsavedPost, postType, statusSlug ) => {
 	const allButLastStatusTerm = VW_CUSTOM_STATUSES.status_terms.slice( 0, -1 );
 	const isSupportedStatusTerm = allButLastStatusTerm.map( t => t.slug ).includes( statusSlug );
 
-	return isSupportedPostType && isSupportedStatusTerm;
+	return isSupportedPostType && ( isSupportedStatusTerm || isRestrictedStatus );
 };
 
-const getCustomSaveButtonText = ( nextStatusTerm, isWideViewport ) => {
+const getCustomSaveButtonText = ( nextStatusTerm, isRestrictedStatus, isWideViewport ) => {
 	let buttonText = __( 'Save', 'vip-workflow' );
 
 	if ( nextStatusTerm ) {
@@ -190,9 +206,49 @@ const getCustomSaveButtonText = ( nextStatusTerm, isWideViewport ) => {
 			// translators: %s: Next custom status name, possibly truncated with an ellipsis. e.g. "Draft" or "Pendi…"
 			buttonText = sprintf( __( 'Move to %s', 'vip-workflow' ), truncatedStatus );
 		}
+	} else if ( ! nextStatusTerm && isRestrictedStatus ) {
+		// Awaiting a privileged user to approve publishing.
+		// Show disabled "Publish" button as a placeholder.
+		buttonText = __( 'Publish', 'vip-workflow' );
 	}
 
 	return buttonText;
+};
+
+const isStatusRestrictedFromMovement = ( status, metaFields ) => {
+	let isStatusRestricted = false;
+
+	if ( status?.meta?.required_user_ids && status.meta.required_user_ids.length > 0 ) {
+		const requiredUserIds = status.meta.required_user_ids;
+		const currentUserId = parseInt( VW_CUSTOM_STATUSES.current_user_id, /* radix */ 10 );
+		isStatusRestricted = ! requiredUserIds.includes( currentUserId );
+	}
+
+	if (
+		! isStatusRestricted &&
+		status?.meta?.required_metadatas &&
+		status.meta.required_metadatas.length > 0
+	) {
+		const requiredMetadas = status.meta.required_metadatas;
+		const hasMissingMetaFields = requiredMetadas.some( field => {
+			const postmeta_key = field.meta.postmeta_key;
+
+			// Insert the rules engine check here, once that's implemented. Right now, it's just the default values for a boolean and a text field.
+			if ( field.meta.type === 'checkbox' ) {
+				return ! metaFields[ postmeta_key ];
+			} else {
+				return ! metaFields[ postmeta_key ] || metaFields[ postmeta_key ].length === 0;
+			}
+		} );
+		isStatusRestricted = hasMissingMetaFields;
+	}
+
+	return isStatusRestricted;
+};
+
+const getCurrentStatusTerm = currentStatus => {
+	const statusTerm = VW_CUSTOM_STATUSES.status_terms.find( term => term.slug === currentStatus );
+	return statusTerm ? statusTerm : false;
 };
 
 const getNextStatusTerm = currentStatus => {

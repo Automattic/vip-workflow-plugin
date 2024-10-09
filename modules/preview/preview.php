@@ -10,44 +10,31 @@ namespace VIPWorkflow\Modules;
 require_once __DIR__ . '/token.php';
 require_once __DIR__ . '/rest/preview-endpoint.php';
 
+use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\Preview\PreviewEndpoint;
-use VIPWorkflow\VIP_Workflow;
-use VIPWorkflow\Modules\Shared\PHP\Module;
 use VIPWorkflow\Modules\Preview\Token;
+use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
+use WP_Query;
 
-class Preview extends Module {
-	public $module;
-
-	public function __construct() {
-		// Register the module with VIP Workflow
-		$this->module_url = $this->get_module_url( __FILE__ );
-
-		$this->module = VIP_Workflow::instance()->register_module( 'preview', [
-			'title'      => __( 'Preview Link', 'vip-workflow' ),
-			'module_url' => $this->module_url,
-			'slug'       => 'preview',
-			'autoload'   => true,
-		] );
-	}
-
+class Preview {
 	/**
 	 * Initialize preview module
 	 */
-	public function init() {
-		PreviewEndpoint::init();
-
+	public static function init(): void {
 		// Load block editor JS
-		add_action( 'enqueue_block_editor_assets', [ $this, 'load_block_editor_scripts' ], 9 /* Load before custom status module */ );
+		add_action( 'enqueue_block_editor_assets', [ __CLASS__, 'load_block_editor_scripts' ], 9 /* Load before custom status module */ );
 
 		// Load block editor CSS
-		add_action( 'enqueue_block_editor_assets', [ $this, 'load_block_editor_styles' ] );
+		add_action( 'enqueue_block_editor_assets', [ __CLASS__, 'load_block_editor_styles' ] );
 
 		// Preview rendering
-		add_filter( 'query_vars', [ $this, 'add_preview_query_vars' ] );
-		add_action( 'posts_results', [ $this, 'allow_preview_result' ], 10, 2 );
+		add_filter( 'query_vars', [ __CLASS__, 'add_preview_query_vars' ] );
+		add_action( 'posts_results', [ __CLASS__, 'allow_preview_result' ], 10, 2 );
 	}
 
-	public function load_block_editor_scripts() {
+	// Block editor asset filters
+
+	public static function load_block_editor_scripts(): void {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/preview/preview.asset.php';
 		wp_enqueue_script( 'vip-workflow-preview-script', VIP_WORKFLOW_URL . 'dist/modules/preview/preview.js', $asset_file['dependencies'], $asset_file['version'], true );
 
@@ -57,33 +44,34 @@ class Preview extends Module {
 		if ( $post_id ) {
 			$generate_preview_url = PreviewEndpoint::get_url( $post_id );
 		}
-
-		$custom_status_module = VIP_Workflow::instance()->custom_status;
-		$custom_status_slugs  = wp_list_pluck( $custom_status_module->get_custom_statuses(), 'slug' );
-		$custom_post_types    = $custom_status_module->get_supported_post_types();
+		$custom_status_slugs  = wp_list_pluck( CustomStatus::get_custom_statuses(), 'slug' );
+		$custom_post_types    = HelperUtilities::get_supported_post_types();
 
 		wp_localize_script( 'vip-workflow-preview-script', 'VW_PREVIEW', [
 			'custom_post_types'    => $custom_post_types,
 			'custom_status_slugs'  => $custom_status_slugs,
-			'expiration_options'   => $this->get_link_expiration_options(),
+			'expiration_options'   => self::get_link_expiration_options(),
 			'text_preview_error'   => __( 'There was an error generating a preview link:', 'vip-workflow' ),
 			'url_generate_preview' => $generate_preview_url,
 		] );
 	}
 
-	public function load_block_editor_styles() {
+	public static function load_block_editor_styles(): void {
 		$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/preview/preview.asset.php';
 
 		wp_enqueue_style( 'vip-workflow-preview-styles', VIP_WORKFLOW_URL . 'dist/modules/preview/preview.css', [ 'wp-components' ], $asset_file['version'] );
 	}
 
-	public function add_preview_query_vars( $query_vars ) {
+	// Preview rendering WP_Query filters
+
+	public static function add_preview_query_vars( array $query_vars ) {
+		// Allow 'vw-token' GET parameter to be detected in WP_Query parameters
 		$query_vars[] = 'vw-token';
 
 		return $query_vars;
 	}
 
-	public function allow_preview_result( $posts, $query ) {
+	public static function allow_preview_result( array $posts, WP_Query $query ) {
 		$token = $query->query_vars['vw-token'] ?? false;
 
 		// If there's no token, go back to result processing quickly
@@ -136,10 +124,17 @@ class Preview extends Module {
 		return $posts;
 	}
 
+	// Public API
+
 	/**
-	 * Get the expiration options available in the preview modal dropdown.
+	 * Returns the valid set of expiration options for preview links. See the
+	 * vw_preview_expiration_options filter for customization.
+	 *
+	 * @access public
+	 *
+	 * @return array
 	 */
-	public function get_link_expiration_options() {
+	public static function get_link_expiration_options(): array {
 		/**
 		 * Filter the expiration options available in the preview modal dropdown.
 		 *
@@ -169,3 +164,5 @@ class Preview extends Module {
 		]);
 	}
 }
+
+Preview::init();

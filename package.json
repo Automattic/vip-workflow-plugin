@@ -1,14 +1,21 @@
 {
   "name": "vip-workflow",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "VIP Workflow",
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack --watch",
     "dev:hot": "wp-scripts start -c webpack.config.js --hot",
     "wp-env": "wp-env",
-    "lint-js": "eslint modules",
-    "lint-js-fix": "eslint modules --fix"
+    "check-types": "tsc --noEmit",
+    "cmd:format": "prettier '**/*.(js|json|jsx|md|ts|tsx|yml|yaml)'",
+    "format": "npm run cmd:format -- --write",
+    "format:check": "npm run cmd:format -- --check",
+    "lint": "npm run lint:js && npm run lint:css",
+    "lint:js": "eslint --ext 'js,jsx,ts,tsx' --quiet",
+    "lint:js:fix": "eslint --ext 'js,jsx,ts,tsx' --quiet --fix",
+    "lint:css:fix": "wp-scripts lint-style --fix",
+    "lint:css": "wp-scripts lint-style"
   },
   "repository": {
     "type": "git",
@@ -24,10 +31,13 @@
     "@automattic/eslint-plugin-wpvip": "^0.13.0",
     "@babel/preset-react": "^7.24.7",
     "@hello-pangea/dnd": "^16.6.0",
+    "@types/wordpress__block-editor": "^11.5.15",
+    "@types/wordpress__editor": "^14.3.0",
     "@wordpress/api-fetch": "^7.2.0",
     "@wordpress/block-editor": "^14.0.0",
     "@wordpress/components": "^27.6.0",
     "@wordpress/compose": "^7.2.0",
+    "@wordpress/core-data": "^7.8.0",
     "@wordpress/data": "^10.2.0",
     "@wordpress/dom-ready": "^4.2.0",
     "@wordpress/edit-post": "^8.2.0",
@@ -47,6 +57,12 @@
     "prettier": "npm:wp-prettier@2.8.5",
     "react": "^18.3.1",
     "react-dom": "^18.0.0",
+    "stylelint": "^14.16.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.2",
     "webpack": "^5.91.0"
+  },
+  "stylelint": {
+    "extends": "./node_modules/@wordpress/scripts/config/.stylelintrc.json"
   }
 }
