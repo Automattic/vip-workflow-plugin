@@ -158,11 +158,9 @@ class Notifications {
 			/**
 			 * Fires after a notification is sent
 			 *
-			 * @param WP_Post $post The post object
-			 * @param string $subject The subject of the email
-			 * @param WP_User $current_user The user who is taking the action
+			 * @param int $post_id The post ID of the post that was updated.
 			 */
-			do_action( 'vw_notification_status_change', $post, $subject, $current_user );
+			do_action( 'vw_notification_status_change', $post->ID );
 		}
 	}
 
