@@ -12,30 +12,26 @@ use VIPWorkflow\Modules\Notifications;
 use VIPWorkflow\Modules\Settings;
 use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
 use WP_Error;
-use WP_UnitTestCase;
 
-class NotificationsTest extends WP_UnitTestCase {
+class NotificationsTest extends WorkflowTestCase {
 
 	protected function tearDown(): void {
 		parent::tearDown();
 
 		reset_phpmailer_instance();
-
-		// Reset all module options
-		OptionsUtilities::reset_all_module_options();
 	}
 
 	public function test_validate_get_notification_footer() {
 		$expected_result = "\r\n--------------------\r\nYou are receiving this email because a notification was configured via the VIP Workflow Plugin.\r\n";
-		$result = Notifications::get_notification_footer();
+		$result          = Notifications::get_notification_footer();
 
 		$this->assertTrue( $result === $expected_result );
 	}
 
 	public function test_send_emails() {
 		$recipients = [ 'test1@gmail.com', 'test2@gmail.com', 'test3@gmail.com' ];
-		$subject = 'Test Subject';
-		$body = 'Test Body';
+		$subject    = 'Test Subject';
+		$body       = 'Test Body';
 
 		Notifications::send_emails( $recipients, $subject, $body );
 

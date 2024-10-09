@@ -7,7 +7,6 @@
 
 namespace VIPWorkflow\Tests;
 
-use PHPUnit\Framework\TestCase;
 use WP_REST_Request;
 use WP_REST_Server;
 
@@ -25,11 +24,9 @@ class RestTestCase extends WorkflowTestCase {
 		parent::setUp();
 
 		// Create an administrative user for tests to use
-		$this->administrator_user_id = $this->create_user( 'admin-rest-user', [
-			'user_pass'  => wp_generate_password(),
-			'user_email' => 'admin-rest-user@example.com',
-			'role'       => 'administrator',
-		]);
+		$this->administrator_user_id = $this->factory()->user->create( [
+			'role' => 'administrator',
+		] );
 
 		// Create a new REST server
 		$this->server = new WP_REST_Server();

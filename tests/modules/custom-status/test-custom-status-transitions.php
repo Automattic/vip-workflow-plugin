@@ -15,7 +15,10 @@ use VIPWorkflow\Modules\CustomStatus;
 class CustomStatusTransitionsTest extends WorkflowTestCase {
 
 	public function test_transition_restrictions_as_privileged_user() {
-		$admin_user_id = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
+		$admin_user_id = $this->factory()->user->create( [
+			'role' => 'administrator',
+		] );
+
 		wp_set_current_user( $admin_user_id );
 
 		// Setup statuses, with the second status requiring admin user permissions
@@ -62,18 +65,13 @@ class CustomStatusTransitionsTest extends WorkflowTestCase {
 
 		$this->assertEquals( $post_id, $transtion_to_status_3_result );
 		$this->assertEquals( 'status-3', get_post_status( $post_id ) );
-
-		// Cleanup
-		CustomStatus::delete_custom_status( $status_1->term_id );
-		CustomStatus::delete_custom_status( $status_2_restricted->term_id );
-		CustomStatus::delete_custom_status( $status_3->term_id );
-
-		wp_set_current_user( null );
-		wp_delete_user( $admin_user_id );
 	}
 
 	public function test_transition_restrictions_as_unprivileged_user() {
-		$author_user_id = self::create_user( 'test-unprivileged-author', [ 'role' => 'author' ] );
+		$author_user_id = $this->factory()->user->create( [
+			'role' => 'author',
+		] );
+
 		wp_set_current_user( $author_user_id );
 
 		// Setup statuses, with the second status requiring admin user permissions
@@ -83,7 +81,10 @@ class CustomStatusTransitionsTest extends WorkflowTestCase {
 			'slug'     => 'status-1',
 		] );
 
-		$admin_user_id       = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
+		$admin_user_id = $this->factory()->user->create( [
+			'role' => 'administrator',
+		] );
+
 		$status_2_restricted = CustomStatus::add_custom_status( [
 			'name'              => 'Status 2 (restricted)',
 			'position'          => -2,
@@ -121,10 +122,5 @@ class CustomStatusTransitionsTest extends WorkflowTestCase {
 
 		$this->assertInstanceOf( 'WP_Error', $transtion_to_status_3_result );
 		$this->assertEquals( 'status-2-restricted', get_post_status( $post_id ) );
-
-		// Cleanup
-		CustomStatus::delete_custom_status( $status_1->term_id );
-		CustomStatus::delete_custom_status( $status_2_restricted->term_id );
-		CustomStatus::delete_custom_status( $status_3->term_id );
 	}
 }

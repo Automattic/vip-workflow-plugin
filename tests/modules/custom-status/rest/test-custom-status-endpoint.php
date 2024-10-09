@@ -17,34 +17,21 @@ use WP_REST_Request;
  */
 class CustomStatusRestApiTest extends RestTestCase {
 
-	/**
-	 * Before each test, ensure default custom statuses are available and reset all module options.
-	 */
-	protected function setUp(): void {
-		parent::setUp();
-
-		// Reset all module options
-		OptionsUtilities::reset_all_module_options();
-
-		// Normally custom statuses are installed on 'admin_init', which is only run when a page is accessed
-		// in the admin web interface. Manually install them here. This avoid issues when a test creates or deletes
-		// a status and it's the only status existing, which can cause errors due to status restrictions.
-		CustomStatus::setup_install();
-	}
-
 	public function test_create_custom_status_with_optional_fields() {
 		$editorial_metadata_term = EditorialMetadata::insert_editorial_metadata_term( [
 			'name'        => 'Test Metadata 1',
 			'description' => 'A test metadata for testing',
 			'type'        => 'text',
 		] );
-		$admin_user_id = self::create_user( 'test-admin', [ 'role' => 'administrator' ] );
+		$admin_user_id           = $this->factory()->user->create( [
+			'role' => 'administrator',
+		] );
 
 		$request = new WP_REST_Request( 'POST', sprintf( '/%s/%s', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status' ) );
 		$request->set_body_params( [
-			'name'              => 'test-status',
-			'description'       => 'A test status for testing',
-			'required_user_ids' => [ $admin_user_id ],
+			'name'                  => 'test-status',
+			'description'           => 'A test status for testing',
+			'required_user_ids'     => [ $admin_user_id ],
 			'required_metadata_ids' => [ $editorial_metadata_term->term_id ],
 		] );
 
@@ -68,9 +55,6 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertEquals( $admin_user_id, $created_term->meta['required_user_ids'][0] );
 		$this->assertCount( 1, $created_term->meta['required_metadata_ids'] );
 		$this->assertEquals( $editorial_metadata_term->term_id, $created_term->meta['required_metadata_ids'][0] );
-
-		CustomStatus::delete_custom_status( $term_id );
-		EditorialMetadata::delete_editorial_metadata_term( $editorial_metadata_term->term_id );
 	}
 
 	public function test_create_custom_status() {
@@ -94,19 +78,19 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$created_term = CustomStatus::get_custom_status_by( 'id', $term_id );
 
 		$this->assertEquals( 'test-status', $created_term->name );
-
-		CustomStatus::delete_custom_status( $term_id );
 	}
 
 	public function test_update_custom_status() {
 		$custom_status_term = CustomStatus::add_custom_status( [
-			'name'               => 'Test Custom Status',
-			'slug'               => 'test-custom-status',
-			'description'        => 'Test Description.',
+			'name'        => 'Test Custom Status',
+			'slug'        => 'test-custom-status',
+			'description' => 'Test Description.',
 		] );
 
 		$term_id        = $custom_status_term->term_id;
-		$editor_user_id = self::create_user( 'test-editor', [ 'role' => 'editor' ] );
+		$editor_user_id = $this->factory()->user->create( [
+			'role' => 'editor',
+		] );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( '/%s/%s/%d', VIP_WORKFLOW_REST_NAMESPACE, 'custom-status', $term_id ) );
 		$request->set_body_params( [
@@ -129,8 +113,6 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertEquals( 'Test Description 2!', $updated_term->description );
 		$this->assertCount( 1, $updated_term->meta['required_user_ids'] );
 		$this->assertEquals( $editor_user_id, $updated_term->meta['required_user_ids'][0] );
-
-		CustomStatus::delete_custom_status( $term_id );
 	}
 
 	public function test_delete_custom_status() {
@@ -193,9 +175,5 @@ class CustomStatusRestApiTest extends RestTestCase {
 		$this->assertEquals( $term3->term_id, $reordered_custom_statuses[0]->term_id );
 		$this->assertEquals( $term1->term_id, $reordered_custom_statuses[1]->term_id );
 		$this->assertEquals( $term2->term_id, $reordered_custom_statuses[2]->term_id );
-
-		CustomStatus::delete_custom_status( $term1->term_id );
-		CustomStatus::delete_custom_status( $term2->term_id );
-		CustomStatus::delete_custom_status( $term3->term_id );
 	}
 }
