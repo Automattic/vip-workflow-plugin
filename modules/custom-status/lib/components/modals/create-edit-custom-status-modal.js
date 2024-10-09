@@ -26,27 +26,9 @@ export default function CreateEditCustomStatusModal( {
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
 	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.meta?.required_users || [] );
-
-	// Taxonomy conflicts arise if this is done server side, so this transient field is only set here.
-	const [ requiredMetadatas, setRequiredMetadatas ] = useState( () => {
-		if (
-			customStatus?.meta?.required_metadata_ids &&
-			customStatus?.meta?.required_metadata_ids.length > 0 &&
-			editorialMetadatas.length > 0
-		) {
-			// Get the required metadata fields from the custom status meta and find the corresponding editorial metadata.
-			const required_metadatas = customStatus.meta.required_metadata_ids.map( metadata => {
-				return editorialMetadatas.find(
-					editorialMetadata => editorialMetadata.term_id === metadata
-				);
-			} );
-
-			// Filter out any undefined values.
-			return required_metadatas.filter( metadata => metadata );
-		}
-
-		return [];
-	} );
+	const [ requiredMetadatas, setRequiredMetadatas ] = useState(
+		customStatus?.meta?.required_metadatas || []
+	);
 
 	const [ metadatas, setMetadatas ] = useState( editorialMetadatas );
 

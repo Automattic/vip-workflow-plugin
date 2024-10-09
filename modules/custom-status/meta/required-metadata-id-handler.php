@@ -8,6 +8,7 @@
 namespace VIPWorkflow\Modules\CustomStatus\Meta;
 
 use VIPWorkflow\Modules\Custom_Status;
+use VIPWorkflow\Modules\EditorialMetadata;
 use VIPWorkflow\VIP_Workflow;
 use VIPWorkflow\Modules\Shared\PHP\MetaCleanupUtilities;
 
@@ -37,6 +38,20 @@ class RequiredMetadataIdHandler {
 		$metadata_ids = MetaCleanupUtilities::get_array( $custom_status->term_id, Custom_Status::METADATA_REQ_EDITORIAL_IDS_KEY );
 
 		$term_meta[ Custom_Status::METADATA_REQ_EDITORIAL_IDS_KEY ] = $metadata_ids;
+
+		// Reset the metadata array to be empty, so that it can be filled with the actual metadata only.
+		$term_meta[ Custom_Status::METADATA_REQ_EDITORIALS_KEY ] = [];
+
+		// This is done this way until the big refactor is in. This should be optimized further.
+		foreach ( $metadata_ids as $metadata_id ) {
+			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_id );
+			if ( $editorial_metadata ) {
+				$term_meta[ Custom_Status::METADATA_REQ_EDITORIALS_KEY ][] = $editorial_metadata;
+			}
+
+			// The else case for removing the IDs is not there, as until the refactor is done this will cause issues.
+			// After the refactor, this should be added in for safety.
+		}
 
 		return $term_meta;
 	}
