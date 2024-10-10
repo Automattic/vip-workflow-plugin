@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Plugin Name: WordPress VIP Workflow
  * Plugin URI: https://github.com/Automattic/vip-workflow-plugin
@@ -24,13 +24,10 @@ define( 'VIP_WORKFLOW_LOADED', true );
 
 global $wp_version;
 if ( version_compare( phpversion(), '8.1', '<' ) || version_compare( $wp_version, '6.4', '<' ) ) {
-		add_action( 'admin_notices', function () {
-			?>
-		<div class="notice notice-error">
-			<p><?php esc_html_e( 'VIP Workflow requires PHP 8.1+ and WordPress 6.4+.', 'vip-workflow' ); ?></p>
-		</div>
-			<?php
-		}, 10, 0 );
+	wp_admin_notice( esc_html( 'VIP Workflow requires PHP 8.1+ and WordPress 6.4+.', 'vip-workflow' ), [
+		'type' => 'error',
+		'dismissible' => true,
+	] );
 	return;
 }
 
@@ -38,7 +35,6 @@ if ( version_compare( phpversion(), '8.1', '<' ) || version_compare( $wp_version
 define( 'VIP_WORKFLOW_VERSION', '0.4.0' );
 define( 'VIP_WORKFLOW_ROOT', __DIR__ );
 define( 'VIP_WORKFLOW_URL', plugins_url( '/', __FILE__ ) );
-define( 'VIP_WORKFLOW_SETTINGS_PAGE', add_query_arg( 'page', 'vw-settings', get_admin_url( null, 'admin.php' ) ) );
 define( 'VIP_WORKFLOW_REST_NAMESPACE', 'vip-workflow/v1' );
 
 

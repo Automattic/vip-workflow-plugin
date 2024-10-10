@@ -26,9 +26,22 @@ export default function CreateEditCustomStatusModal( {
 	const [ name, setName ] = useState( customStatus?.name || '' );
 	const [ description, setDescription ] = useState( customStatus?.description || '' );
 	const [ requiredUsers, setRequiredUsers ] = useState( customStatus?.meta?.required_users || [] );
-	const [ requiredMetadatas, setRequiredMetadatas ] = useState(
-		customStatus?.meta?.required_metadatas || []
-	);
+	const [requiredMetadatas, setRequiredMetadatas] = useState(() => {
+		if (
+			customStatus?.meta?.required_metadata_ids &&
+			customStatus?.meta?.required_metadata_ids.length > 0 &&
+			editorialMetadatas.length > 0
+		) {
+			// Get the required metadata fields from the custom status meta and find the corresponding editorial metadata.
+			return customStatus.meta.required_metadata_ids.map(metadataId => {
+				return editorialMetadatas.find(
+					editorialMetadata => editorialMetadata.term_id === metadataId
+				);
+			}).filter(metadata => metadata);
+		}
+
+		return [];
+	} );
 
 	const [ metadatas, setMetadatas ] = useState( editorialMetadatas );
 

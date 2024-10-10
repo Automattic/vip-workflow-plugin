@@ -25,7 +25,6 @@ $message_slug = isset( $_REQUEST['message'] ) ? sanitize_title( $_REQUEST['messa
 				wp_admin_notice( esc_html( $messages[ $message_slug ] ), [
 					'type' => 'success',
 					'dismissible' => true,
-					'additional_classes' => [ 'inline', 'notice-alt' ],
 				] );
 				?>
 			<?php } ?>
