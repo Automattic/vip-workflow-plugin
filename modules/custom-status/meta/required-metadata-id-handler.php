@@ -38,16 +38,6 @@ class RequiredMetadataIdHandler {
 
 		$term_meta[ CustomStatus::METADATA_REQ_EDITORIAL_IDS_KEY ] = $metadata_ids;
 
-		// Reset the metadata array to be empty, so that it can be filled with the actual metadata only.
-		$term_meta[ CustomStatus::METADATA_REQ_EDITORIALS_KEY ] = [];
-
-		foreach ( $metadata_ids as $metadata_id ) {
-			$editorial_metadata = EditorialMetadata::get_editorial_metadata_term_by( 'id', $metadata_id );
-			if ( $editorial_metadata ) {
-				$term_meta[ CustomStatus::METADATA_REQ_EDITORIALS_KEY ][] = $editorial_metadata;
-			}
-		}
-
 		return $term_meta;
 	}
 

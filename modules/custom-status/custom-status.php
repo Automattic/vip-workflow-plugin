@@ -38,8 +38,6 @@ class CustomStatus {
 	const METADATA_REQ_USER_IDS_KEY = 'required_user_ids';
 	const METADATA_REQ_USERS_KEY = 'required_users';
 
-	private static $custom_statuses_cache = [];
-
 	public static function init(): void {
 		// Register the taxonomy we use with WordPress core, and ensure it's registered after editorial metadata
 		add_action( 'init', [ __CLASS__, 'register_custom_status_taxonomy' ] );
@@ -210,7 +208,7 @@ class CustomStatus {
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'custom_statuses'    => self::modify_custom_statuses_with_editorial_metadata(),
+				'custom_statuses'    => self::get_custom_statuses(),
 				'editorial_metadatas' => EditorialMetadata::get_editorial_metadata_terms(),
 				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
 				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
@@ -547,9 +545,6 @@ class CustomStatus {
 			return $inserted_term;
 		}
 
-		// Reset our internal object cache
-		self::$custom_statuses_cache = [];
-
 		$term_id = $inserted_term['term_id'];
 
 		$position = $args[ self::METADATA_POSITION_KEY ];
@@ -592,9 +587,6 @@ class CustomStatus {
 		} else if ( ! $old_status ) {
 			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
 		}
-
-		// Reset our internal object cache
-		self::$custom_statuses_cache = [];
 
 		// If the name was changed, we need to change the slug unless its banned from slug updates
 		if ( isset( $args['name'] ) && $args['name'] !== $old_status->name && ! self::is_status_banned_from_slug_changes( $old_status->slug ) ) {
@@ -652,9 +644,6 @@ class CustomStatus {
 
 		$updated_term = wp_update_term( $status_id, self::TAXONOMY_KEY, $term_fields_to_update );
 
-		// Reset status cache again, as reassign_post_status() will recache prior statuses
-		self::$custom_statuses_cache = [];
-
 		if ( is_wp_error( $updated_term ) ) {
 			return $updated_term;
 		}
@@ -686,9 +675,6 @@ class CustomStatus {
 			return new WP_Error( 'restricted', sprintf( __( 'Restricted status (%s) cannot be deleted.', 'vip-workflow' ), $old_status->name ) );
 		}
 
-		// Reset our internal object cache
-		self::$custom_statuses_cache = [];
-
 		// Get the new status to reassign posts to, which would be the first custom status.
 		// In the event that the first custom status is being deleted, we'll reassign to the second custom status.
 		// Since draft and pending review cannot be deleted, we don't need to worry about ever getting index out of bounds.
@@ -711,9 +697,6 @@ class CustomStatus {
 		if ( ! $result ) {
 			return new WP_Error( 'invalid', __( 'Unable to delete custom status.', 'vip-workflow' ) );
 		}
-
-		// Reset status cache again, as reassign_post_status() will recache prior statuses
-		self::$custom_statuses_cache = [];
 
 		// Re-order the positions after deletion
 		$custom_statuses = self::get_custom_statuses();
@@ -741,11 +724,6 @@ class CustomStatus {
 			return self::get_core_statuses();
 		}
 
-		// Internal object cache for repeat requests
-		if ( ! empty( self::$custom_statuses_cache ) ) {
-			return self::$custom_statuses_cache;
-		}
-
 		$statuses = get_terms( [
 			'taxonomy'   => self::TAXONOMY_KEY,
 			'hide_empty' => false,
@@ -765,9 +743,6 @@ class CustomStatus {
 
 			return $status;
 		}, $statuses );
-
-		// Set the internal object cache
-		self::$custom_statuses_cache = $statuses;
 
 		return $statuses;
 	}
