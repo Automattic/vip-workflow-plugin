@@ -183,6 +183,10 @@ class Telemetry {
 		if ( $new_options['webhook_url'] !== $old_options['webhook_url'] ) {
 			self::record_send_to_webhook_toggle( $new_options['webhook_url'] );
 		}
+
+		if ( $new_options['email_address'] !== $old_options['email_address'] ) {
+			self::record_send_to_email_toggle( $new_options['email_address'] );
+		}
 	}
 
 	/**
@@ -199,7 +203,7 @@ class Telemetry {
 	}
 
 	/**
-	 * Record an event when the send to webhook is toggled
+	 * Record an event when send to webhook is toggled
 	 *
 	 * @param string $webhook_url A string indicating a webhook URL, or an empty string if none is set.
 	 */
@@ -208,6 +212,19 @@ class Telemetry {
 			self::$tracks->record_event( 'send_to_webhook_disabled' );
 		} else {
 			self::$tracks->record_event( 'send_to_webhook_enabled' );
+		}
+	}
+
+	/**
+	 * Record an event when send to email is changed
+	 *
+	 * @param string $email_address A string indicating a webhook URL, or an empty string if none is set.
+	 */
+	protected static function record_send_to_email_toggle( string $email_address ): void {
+		if ( '' === $email_address ) {
+			self::$tracks->record_event( 'send_to_email_disabled' );
+		} else {
+			self::$tracks->record_event( 'send_to_email_enabled' );
 		}
 	}
 }
