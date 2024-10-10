@@ -29,7 +29,7 @@ class Telemetry {
 		add_action( 'vw_update_custom_status', [ __CLASS__, 'record_update_custom_status' ], 10, 2 );
 
 		// Notification events
-		add_action( 'vw_notification_status_change', [ __CLASS__, 'record_notification_sent' ], 10, 1 );
+		add_action( 'vw_notification_status_change', [ __CLASS__, 'record_notification_sent' ], 10, 3 );
 
 		// Settings events
 		add_action( 'vw_upgrade_version', [ __CLASS__, 'record_admin_update' ], 10, 2 );
@@ -125,11 +125,15 @@ class Telemetry {
 	/**
 	 * Record an event when a notification is sent
 	 *
-	 * @param int $post_id The post ID that was updated.
+	 * @param int $post_id The post ID of the post that was updated.
+	 * @param bool $is_email_scheduled True if an email was scheduled as part of the notification, false otherwise.
+	 * @param bool $is_webhook_scheduled True if a webhook was scheduled as part of the notification, false otherwise.
 	 */
-	public static function record_notification_sent( int $post_id ): void {
+	public static function record_notification_sent( int $post_id, $is_email_scheduled, $is_webhook_scheduled ): void {
 		self::$tracks->record_event( 'notification_sent', [
 			'post_id' => $post_id,
+			'email'   => $is_email_scheduled,
+			'webhook' => $is_webhook_scheduled,
 		] );
 	}
 
