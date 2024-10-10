@@ -681,7 +681,7 @@ class CustomStatus {
 
 		$old_status_slug = $old_status->slug;
 
-		if ( self::is_restricted_status( $old_status_slug ) && ! self::is_status_banned_from_slug_changes( $old_status_slug ) ) {
+		if ( self::is_restricted_status( $old_status_slug ) || self::is_status_banned_from_slug_changes( $old_status_slug ) ) {
 			// translators: %s: Post status, like "Draft"
 			return new WP_Error( 'restricted', sprintf( __( 'Restricted status (%s) cannot be deleted.', 'vip-workflow' ), $old_status->name ) );
 		}
