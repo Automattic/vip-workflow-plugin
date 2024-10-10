@@ -158,18 +158,18 @@ class Telemetry {
 			self::record_publish_guard_toggle( $new_options['publish_guard'] );
 		}
 
-		if ( $new_options['send_to_webhook'] !== $old_options['send_to_webhook'] ) {
-			self::record_send_to_webhook_toggle( $new_options['send_to_webhook'] );
+		if ( $new_options['webhook_url'] !== $old_options['webhook_url'] ) {
+			self::record_send_to_webhook_toggle( $new_options['webhook_url'] );
 		}
 	}
 
 	/**
 	 * Record an event when the publish guard is toggled
 	 *
-	 * @param bool $enabled Whether the publish guard is enabled
+	 * @param string $publish_guard_value Either 'on' or 'off'.
 	 */
-	protected static function record_publish_guard_toggle( bool $enabled ): void {
-		if ( $enabled ) {
+	protected static function record_publish_guard_toggle( string $publish_guard_value ): void {
+		if ( 'on' === $publish_guard_value ) {
 			self::$tracks->record_event( 'publish_guard_enabled' );
 		} else {
 			self::$tracks->record_event( 'publish_guard_disabled' );
@@ -179,13 +179,13 @@ class Telemetry {
 	/**
 	 * Record an event when the send to webhook is toggled
 	 *
-	 * @param bool $enabled Whether the send to webhook is enabled
+	 * @param string $webhook_url A string indicating a webhook URL, or an empty string if none is set.
 	 */
-	protected static function record_send_to_webhook_toggle( bool $enabled ): void {
-		if ( $enabled ) {
-			self::$tracks->record_event( 'send_to_webhook_enabled' );
-		} else {
+	protected static function record_send_to_webhook_toggle( string $webhook_url ): void {
+		if ( '' === $webhook_url ) {
 			self::$tracks->record_event( 'send_to_webhook_disabled' );
+		} else {
+			self::$tracks->record_event( 'send_to_webhook_enabled' );
 		}
 	}
 }
