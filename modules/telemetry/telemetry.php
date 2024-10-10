@@ -47,10 +47,20 @@ class Telemetry {
 	 */
 	public static function record_custom_status_change( string $new_status, string $old_status, WP_Post $post ): void {
 		if ( ! in_array( $post->post_type, HelperUtilities::get_supported_post_types() ) ) {
+			// This isn't a supported post type
+			return;
+		} elseif ( $old_status === $new_status ) {
+			// The status hasn't changed
+			return;
+		} elseif ( in_array( $new_status, [ 'inherit', 'auto-draft' ] ) ) {
+			// The status hasn't changed, or it moved into an auto-generated status
 			return;
 		}
 
-		if ( in_array( $new_status, [ $old_status, 'inherit', 'auto-draft', 'publish' ] ) ) {
+		$status_slugs = wp_list_pluck( CustomStatus::get_custom_statuses(), 'slug' );
+
+		if ( ! in_array( $new_status, $status_slugs, true ) && ! in_array( $old_status, $status_slugs, true ) ) {
+			// The status isn't moving to or from a custom status
 			return;
 		}
 
