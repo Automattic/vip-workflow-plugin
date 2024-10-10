@@ -123,7 +123,7 @@ class Telemetry {
 	 * @param string $previous_version The previous version
 	 * @param string $new_version The new version
 	 */
-	public function record_admin_update( string $previous_version, string $new_version ): void {
+	public static function record_admin_update( string $previous_version, string $new_version ): void {
 		$custom_statuses      = CustomStatus::get_custom_statuses();
 		$supported_post_types = HelperUtilities::get_supported_post_types();
 
@@ -153,13 +153,13 @@ class Telemetry {
 	 * @param array $new_options The new options
 	 * @param array $old_options The old options
 	 */
-	public function record_settings_update( array $new_options, array $old_options ): void {
+	public static function record_settings_update( array $new_options, array $old_options ): void {
 		if ( $new_options['publish_guard'] !== $old_options['publish_guard'] ) {
-			$this->record_publish_guard_toggle( $new_options['publish_guard'] );
+			self::record_publish_guard_toggle( $new_options['publish_guard'] );
 		}
 
 		if ( $new_options['send_to_webhook'] !== $old_options['send_to_webhook'] ) {
-			$this->record_send_to_webhook_toggle( $new_options['send_to_webhook'] );
+			self::record_send_to_webhook_toggle( $new_options['send_to_webhook'] );
 		}
 	}
 
@@ -168,7 +168,7 @@ class Telemetry {
 	 *
 	 * @param bool $enabled Whether the publish guard is enabled
 	 */
-	protected function record_publish_guard_toggle( bool $enabled ): void {
+	protected static function record_publish_guard_toggle( bool $enabled ): void {
 		if ( $enabled ) {
 			self::$tracks->record_event( 'publish_guard_enabled' );
 		} else {
@@ -181,7 +181,7 @@ class Telemetry {
 	 *
 	 * @param bool $enabled Whether the send to webhook is enabled
 	 */
-	protected function record_send_to_webhook_toggle( bool $enabled ): void {
+	protected static function record_send_to_webhook_toggle( bool $enabled ): void {
 		if ( $enabled ) {
 			self::$tracks->record_event( 'send_to_webhook_enabled' );
 		} else {
