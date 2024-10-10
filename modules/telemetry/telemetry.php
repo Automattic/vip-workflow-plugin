@@ -6,6 +6,7 @@ use Automattic\VIP\Telemetry\Tracks;
 use VIPWorkflow\Modules\CustomStatus;
 use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 use WP_Post;
+use WP_Term;
 
 class Telemetry {
 	/**
@@ -92,13 +93,20 @@ class Telemetry {
 	/**
 	 * Record an event when a custom status is updated
 	 *
-	 * @param int $term_id The custom status term ID
-	 * @param string $slug The status slug
+	 * @param WP_Term $updated_status The updated status WP_Term object.
+	 * @param array $update_args The arguments used to update the status.
 	 */
-	public static function record_update_custom_status( int $status_id, string $slug ): void {
+	public static function record_update_custom_status( WP_Term $updated_status, array $update_args ): void {
+		$is_position_update = 1 === count( $update_args ) && isset( $update_args['position'] );
+		if ( $is_position_update ) {
+			// Ignore position changes, as they fire for every custom status when statuses are reordered
+			return;
+		}
+
 		self::$tracks->record_event( 'custom_status_changed', [
-			'status_id' => $status_id,
-			'slug'      => $slug,
+			'term_id' => $updated_status->term_id,
+			'name'    => $updated_status->name,
+			'slug'    => $updated_status->slug,
 		] );
 	}
 

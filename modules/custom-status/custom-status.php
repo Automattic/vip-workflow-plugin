@@ -656,19 +656,17 @@ class CustomStatus {
 			return $updated_term;
 		}
 
-		$slug = isset( $args['slug'] ) ? $args['slug'] : $old_status->slug;
+		$updated_status = self::get_custom_status_by( 'id', $status_id );
 
 		/**
 		 * Fires after a custom status is updated in the database.
 		 *
-		 * @param int $term_id The ID of the status being updated
-		 * @param string $slug The slug of the status being updated
+		 * @param WP_Term $updated_status The updated status WP_Term object.
+		 * @param array $update_args The arguments used to update the status.
 		 */
-		do_action( 'vw_update_custom_status', $status_id, $slug );
+		do_action( 'vw_update_custom_status', $updated_status, $args );
 
-		$status_result = self::get_custom_status_by( 'id', $status_id );
-
-		return $status_result;
+		return $updated_status;
 	}
 
 	/**
