@@ -209,8 +209,8 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the status.' );
 		}
 
-		// Check to make sure the name is not restricted
-		if ( CustomStatus::is_restricted_status( strtolower( $status_name ) ) ) {
+		// Check to make sure the slug is not restricted
+		if ( CustomStatus::is_restricted_status( $status_slug ) || CustomStatus::is_status_banned_from_slug_changes( $status_slug ) ) {
 			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.' );
 		}
 
@@ -219,11 +219,15 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Status name is too long. Please choose a name that is 20 characters or less.' );
 		}
 
-		// Check to make sure the status doesn't already exist as another term because otherwise we'd get a fatal error
-		$term_exists = term_exists( $status_slug, CustomStatus::TAXONOMY_KEY );
+		// Check to make sure the status doesn't already exist with the same name or slug
+		$custom_status_by_slug = CustomStatus::get_custom_status_by( 'slug', $status_slug, false );
+		if ( $custom_status_by_slug ) {
+			return new WP_Error( 'invalid', 'Status already exists, please choose another name.' );
+		}
 
-		if ( $term_exists ) {
-			return new WP_Error( 'invalid', 'Status name conflicts with existing term. Please choose another.' );
+		$custom_status_by_name = CustomStatus::get_custom_status_by( 'name', $status_name, false );
+		if ( $custom_status_by_name ) {
+			return new WP_Error( 'invalid', 'Status already exists, please choose another name.' );
 		}
 
 		$args = [
@@ -258,8 +262,8 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the status.' );
 		}
 
-		// Check to make sure the name is not restricted
-		if ( CustomStatus::is_restricted_status( strtolower( $status_name ) ) ) {
+		// Check to make sure the slug is not restricted
+		if ( CustomStatus::is_restricted_status( $status_slug ) ) {
 			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.' );
 		}
 
@@ -268,20 +272,27 @@ class CustomStatusEndpoint {
 			return new WP_Error( 'invalid', 'Status name is too long. Please choose a name that is 20 characters or less.' );
 		}
 
-		// Check to make sure the status doesn't already exist
-		$custom_status_by_id   = CustomStatus::get_custom_status_by( 'id', $term_id );
-		$custom_status_by_slug = CustomStatus::get_custom_status_by( 'slug', $status_slug );
+		$custom_status_by_id   = CustomStatus::get_custom_status_by( 'id', $term_id, false );
 
-		if ( $custom_status_by_slug && $custom_status_by_id && $custom_status_by_id->slug !== $status_slug ) {
+		// Not likely as we have a validate check for the rest endpoint already, but just in case
+		if ( ! $custom_status_by_id ) {
+			return new WP_Error( 'invalid', 'Status does not exist.' );
+		}
+
+		// If the status is banned from updates, ensure that the slug is the same as the existing one.
+		if ( CustomStatus::is_status_banned_from_slug_changes( $custom_status_by_id->slug ) ) {
+			$status_slug = $custom_status_by_id->slug;
+		}
+
+		// Check to make sure the status doesn't already exist with the same name or slug
+		$custom_status_by_slug = CustomStatus::get_custom_status_by( 'slug', $status_slug, false );
+		if ( $custom_status_by_slug && $custom_status_by_slug->term_id !== $custom_status_by_id->term_id ) {
 			return new WP_Error( 'invalid', 'Status already exists. Please choose another name.' );
 		}
 
-		// Check to make sure the status doesn't already exist as another term because otherwise we'd get a fatal error
-		$term_exists = term_exists( $status_slug, CustomStatus::TAXONOMY_KEY );
-
-		// term_id from term_exists is a string, while term_id is an integer so not using strict comparison
-		if ( $term_exists && isset( $term_exists['term_id'] ) && $term_exists['term_id'] != $term_id ) {
-			return new WP_Error( 'invalid', 'Status name conflicts with existing term. Please choose another.' );
+		$custom_status_by_name = CustomStatus::get_custom_status_by( 'name', $status_name, false );
+		if ( $custom_status_by_name && $custom_status_by_name->term_id !== $custom_status_by_id->term_id ) {
+			return new WP_Error( 'invalid', 'Status already exists. Please choose another name.' );
 		}
 
 		// get status_name & status_description
@@ -307,7 +318,7 @@ class CustomStatusEndpoint {
 	public static function handle_delete_status( WP_REST_Request $request ) {
 		$term_id = $request->get_param( 'id' );
 
-		// Check to make sure the status exists
+		// Not likely as we have a validate check for the rest endpoint already, but just in case
 		$custom_status_by_id = CustomStatus::get_custom_status_by( 'id', $term_id );
 		if ( ! $custom_status_by_id ) {
 			return new WP_Error( 'invalid', 'Status does not exist.' );

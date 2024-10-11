@@ -101,6 +101,14 @@ class CustomStatus {
 	 * Also unregisters pending, in case the user doesn't want them.
 	 */
 	public static function register_custom_statuses(): void {
+		global $wp_post_statuses;
+
+		// This will ensure that if the names of the pending and draft statuses are changed, they will
+		// be registered as the new names, rather than the old ones.
+		// They cannot be deleted, so this is only for that.
+		unset( $wp_post_statuses['draft'] );
+		unset( $wp_post_statuses['pending'] );
+
 		$custom_statuses = self::get_custom_statuses();
 
 		// Unfortunately, register_post_status() doesn't accept a
@@ -510,6 +518,16 @@ class CustomStatus {
 	 * @return object|WP_Error $inserted_term The newly inserted term object or a WP_Error object
 	 */
 	public static function add_custom_status( array $args ): WP_Term|WP_Error {
+		$term_to_save = [
+			'slug'        => $args['slug'] ?? sanitize_title( $args['name'] ),
+			'description' => $args['description'] ?? '',
+		];
+
+		// Check to make sure the slug is not restricted
+		if ( self::is_restricted_status( $term_to_save['slug'] ) ) {
+			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.' );
+		}
+
 		if ( ! isset( $args['position'] ) ) {
 			// get the existing statuses, ordered by position
 			$custom_statuses = self::get_custom_statuses();
@@ -520,11 +538,6 @@ class CustomStatus {
 			// set the new status position to be one more than the last status
 			$args['position'] = $last_position + 1;
 		}
-
-		$term_to_save = [
-			'slug'        => $args['slug'] ?? sanitize_title( $args['name'] ),
-			'description' => $args['description'] ?? '',
-		];
 
 		$term_name = $args['name'];
 
@@ -592,24 +605,23 @@ class CustomStatus {
 		// Reset our internal object cache
 		self::$custom_statuses_cache = [];
 
-		// Prevent user from changing draft name or slug
-		if ( self::is_restricted_status( $old_status->slug )
-		&& (
-			( isset( $args['name'] ) && $args['name'] !== $old_status->name )
-			||
-			( isset( $args['slug'] ) && $args['slug'] !== $old_status->slug )
-		) ) {
-			// translators: %s: Post status, like "Draft"
-			return new WP_Error( 'restricted', sprintf( __( 'Changing the name and slug of a restricted status (%s) is not allowed.', 'vip-workflow' ), $old_status->name ) );
-		}
-
-		// If the name was changed, we need to change the slug
-		if ( isset( $args['name'] ) && $args['name'] != $old_status->name ) {
+		// If the name was changed, we need to change the slug unless its banned from slug updates
+		if ( isset( $args['name'] ) && $args['name'] !== $old_status->name && ! self::is_status_banned_from_slug_changes( $old_status->slug ) ) {
 			$args['slug'] = sanitize_title( $args['name'] );
 		}
 
-		// Reassign posts to new status slug if the slug changed and isn't restricted
-		if ( isset( $args['slug'] ) && $args['slug'] != $old_status->slug && ! self::is_restricted_status( $old_status->slug ) ) {
+		// Check to make sure the slug is not restricted
+		if ( isset( $args['slug'] ) && self::is_restricted_status( $args['slug'] ) ) {
+			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.' );
+		}
+
+		// If the status is banned from updates, we shouldn't allow the user to change the slug
+		if ( self::is_status_banned_from_slug_changes( $old_status->slug ) && isset( $args['slug'] ) ) {
+			unset( $args['slug'] );
+		}
+
+		// Reassign posts to new status slug if the slug changed
+		if ( isset( $args['slug'] ) && $args['slug'] != $old_status->slug ) {
 			$new_status        = $args['slug'];
 			$reassigned_result = self::reassign_post_status( $old_status->slug, $new_status );
 			// If the reassignment failed, return the error
@@ -686,7 +698,7 @@ class CustomStatus {
 
 		$old_status_slug = $old_status->slug;
 
-		if ( self::is_restricted_status( $old_status_slug ) ) {
+		if ( self::is_restricted_status( $old_status_slug ) || self::is_status_banned_from_slug_changes( $old_status_slug ) ) {
 			// translators: %s: Post status, like "Draft"
 			return new WP_Error( 'restricted', sprintf( __( 'Restricted status (%s) cannot be deleted.', 'vip-workflow' ), $old_status->name ) );
 		}
@@ -790,9 +802,10 @@ class CustomStatus {
 	 *
 	 * @param string $field The field to search by
 	 * @param int|string $value The value to search for
+	 * @param bool $include_metadata Whether to include the metadata in the returned status. Useful to avoid unnecessary queries, when just an existence check is needed.
 	 * @return WP_Term|false $status The object for the matching status
 	 */
-	public static function get_custom_status_by( string $field, int|string $value ): WP_Term|false {
+	public static function get_custom_status_by( string $field, int|string $value, $include_metadata = true ): WP_Term|false {
 		// We only support id, slug and name for lookup.
 		if ( ! in_array( $field, [ 'id', 'slug', 'name' ] ) ) {
 			return false;
@@ -808,7 +821,7 @@ class CustomStatus {
 
 		if ( is_wp_error( $custom_status ) || ! $custom_status ) {
 			$custom_status = false;
-		} else {
+		} elseif ( $include_metadata ) {
 			$term_meta           = apply_filters( 'vw_register_custom_status_meta', [], $custom_status );
 			$custom_status->meta = $term_meta;
 		}
@@ -925,31 +938,29 @@ class CustomStatus {
 	}
 
 	/**
-	 * Determines whether the slug indicated belongs to a restricted status or not
+	 * Determines whether the slug indicated belongs to a restricted status or not.
+	 *
+	 * It's restricted from changes, and these statuses are not allowed to be created at all.
 	 *
 	 * @param string $slug Slug of the status
 	 * @return bool $restricted True if restricted, false if not
 	 */
 	public static function is_restricted_status( string $slug ): bool {
+		$restricted_statuses = [ 'publish', 'private', 'future', 'new', 'inherit', 'auto-draft', 'trash' ];
 
-		switch ( $slug ) {
-			case 'draft':
-			case 'pending':
-			case 'publish':
-			case 'private':
-			case 'future':
-			case 'new':
-			case 'inherit':
-			case 'auto-draft':
-			case 'trash':
-				$restricted = true;
-				break;
+		return in_array( $slug, $restricted_statuses, true );
+	}
 
-			default:
-				$restricted = false;
-				break;
-		}
-		return $restricted;
+	/**
+	 * Determines whether the slug indicated belongs to a status that is banned from updates to its slug.
+	 *
+	 * @param string $slug
+	 * @return boolean $banned True if banned, false if not
+	 */
+	public static function is_status_banned_from_slug_changes( string $slug ): bool {
+		$banned_statuses = [ 'draft', 'pending' ];
+
+		return in_array( $slug, $banned_statuses, true );
 	}
 
 	/**
