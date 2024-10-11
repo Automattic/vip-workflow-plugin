@@ -1,11 +1,16 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import apiFetch from '@wordpress/api-fetch';
-import { Button, Flex, __experimentalHeading as Heading, Tooltip } from '@wordpress/components';
+import {
+	Button,
+	__experimentalConfirmDialog as ConfirmDialog,
+	Flex,
+	__experimentalHeading as Heading,
+	Tooltip,
+} from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import ErrorNotice from '../../../shared/js/components/error-notice';
-import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
 import DraggableCustomStatus from './draggable-custom-status';
 import CreateEditCustomStatusModal from './modals/create-edit-custom-status-modal';
@@ -71,14 +76,25 @@ export default function WorkflowManager( { customStatuses, editorialMetadatas } 
 	};
 
 	const deleteModal = (
-		<ConfirmDeleteModal
-			confirmationMessage={
-				'Any existing posts with this status will be reassigned to the first status.'
-			}
-			name={ status?.name }
+		<ConfirmDialog
+			onConfirm={ handleDelete }
 			onCancel={ () => setIsConfirmingDelete( false ) }
-			onConfirmDelete={ handleDelete }
-		/>
+			isOpen={ isConfirmingDelete }
+			confirmButtonText={ __( 'Proceed with Deletion', 'vip-workflow' ) }
+		>
+			<p>
+				{ sprintf(
+					__(
+						'Are you sure you want to delete "%1$s"? Any existing posts with this status will be reassigned to the first status.',
+						'vip-workflow'
+					),
+					status?.name
+				) }
+			</p>
+			<strong style={ { display: 'block', marginTop: '1rem' } }>
+				{ __( 'This action can not be undone.', 'vip-workflow' ) }
+			</strong>
+		</ConfirmDialog>
 	);
 
 	const createEditModal = (
@@ -213,7 +229,7 @@ export default function WorkflowManager( { customStatuses, editorialMetadatas } 
 				</Flex>
 			</div>
 
-			{ isConfirmingDelete && deleteModal }
+			{ deleteModal }
 			{ isCreateEditModalVisible && createEditModal }
 		</>
 	);
