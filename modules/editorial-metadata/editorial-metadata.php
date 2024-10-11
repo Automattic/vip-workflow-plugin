@@ -343,7 +343,7 @@ class EditorialMetadata {
 		if ( is_wp_error( $old_term ) ) {
 			return $old_term;
 		} else if ( ! $old_term ) {
-			return new WP_Error( 'invalid', __( "Editorial metadata doesn't exist.", 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( "Editorial metadata doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
 
 		$term_fields_to_update = [
@@ -376,7 +376,7 @@ class EditorialMetadata {
 		if ( is_wp_error( $term ) ) {
 			return $term;
 		} else if ( ! $term ) {
-			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
 
 		// Delete the post meta for the term

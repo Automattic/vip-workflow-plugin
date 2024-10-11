@@ -139,19 +139,19 @@ class EditorialMetadataEndpoint {
 
 		// Check that the name isn't numeric
 		if ( is_numeric( $editorial_metadata_name ) ) {
-			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the editorial metadata.' );
+			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the editorial metadata.', array( 'status' => 400 ) );
 		}
 
 		// Check to make sure the name isn't too long
 		if ( strlen( $editorial_metadata_name ) > 200 ) {
-			return new WP_Error( 'invalid', 'Editorial metadata name is too long. Please choose a name that is 200 characters or less.' );
+			return new WP_Error( 'invalid', 'Editorial metadata name is too long. Please choose a name that is 200 characters or less.', array( 'status' => 400 ) );
 		}
 
 		// Check to make sure the editorial metadata doesn't already exist as another term because otherwise we'd get a fatal error
 		$term_exists = term_exists( $editorial_metadata_slug, EditorialMetadata::METADATA_TAXONOMY );
 
 		if ( $term_exists ) {
-			return new WP_Error( 'invalid', 'Editorial metadata name conflicts with existing term. Please choose another.' );
+			return new WP_Error( 'invalid', 'Editorial metadata name conflicts with existing term. Please choose another.', array( 'status' => 400 ) );
 		}
 
 		$args = [
@@ -179,12 +179,12 @@ class EditorialMetadataEndpoint {
 
 		// Check that the name isn't numeric
 		if ( is_numeric( $editorial_metadata_name ) ) {
-			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the editorial metadata.' );
+			return new WP_Error( 'invalid', 'Please enter a valid, non-numeric name for the editorial metadata.', array( 'status' => 400 ) );
 		}
 
 		// Check to make sure the name isn't too long
 		if ( strlen( $editorial_metadata_name ) > 200 ) {
-			return new WP_Error( 'invalid', 'Editorial metadata name is too long. Please choose a name that is 200 characters or less.' );
+			return new WP_Error( 'invalid', 'Editorial metadata name is too long. Please choose a name that is 200 characters or less.', array( 'status' => 400 ) );
 		}
 
 		// Check to make sure the editorial metadata doesn't already exist
@@ -193,7 +193,7 @@ class EditorialMetadataEndpoint {
 		$editorial_metadata_by_slug = EditorialMetadata::get_editorial_metadata_term_by( 'slug', $editorial_metadata_slug );
 
 		if ( $editorial_metadata_by_slug && $editorial_metadata_by_id && $editorial_metadata_by_id->slug !== $editorial_metadata_slug ) {
-			return new WP_Error( 'invalid', 'Editorial Metadata already exists. Please choose another name.' );
+			return new WP_Error( 'invalid', 'Editorial Metadata already exists. Please choose another name.', array( 'status' => 400 ) );
 		}
 
 		// Check to make sure the editorial metadata doesn't already exist as another term because otherwise we'd get a fatal error
@@ -201,7 +201,8 @@ class EditorialMetadataEndpoint {
 
 		// term_id from term_exists is a string, while term_id is an integer so not using strict comparison
 		if ( $term_exists && isset( $term_exists['term_id'] ) && $term_exists['term_id'] != $term_id ) {
-			return new WP_Error( 'invalid', 'Editorial metadata name conflicts with existing term. Please choose another.' );
+			return new WP_Error( 'invalid', 'Editorial metadata name conflicts with existing term. Please choose another.', array( 'status' => 400 ) );
+			;
 		}
 
 		// get the necessary editorial metadata fields together
@@ -227,7 +228,7 @@ class EditorialMetadataEndpoint {
 		// Check to make sure the editorial metadata exists
 		$editorial_metadata_by_id = EditorialMetadata::get_editorial_metadata_term_by( 'id', $term_id );
 		if ( ! $editorial_metadata_by_id ) {
-			return new WP_Error( 'invalid', 'Editorial Metadata does not exist.' );
+			return new WP_Error( 'invalid', 'Editorial Metadata does not exist.', array( 'status' => 400 ) );
 		}
 
 		$delete_editorial_metadata_result = EditorialMetadata::delete_editorial_metadata_term( $term_id );

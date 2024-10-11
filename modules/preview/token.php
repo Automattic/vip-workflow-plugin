@@ -25,7 +25,7 @@ class Token {
 	 */
 	public static function generate_token( $post_id, $is_one_time_use, $expiration_seconds ) {
 		if ( ! current_user_can( 'edit_posts', $post_id ) ) {
-			return new WP_Error( 'vip-workflow-token-permission-denied', __( 'You do not have sufficient permissions to access this page.', 'vip-workflow' ) );
+			return new WP_Error( 'vip-workflow-token-permission-denied', __( 'You do not have sufficient permissions to access this page.', 'vip-workflow' ), array( 'status' => 401 ) );
 		}
 
 		$expiration = time() + $expiration_seconds;

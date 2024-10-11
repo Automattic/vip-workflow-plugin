@@ -523,7 +523,7 @@ class CustomStatus {
 
 		// Check to make sure the slug is not restricted
 		if ( self::is_restricted_status( $term_to_save['slug'] ) ) {
-			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.' );
+			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.', array( 'status' => 400 ) );
 		}
 
 		if ( ! isset( $args['position'] ) ) {
@@ -585,7 +585,7 @@ class CustomStatus {
 		if ( is_wp_error( $old_status ) ) {
 			return $old_status;
 		} else if ( ! $old_status ) {
-			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
 
 		// If the name was changed, we need to change the slug unless its banned from slug updates
@@ -595,7 +595,7 @@ class CustomStatus {
 
 		// Check to make sure the slug is not restricted
 		if ( isset( $args['slug'] ) && self::is_restricted_status( $args['slug'] ) ) {
-			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.' );
+			return new WP_Error( 'invalid', 'Status name is restricted. Please chose another name.', array( 'status' => 400 ) );
 		}
 
 		// If the status is banned from updates, we shouldn't allow the user to change the slug
@@ -665,14 +665,14 @@ class CustomStatus {
 		if ( is_wp_error( $old_status ) ) {
 			return $old_status;
 		} else if ( ! $old_status ) {
-			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
 
 		$old_status_slug = $old_status->slug;
 
 		if ( self::is_restricted_status( $old_status_slug ) || self::is_status_banned_from_slug_changes( $old_status_slug ) ) {
 			// translators: %s: Post status, like "Draft"
-			return new WP_Error( 'restricted', sprintf( __( 'Restricted status (%s) cannot be deleted.', 'vip-workflow' ), $old_status->name ) );
+			return new WP_Error( 'restricted', sprintf( __( 'Restricted status (%s) cannot be deleted.', 'vip-workflow' ), $old_status->name ), array( 'status' => 400 ) );
 		}
 
 		// Get the new status to reassign posts to, which would be the first custom status.
