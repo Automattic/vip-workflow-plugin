@@ -240,7 +240,7 @@ class Notifications {
 		 */
 		$message_headers = apply_filters( 'vw_notification_email_headers', $message_headers, $action, $post );
 
-		if ( ! empty( $recipients ) ) {
+		if ( [] !== $recipients ) {
 			wp_schedule_single_event( time(), 'vw_send_scheduled_emails', [ $recipients, $subject, $message, $message_headers ] );
 		}
 	}
@@ -286,7 +286,7 @@ class Notifications {
 	public static function send_to_webhook( string $message, string $message_type, string $timestamp ): bool {
 		$webhook_url = OptionsUtilities::get_options_by_key( 'webhook_url' );
 
-		if ( empty( $webhook_url ) ) {
+		if ( ! is_string( $webhook_url ) || strlen( $webhook_url ) === 0 ) {
 			// This can happen if the webhook URL was cleared after scheduling this notification
 			return false;
 		}
