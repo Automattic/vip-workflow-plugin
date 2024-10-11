@@ -149,15 +149,18 @@ class Telemetry {
 		$custom_statuses      = CustomStatus::get_custom_statuses();
 		$supported_post_types = HelperUtilities::get_supported_post_types();
 
-		$custom_status_posts = 0;
+		$published_post_count     = 0;
+		$custom_status_post_count = 0;
 
 		foreach ( $supported_post_types as $post_type ) {
 			// Get all posts count for this post type
 			$posts_count = wp_count_posts( $post_type );
 
+			$published_post_count += (int) $posts_count->publish;
+
 			foreach ( $custom_statuses as $status ) {
 				if ( isset( $posts_count->{ $status->slug } ) ) {
-					$custom_status_posts += (int) $posts_count->{ $status->slug };
+					$custom_status_post_count += (int) $posts_count->{ $status->slug };
 				}
 			}
 		}
@@ -165,7 +168,8 @@ class Telemetry {
 		self::$tracks->record_event( 'plugin_update', [
 			'previous_version'    => $previous_version,
 			'new_version'         => $new_version,
-			'custom_status_posts' => $custom_status_posts,
+			'published_posts'     => $published_post_count,
+			'custom_status_posts' => $custom_status_post_count,
 		] );
 	}
 
