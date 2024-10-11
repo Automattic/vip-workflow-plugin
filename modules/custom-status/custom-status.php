@@ -549,15 +549,6 @@ class CustomStatus {
 
 		$term_id = $inserted_term['term_id'];
 
-		/**
-		 * Fires after a custom status is added to the database.
-		 *
-		 * @param int $term_id The ID of the custom status.
-		 * @param string $term_name The name of the custom status.
-		 * @param string $slug The slug of the custom status.
-		 */
-		do_action( 'vw_add_custom_status', $term_id, $term_name, $term_to_save['slug'] );
-
 		// Reset our internal object cache
 		self::$custom_statuses_cache = [];
 
@@ -583,6 +574,15 @@ class CustomStatus {
 		}
 
 		$term_result = self::get_custom_status_by( 'id', $term_id );
+
+		if ( false !== $term_result ) {
+			/**
+			 * Fires after a custom status is added to the database.
+			 *
+			 * @param WP_Term $term The custom status term object.
+			 */
+			do_action( 'vw_add_custom_status', $term_result );
+		}
 
 		return $term_result;
 	}
@@ -670,13 +670,15 @@ class CustomStatus {
 
 		$updated_status = self::get_custom_status_by( 'id', $status_id );
 
-		/**
-		 * Fires after a custom status is updated in the database.
-		 *
-		 * @param WP_Term $updated_status The updated status WP_Term object.
-		 * @param array $update_args The arguments used to update the status.
-		 */
-		do_action( 'vw_update_custom_status', $updated_status, $args );
+		if ( $updated_status ) {
+			/**
+			 * Fires after a custom status is updated in the database.
+			 *
+			 * @param WP_Term $updated_status The updated status WP_Term object.
+			 * @param array $update_args The arguments used to update the status.
+			 */
+			do_action( 'vw_update_custom_status', $updated_status, $args );
+		}
 
 		return $updated_status;
 	}
@@ -733,9 +735,10 @@ class CustomStatus {
 		 * Fires after a custom status is deleted from the database.
 		 *
 		 * @param int $term_id The ID of the status being deleted
+		 * @param string $term_name The name of the status being deleted
 		 * @param string $old_status_slug The slug of the status being deleted
 		 */
-		do_action( 'vw_delete_custom_status', $status_id, $old_status_slug );
+		do_action( 'vw_delete_custom_status', $status_id, $old_status->name, $old_status_slug );
 
 		// Reset status cache again, as reassign_post_status() will recache prior statuses
 		self::$custom_statuses_cache = [];

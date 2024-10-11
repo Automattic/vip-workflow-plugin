@@ -25,7 +25,7 @@ class Telemetry {
 		// Custom Status events
 		add_action( 'transition_post_status', [ __CLASS__, 'record_custom_status_change' ], 10, 3 );
 		add_action( 'vw_add_custom_status', [ __CLASS__, 'record_add_custom_status' ], 10, 3 );
-		add_action( 'vw_delete_custom_status', [ __CLASS__, 'record_delete_custom_status' ], 10, 2 );
+		add_action( 'vw_delete_custom_status', [ __CLASS__, 'record_delete_custom_status' ], 10, 3 );
 		add_action( 'vw_update_custom_status', [ __CLASS__, 'record_update_custom_status' ], 10, 2 );
 
 		// Notification events
@@ -74,16 +74,19 @@ class Telemetry {
 	/**
 	 * Record an event when a custom status is created
 	 *
-	 * @param int $term_id The term's ID
-	 * @param string $term_name The term's name
-	 * @param string $slug The term's slug
+	 * @param WP_Term $term The custom status term object
 	 */
 
-	public static function record_add_custom_status( int $term_id, string $term_name, string $term_slug ): void {
+	public static function record_add_custom_status( WP_Term $term ): void {
+		$required_user_count               = count( $updated_status->meta[ CustomStatus::METADATA_REQ_USER_IDS_KEY ] ?? [] );
+		$required_editorial_metadata_count = count( $updated_status->meta[ CustomStatus::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [] );
+
 		self::$tracks->record_event( 'custom_status_created', [
-			'term_id' => $term_id,
-			'name'    => $term_name,
-			'slug'    => $term_slug,
+			'term_id'        => $term->term_id,
+			'name'           => $term->name,
+			'slug'           => $term->slug,
+			'required_users' => $required_user_count,
+			'required_em'    => $required_editorial_metadata_count,
 		] );
 	}
 
@@ -91,11 +94,13 @@ class Telemetry {
 	 * Record an event when a custom status is deleted
 	 *
 	 * @param int $term_id The custom status term ID
+	 * @param string $term_name The custom status term name
 	 * @param string $slug The status slug
 	 */
-	public static function record_delete_custom_status( int $term_id, string $slug ): void {
+	public static function record_delete_custom_status( int $term_id, string $term_name, string $slug ): void {
 		self::$tracks->record_event( 'custom_status_deleted', [
 			'term_id' => $term_id,
+			'name'    => $term_name,
 			'slug'    => $slug,
 		] );
 	}
@@ -113,10 +118,15 @@ class Telemetry {
 			return;
 		}
 
+		$required_user_count               = count( $updated_status->meta[ CustomStatus::METADATA_REQ_USER_IDS_KEY ] ?? [] );
+		$required_editorial_metadata_count = count( $updated_status->meta[ CustomStatus::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [] );
+
 		self::$tracks->record_event( 'custom_status_changed', [
-			'term_id' => $updated_status->term_id,
-			'name'    => $updated_status->name,
-			'slug'    => $updated_status->slug,
+			'term_id'        => $updated_status->term_id,
+			'name'           => $updated_status->name,
+			'slug'           => $updated_status->slug,
+			'required_users' => $required_user_count,
+			'required_em'    => $required_editorial_metadata_count,
 		] );
 	}
 
