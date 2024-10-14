@@ -39,7 +39,7 @@ class Telemetry {
 		// Editorial Metadata events
 		add_action( 'vw_add_editorial_metadata_field', [ __CLASS__, 'record_add_editorial_metadata_field' ], 10, 1 );
 		add_action( 'vw_update_editorial_metadata_field', [ __CLASS__, 'record_update_editorial_metadata_field' ], 10, 1 );
-		add_action( 'vw_editorial_metadata_term_deleted', [ __CLASS__, 'record_delete_editorial_metadata_field' ], 10, 3 );
+		add_action( 'vw_editorial_metadata_term_deleted', [ __CLASS__, 'record_delete_editorial_metadata_field' ], 10, 4 );
 	}
 
 	// Custom Status events
@@ -75,6 +75,13 @@ class Telemetry {
 			'new_status' => $new_status,
 			'post_id'    => $post->ID,
 		] );
+
+		if ( 'publish' === $new_status ) {
+			self::$tracks->record_event( 'post_custom_status_published', [
+				'post_id'          => $post->ID,
+				'em_fields_filled' => self::get_filled_em_fields_for_post( $post->ID ),
+			] );
+		}
 	}
 
 	/**
@@ -285,13 +292,39 @@ class Telemetry {
 	 * @param int $term_id The editorial metadata field term ID
 	 * @param string $term_name The editorial metadata name
 	 * @param string $slug The editorial metadata slug
+	 * @param string $metadata_type The type of field, e.g. 'date', 'text'
 	 */
-	public static function record_delete_editorial_metadata_field( int $term_id, string $term_name, string $slug ): void {
+	public static function record_delete_editorial_metadata_field( int $term_id, string $term_name, string $slug, string $metadata_type ): void {
 		self::$tracks->record_event( 'em_field_deleted', [
 			'term_id' => $term_id,
 			'name'    => $term_name,
 			'slug'    => $slug,
+			'type'    => $metadata_type,
 		] );
+	}
+
+	// Utility methods
+
+	/**
+	 * Get the number of filled editorial metadata fields for a post
+	 *
+	 * @param int $post_id The post ID
+	 * @return int The number of fields with a value set
+	 */
+	private static function get_filled_em_fields_for_post( int $post_id ): int {
+		$editorial_metadata_terms = EditorialMetadata::get_editorial_metadata_terms();
+		$filled_em_fields         = 0;
+
+		foreach ( $editorial_metadata_terms as $em_term ) {
+			$post_meta_key   = $em_term->meta[ EditorialMetadata::METADATA_POSTMETA_KEY ];
+			$post_meta_value = get_post_meta( $post_id, $post_meta_key, true );
+
+			if ( '' !== $post_meta_value ) {
+				++$filled_em_fields;
+			}
+		}
+
+		return $filled_em_fields;
 	}
 }
 

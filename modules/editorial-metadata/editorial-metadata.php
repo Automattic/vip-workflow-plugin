@@ -398,7 +398,8 @@ class EditorialMetadata {
 		}
 
 		// Delete the post meta for the term
-		$post_meta_key = self::get_postmeta_key( $term->meta[ self::METADATA_TYPE_KEY ], $term_id );
+		$metadata_type = $term->meta[ self::METADATA_TYPE_KEY ];
+		$post_meta_key = self::get_postmeta_key( $metadata_type, $term_id );
 		delete_post_meta_by_key( $post_meta_key );
 
 		delete_term_meta( $term_id, self::METADATA_TYPE_KEY );
@@ -416,8 +417,9 @@ class EditorialMetadata {
 		 * @param int $term_id The ID of the editorial metadata field being deleted
 		 * @param string $term_name The name of the editorial metadata field being deleted
 		 * @param string $term_slug The slug of the editorial metadata field being deleted
+		 * @param string $metadata_type The type of field, e.g. 'date', 'text'
 		 */
-		do_action( 'vw_editorial_metadata_term_deleted', $term_id, $term->name, $term->slug );
+		do_action( 'vw_editorial_metadata_term_deleted', $term_id, $term->name, $term->slug, $metadata_type );
 
 		return $result;
 	}
