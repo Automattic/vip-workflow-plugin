@@ -4,6 +4,7 @@ import {
 	Card,
 	CardFooter,
 	CardHeader,
+	__experimentalConfirmDialog as ConfirmDialog,
 	Flex,
 	FlexItem,
 	__experimentalHeading as Heading,
@@ -13,7 +14,6 @@ import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import ErrorNotice from '../../../shared/js/components/error-notice';
-import ConfirmDeleteModal from '../../../shared/js/components/modals/confirm-delete-modal';
 import SuccessNotice from '../../../shared/js/components/success-notice';
 import CreateEditEditorialMetadataModal from './modals/create-edit-editorial-metadata-modal';
 
@@ -95,12 +95,22 @@ export default function EditorialMetadataManager( {
 	};
 
 	const deleteModal = (
-		<ConfirmDeleteModal
-			confirmationMessage={ '' }
-			name={ eMetadataTerm?.name }
+		<ConfirmDialog
+			onConfirm={ handleDelete }
 			onCancel={ () => setIsConfirmingDelete( false ) }
-			onConfirmDelete={ handleDelete }
-		/>
+			isOpen={ isConfirmingDelete }
+			confirmButtonText={ __( 'Proceed with Deletion', 'vip-workflow' ) }
+		>
+			<p>
+				{ sprintf(
+					__( 'Are you sure you want to delete "%1$s"?', 'vip-workflow' ),
+					eMetadataTerm?.name
+				) }
+			</p>
+			<strong style={ { display: 'block', marginTop: '1rem' } }>
+				{ __( 'This action can not be undone.', 'vip-workflow' ) }
+			</strong>
+		</ConfirmDialog>
 	);
 
 	const createEditModal = (
@@ -182,7 +192,7 @@ export default function EditorialMetadataManager( {
 				</Flex>
 			</Flex>
 
-			{ isConfirmingDelete && deleteModal }
+			{ deleteModal }
 			{ isCreateEditModalVisible && createEditModal }
 		</>
 	);

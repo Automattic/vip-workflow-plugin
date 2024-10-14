@@ -7,7 +7,6 @@
 
 namespace VIPWorkflow\Modules\Shared\PHP;
 
-use VIPWorkflow\Modules\Settings;
 use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
 
 class HelperUtilities {

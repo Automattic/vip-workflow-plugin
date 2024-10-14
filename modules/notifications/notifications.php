@@ -9,7 +9,7 @@ namespace VIPWorkflow\Modules;
 use WP_Post;
 
 use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
-use VIPWorkflow\Modules\Settings;
+use VIPWorkflow\Modules\Shared\PHP\LoggingUtility;
 use VIPWorkflow\Modules\Shared\PHP\OptionsUtilities;
 use function VIPWorkflow\Modules\Shared\PHP\vw_draft_or_post_title;
 
@@ -240,8 +240,7 @@ class Notifications {
 		$response = wp_mail( $recipients, $subject, $message, $message_headers );
 
 		if ( ! $response ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( 'Unable to send notification to email(s) provided.' );
+			LoggingUtility::log_error( 'Unable to send notification to email(s) provided.' );
 		}
 	}
 
@@ -298,8 +297,7 @@ class Notifications {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( 'Unable to send notification to webhook provided.' );
+			LoggingUtility::log_error( 'Unable to send notification to webhook provided.' );
 			return false;
 		}
 
