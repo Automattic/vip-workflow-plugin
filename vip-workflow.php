@@ -24,13 +24,10 @@ define( 'VIP_WORKFLOW_LOADED', true );
 
 global $wp_version;
 if ( version_compare( phpversion(), '8.1', '<' ) || version_compare( $wp_version, '6.4', '<' ) ) {
-		add_action( 'admin_notices', function () {
-			?>
-		<div class="notice notice-error">
-			<p><?php esc_html_e( 'VIP Workflow requires PHP 8.1+ and WordPress 6.4+.', 'vip-workflow' ); ?></p>
-		</div>
-			<?php
-		}, 10, 0 );
+	wp_admin_notice( esc_html( 'VIP Workflow requires PHP 8.1+ and WordPress 6.4+.', 'vip-workflow' ), [
+		'type' => 'error',
+		'dismissible' => true,
+	] );
 	return;
 }
 
@@ -69,6 +66,8 @@ require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/options-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/meta-cleanup-utilities.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/util.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/core-hacks.php';
+require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/log-level-enum.php';
+require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/logging-utility.php';
 
 // Modules - Telemetry
 if ( class_exists( '\Automattic\VIP\Telemetry\Tracks' ) ) {

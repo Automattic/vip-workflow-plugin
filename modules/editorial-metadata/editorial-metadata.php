@@ -11,7 +11,6 @@ require_once __DIR__ . '/rest/editorial-metadata-endpoint.php';
 use VIPWorkflow\Modules\EditorialMetadata\REST\EditorialMetadataEndpoint;
 use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 use VIPWorkflow\Modules\Shared\PHP\InstallUtilities;
-use VIPWorkflow\VIP_Workflow;
 use WP_Error;
 use WP_Term;
 
@@ -26,8 +25,6 @@ class EditorialMetadata {
 	const SETTINGS_SLUG            = 'vw-editorial-metadata';
 	const METADATA_TYPE_KEY        = 'type';
 	const METADATA_POSTMETA_KEY    = 'postmeta_key';
-
-	private static $editorial_metadata_terms_cache = [];
 
 	public static function init(): void {
 		// Register the taxonomy we use for Editorial Metadata with WordPress core, and ensure its registered before custom status
@@ -211,10 +208,6 @@ class EditorialMetadata {
 	 * @return array $ordered_terms The terms as they should be ordered
 	 */
 	public static function get_editorial_metadata_terms(): array {
-		// Internal object cache for repeat requests
-		if ( ! empty( self::$editorial_metadata_terms_cache ) ) {
-			return self::$editorial_metadata_terms_cache;
-		}
 
 		$terms = get_terms( [
 			'taxonomy'   => self::METADATA_TAXONOMY,
@@ -227,9 +220,6 @@ class EditorialMetadata {
 		}
 
 		$terms = array_map( [ __CLASS__, 'add_metadata_to_term' ], $terms );
-
-		// Set the internal object cache
-		self::$editorial_metadata_terms_cache = $terms;
 
 		return $terms;
 	}
@@ -312,9 +302,6 @@ class EditorialMetadata {
 			return $inserted_term;
 		}
 
-		// Reset the internal object cache
-		self::$editorial_metadata_terms_cache = [];
-
 		$term_id = $inserted_term['term_id'];
 
 		$metadata_type = $args['type'];
@@ -356,11 +343,8 @@ class EditorialMetadata {
 		if ( is_wp_error( $old_term ) ) {
 			return $old_term;
 		} else if ( ! $old_term ) {
-			return new WP_Error( 'invalid', __( "Editorial metadata doesn't exist.", 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( "Editorial metadata doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
-
-		// Reset the internal object cache
-		self::$editorial_metadata_terms_cache = [];
 
 		$term_fields_to_update = [
 			'name'    => isset( $args['name'] ) ? $args['name'] : $old_term->name,
@@ -392,7 +376,7 @@ class EditorialMetadata {
 		if ( is_wp_error( $term ) ) {
 			return $term;
 		} else if ( ! $term ) {
-			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ) );
+			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
 
 		// Delete the post meta for the term
@@ -409,9 +393,6 @@ class EditorialMetadata {
 		}
 
 		do_action( 'vw_editorial_metadata_term_deleted', $term_id );
-
-		// Reset the internal object cache
-		self::$editorial_metadata_terms_cache = [];
 
 		return $result;
 	}
