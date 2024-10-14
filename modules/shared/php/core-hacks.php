@@ -117,8 +117,13 @@ class CoreHacks {
 
 		$post = get_post( get_the_ID() );
 
-		// Only modify if we're using a pre-publish status on a supported custom post type
-		$status_slugs = wp_list_pluck( CustomStatus::get_custom_statuses(), 'slug' );
+		// Optimization: preview_post_link is called for each visible post on the Posts -> All Posts page.
+		// Temporarily cache slugs to avoid calling get_custom_statuses() for each post.
+		static $status_slugs = false;
+		if ( false === $status_slugs ) {
+			$status_slugs = wp_list_pluck( CustomStatus::get_custom_statuses(), 'slug' );
+		}
+
 		if ( ! $post
 		|| ! is_admin()
 		|| 'post.php' != $pagenow
@@ -360,8 +365,14 @@ class CoreHacks {
 	public static function fix_post_row_actions( array $actions, WP_Post $post ): array {
 		global $pagenow;
 
+		// Optimization: fix_post_row_actions is called for each visible post on the Posts -> All Posts page.
+		// Temporarily cache slugs to avoid calling get_custom_statuses() for each post.
+		static $status_slugs = false;
+		if ( false === $status_slugs ) {
+			$status_slugs = wp_list_pluck( CustomStatus::get_custom_statuses(), 'slug' );
+		}
+
 		// Only modify if we're using a pre-publish status on a supported custom post type
-		$status_slugs = wp_list_pluck( CustomStatus::get_custom_statuses(), 'slug' );
 		if ( 'edit.php' != $pagenow
 		|| ! in_array( $post->post_status, $status_slugs )
 		|| ! in_array( $post->post_type, HelperUtilities::get_supported_post_types() ) ) {
