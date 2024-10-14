@@ -15,13 +15,13 @@ class Settings {
 
 	// Its key to centralize these, so we can easily update them in the future
 	const DEFAULT_SETTINGS_OPTIONS = [
-		'post_types'          => [
+		'post_types'    => [
 			'post' => 'on',
 			'page' => 'on',
 		],
-		'publish_guard'       => 'on',
-		'email_address'       => '',
-		'webhook_url'         => '',
+		'publish_guard' => 'on',
+		'email_address' => '',
+		'webhook_url'   => '',
 	];
 
 	/**
@@ -53,7 +53,7 @@ class Settings {
 	 */
 	public static function action_admin_enqueue_scripts(): void {
 		if ( HelperUtilities::is_settings_view_loaded( self::SETTINGS_SLUG ) ) {
-			$asset_file = include VIP_WORKFLOW_ROOT . '/dist/modules/settings/settings.asset.php';
+			$asset_file   = include VIP_WORKFLOW_ROOT . '/dist/modules/settings/settings.asset.php';
 			$dependencies = [ ...$asset_file['dependencies'], 'jquery' ];
 			wp_enqueue_script( 'vip-workflow-settings-js', VIP_WORKFLOW_URL . 'dist/modules/settings/settings.js', $dependencies, $asset_file['version'], true );
 		}
@@ -63,7 +63,7 @@ class Settings {
 	 * Register the settings for the module
 	 */
 	public static function register_settings(): void {
-		$settings_section_id = OptionsUtilities::get_module_options_general_key();
+		$settings_section_id   = OptionsUtilities::get_module_options_general_key();
 		$settings_section_page = OptionsUtilities::get_module_options_key();
 
 		add_settings_section( $settings_section_id, false, '__return_false', $settings_section_page );
@@ -233,9 +233,18 @@ class Settings {
 		$new_options = ( isset( $_POST[ OptionsUtilities::get_module_options_key() ] ) ) ? $_POST[ OptionsUtilities::get_module_options_key() ] : [];
 
 		$new_options = self::settings_validate( $new_options );
+		$old_options = (array) OptionsUtilities::get_module_options( self::SETTINGS_SLUG );
 
 		// Blend the new options with the old options, including any new options that may have been added
 		OptionsUtilities::update_module_options( $new_options );
+
+		/**
+		 * Fires before saving the settings for all modules
+		 *
+		 * @param array $new_options The new options
+		 * @param array $old_options The old options
+		 */
+		do_action( 'vw_save_settings', $new_options, $old_options );
 
 		// Redirect back to the settings page that was submitted without any previous messages
 		$goback = add_query_arg( 'message', 'settings-updated', remove_query_arg( [ 'message' ], wp_get_referer() ) );

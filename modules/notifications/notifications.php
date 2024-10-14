@@ -54,9 +54,9 @@ class Notifications {
 
 			$body = '';
 
-			$post_id    = $post->ID;
-			$post_title = vw_draft_or_post_title( $post_id );
-			$post_type  = $post->post_type;
+			$post_id           = $post->ID;
+			$post_title        = vw_draft_or_post_title( $post_id );
+			$post_type         = $post->post_type;
 			$subject_post_type = ucfirst( $post_type );
 
 			if ( 0 != $current_user->ID ) {
@@ -147,13 +147,36 @@ class Notifications {
 
 			$action = 'status-change';
 
-			self::schedule_emails( $action, $post, $subject, $body );
+			$notification_email = OptionsUtilities::get_options_by_key( 'email_address' );
+			$is_email_scheduled = '' !== $notification_email;
 
-			/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
-			$webhook_format = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
-			$webhook_message   = sprintf( $webhook_format, $current_user_display_name, $post_type, $post_id, $edit_link, $post_title, $old_status, $new_status );
+			if ( $is_email_scheduled ) {
+				$recipients = [ $notification_email ];
+				self::schedule_emails( $recipients, $action, $post, $subject, $body );
+			}
 
-			self::schedule_webhook_notification( $webhook_message, $action, $post->post_modified_gmt );
+			$webhook_url          = OptionsUtilities::get_options_by_key( 'webhook_url' );
+			$is_webhook_scheduled = '' !== $webhook_url;
+
+			if ( $is_webhook_scheduled ) {
+				/* translators: 1: user name, 2: post type, 3: post id, 4: edit link, 5: post title, 6: old status, 7: new status */
+				$webhook_format  = __( '*%1$s* changed the status of *%2$s #%3$s - <%4$s|%5$s>* from *%6$s* to *%7$s*', 'vip-workflow' );
+				$webhook_message = sprintf( $webhook_format, $current_user_display_name, $post_type, $post_id, $edit_link, $post_title, $old_status, $new_status );
+
+				self::schedule_webhook_notification( $webhook_message, $action, $post->post_modified_gmt );
+			}
+
+			// Fire the notification status change action if any notifications were scheduled
+			if ( $is_email_scheduled || $is_webhook_scheduled ) {
+				/**
+				 * Fires after a notification is sent
+				 *
+				 * @param int $post_id The post ID of the post that was updated.
+				 * @param bool $is_email_scheduled True if an email was scheduled as part of the notification, false otherwise.
+				 * @param bool $is_webhook_scheduled True if a webhook was scheduled as part of the notification, false otherwise.
+				 */
+				do_action( 'vw_notification_status_change', $post->ID, $is_email_scheduled, $is_webhook_scheduled );
+			}
 		}
 	}
 
@@ -174,27 +197,21 @@ class Notifications {
 	/**
 	 * Send email notifications
 	 *
+	 * @param array $recipients An array of string email addresses to send to
 	 * @param string $action (status-change)
 	 * @param string $subject Subject of the email
 	 * @param string $message Body of the email
 	 * @param string $message_headers. (optional) Message headers
 	 */
-	public static function schedule_emails( string $action, WP_Post $post, string $subject, string $message, string $message_headers = '' ): void {
-		// Ensure the email address is set from settings.
-		if ( empty( OptionsUtilities::get_options_by_key( 'email_address' ) ) ) {
-			return;
-		}
-
-		$email_recipients = [ OptionsUtilities::get_options_by_key( 'email_address' ) ];
-
+	public static function schedule_emails( array $recipients, string $action, WP_Post $post, string $subject, string $message, string $message_headers = '' ): void {
 		/**
 		 * Filter the email recipients
 		 *
-		 * @param array $email_recipients Array of email recipients
+		 * @param array $recipients Array of email recipients
 		 * @param string $action Action being taken, eg. status-change
 		 * @param WP_Post $post Post object
 		 */
-		$email_recipients = apply_filters( 'vw_notification_email_recipients', $email_recipients, $action, $post );
+		$recipients = apply_filters( 'vw_notification_email_recipients', $recipients, $action, $post );
 
 		/**
 		 * Filter the email subject
@@ -203,7 +220,7 @@ class Notifications {
 		 * @param string $action Action being taken, eg. status-change
 		 *
 		 */
-		$subject       = apply_filters( 'vw_notification_email_subject', $subject, $action, $post );
+		$subject = apply_filters( 'vw_notification_email_subject', $subject, $action, $post );
 
 		/**
 		 * Filter the email message
@@ -212,7 +229,7 @@ class Notifications {
 		 * @param string $action Action being taken, eg. status-change
 		 * @param WP_Post $post Post object
 		 */
-		$message       = apply_filters( 'vw_notification_email_message', $message, $action, $post );
+		$message = apply_filters( 'vw_notification_email_message', $message, $action, $post );
 
 		/**
 		 * Filter the email headers
@@ -223,8 +240,8 @@ class Notifications {
 		 */
 		$message_headers = apply_filters( 'vw_notification_email_headers', $message_headers, $action, $post );
 
-		if ( ! empty( $email_recipients ) ) {
-			wp_schedule_single_event( time(), 'vw_send_scheduled_emails', [ $email_recipients, $subject, $message, $message_headers ] );
+		if ( [] !== $recipients ) {
+			wp_schedule_single_event( time(), 'vw_send_scheduled_emails', [ $recipients, $subject, $message, $message_headers ] );
 		}
 	}
 
@@ -247,16 +264,11 @@ class Notifications {
 	/**
 	 * Schedule a webhook notification
 	 *
-	 * @param string $webhook_message Message to be sent to webhook
+	 * @param string $webhook_url URL to be send the webhook to
 	 * @param string $action Action being taken, eg. status-change
 	 * @param string $timestamp Timestamp of the message, eg. the time at which the post was updated
 	 */
 	public static function schedule_webhook_notification( string $webhook_message, string $action, string $timestamp ): void {
-		// Ensure the webhook URL is set from settings.
-		if ( empty( OptionsUtilities::get_options_by_key( 'webhook_url' ) ) ) {
-			return;
-		}
-
 		$message_type = 'plugin:vip-workflow:' . $action;
 
 		wp_schedule_single_event( time(), 'vw_send_scheduled_webhook', [ $webhook_message, $message_type, $timestamp ] );
@@ -272,6 +284,11 @@ class Notifications {
 	 */
 	public static function send_to_webhook( string $message, string $message_type, string $timestamp ): bool {
 		$webhook_url = OptionsUtilities::get_options_by_key( 'webhook_url' );
+
+		if ( ! is_string( $webhook_url ) || strlen( $webhook_url ) === 0 ) {
+			// This can happen if the webhook URL was cleared after scheduling this notification
+			return false;
+		}
 
 		// Set up the payload
 		$payload = [

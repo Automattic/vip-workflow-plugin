@@ -45,6 +45,14 @@ define( 'VIP_WORKFLOW_REST_NAMESPACE', 'vip-workflow/v1' );
 add_action( 'admin_init', function () {
 	$previous_version = get_option( 'vip_workflow_version' );
 	if ( $previous_version && version_compare( $previous_version, VIP_WORKFLOW_VERSION, '<' ) ) {
+		/**
+		 * Fires when the plugin is upgraded
+		 *
+		 * @param string $previous_version The previous version of the plugin
+		 * @param string $new_version The new version of the plugin
+		 */
+		do_action( 'vw_upgrade_version', $previous_version, VIP_WORKFLOW_VERSION );
+
 		update_option( 'vip_workflow_version', VIP_WORKFLOW_VERSION );
 	} elseif ( ! $previous_version ) {
 		update_option( 'vip_workflow_version', VIP_WORKFLOW_VERSION );
@@ -61,8 +69,16 @@ require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/core-hacks.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/log-level-enum.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/shared/php/logging-utility.php';
 
-// Modules
+// Modules - Telemetry
+if ( class_exists( '\Automattic\VIP\Telemetry\Tracks' ) ) {
+	// Telemetry is only initialized if the Telemetry library is available on VIP's platform
+	require_once VIP_WORKFLOW_ROOT . '/modules/telemetry/telemetry.php';
+}
+
+// Modules - Settings
 require_once VIP_WORKFLOW_ROOT . '/modules/settings/settings.php';
+
+// Other modules
 require_once VIP_WORKFLOW_ROOT . '/modules/custom-status/custom-status.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/editorial-metadata/editorial-metadata.php';
 require_once VIP_WORKFLOW_ROOT . '/modules/notifications/notifications.php';

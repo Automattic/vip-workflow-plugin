@@ -32,11 +32,11 @@ class CustomStatus {
 	const SETTINGS_SLUG = 'vw-custom-status';
 
 	// The metadata keys for the custom status term
-	const METADATA_POSITION_KEY = 'position';
+	const METADATA_POSITION_KEY          = 'position';
 	const METADATA_REQ_EDITORIAL_IDS_KEY = 'required_metadata_ids';
-	const METADATA_REQ_EDITORIALS_KEY = 'required_metadatas';
-	const METADATA_REQ_USER_IDS_KEY = 'required_user_ids';
-	const METADATA_REQ_USERS_KEY = 'required_users';
+	const METADATA_REQ_EDITORIALS_KEY    = 'required_metadatas';
+	const METADATA_REQ_USER_IDS_KEY      = 'required_user_ids';
+	const METADATA_REQ_USERS_KEY         = 'required_users';
 
 	public static function init(): void {
 		// Register the taxonomy we use with WordPress core, and ensure it's registered after editorial metadata
@@ -161,10 +161,10 @@ class CustomStatus {
 					'position'    => 4,
 				],
 				[
-					'name'               => __( 'Pending Review' ),
-					'slug'               => 'pending',
-					'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
-					'position'           => 5,
+					'name'        => __( 'Pending Review' ),
+					'slug'        => 'pending',
+					'description' => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
+					'position'    => 5,
 				],
 			];
 
@@ -208,10 +208,10 @@ class CustomStatus {
 			wp_enqueue_style( 'vip-workflow-custom-status-styles', VIP_WORKFLOW_URL . 'dist/modules/custom-status/custom-status-configure.css', [ 'wp-components' ], $asset_file['version'] );
 
 			wp_localize_script( 'vip-workflow-custom-status-configure', 'VW_CUSTOM_STATUS_CONFIGURE', [
-				'custom_statuses'    => self::get_custom_statuses(),
+				'custom_statuses'     => self::get_custom_statuses(),
 				'editorial_metadatas' => EditorialMetadata::get_editorial_metadata_terms(),
-				'url_edit_status'    => CustomStatusEndpoint::get_crud_url(),
-				'url_reorder_status' => CustomStatusEndpoint::get_reorder_url(),
+				'url_edit_status'     => CustomStatusEndpoint::get_crud_url(),
+				'url_reorder_status'  => CustomStatusEndpoint::get_reorder_url(),
 			] );
 		}
 
@@ -271,7 +271,7 @@ class CustomStatus {
 		// Add the required editorial metadata to the custom statuses for UI purposes
 		foreach ( $custom_statuses as $status ) {
 			$required_metadata_ids = $status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [];
-			$required_metadatas = [];
+			$required_metadatas    = [];
 			foreach ( $required_metadata_ids as $metadata_id ) {
 				$required_metadatas[] = $editorial_metadatas[ $metadata_id ];
 			}
@@ -333,7 +333,7 @@ class CustomStatus {
 			$custom_statuses = self::get_custom_statuses();
 
 			// $selected can be empty, but must be set because it's used as a JS variable
-			$selected      = '';
+			$selected = '';
 
 			if ( ! empty( $post ) ) {
 				// Get the status of the current post
@@ -547,9 +547,9 @@ class CustomStatus {
 
 		$term_id = $inserted_term['term_id'];
 
-		$position = $args[ self::METADATA_POSITION_KEY ];
+		$position              = $args[ self::METADATA_POSITION_KEY ];
 		$required_metadata_ids = $args[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [];
-		$required_user_ids = $args[ self::METADATA_REQ_USER_IDS_KEY ] ?? [];
+		$required_user_ids     = $args[ self::METADATA_REQ_USER_IDS_KEY ] ?? [];
 
 		// In case of failure, data cleanup happens which includes the term and the meta keys.
 
@@ -570,6 +570,15 @@ class CustomStatus {
 
 		$term_result = self::get_custom_status_by( 'id', $term_id );
 
+		if ( false !== $term_result ) {
+			/**
+			 * Fires after a custom status is added to the database.
+			 *
+			 * @param WP_Term $term The custom status term object.
+			 */
+			do_action( 'vw_add_custom_status', $term_result );
+		}
+
 		return $term_result;
 	}
 
@@ -584,7 +593,7 @@ class CustomStatus {
 		$old_status = self::get_custom_status_by( 'id', $status_id );
 		if ( is_wp_error( $old_status ) ) {
 			return $old_status;
-		} else if ( ! $old_status ) {
+		} elseif ( ! $old_status ) {
 			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
 
@@ -614,8 +623,8 @@ class CustomStatus {
 		}
 
 		$term_fields_to_update = [
-			'name'    => isset( $args['name'] ) ? $args['name'] : $old_status->name,
-			'slug'    => isset( $args['slug'] ) ? $args['slug'] : $old_status->slug,
+			'name'        => isset( $args['name'] ) ? $args['name'] : $old_status->name,
+			'slug'        => isset( $args['slug'] ) ? $args['slug'] : $old_status->slug,
 			'description' => isset( $args['description'] ) ? $args['description'] : $old_status->description,
 		];
 
@@ -648,9 +657,19 @@ class CustomStatus {
 			return $updated_term;
 		}
 
-		$status_result = self::get_custom_status_by( 'id', $status_id );
+		$updated_status = self::get_custom_status_by( 'id', $status_id );
 
-		return $status_result;
+		if ( $updated_status ) {
+			/**
+			 * Fires after a custom status is updated in the database.
+			 *
+			 * @param WP_Term $updated_status The updated status WP_Term object.
+			 * @param array $update_args The arguments used to update the status.
+			 */
+			do_action( 'vw_update_custom_status', $updated_status, $args );
+		}
+
+		return $updated_status;
 	}
 
 	/**
@@ -664,7 +683,7 @@ class CustomStatus {
 		$old_status = self::get_custom_status_by( 'id', $status_id );
 		if ( is_wp_error( $old_status ) ) {
 			return $old_status;
-		} else if ( ! $old_status ) {
+		} elseif ( ! $old_status ) {
 			return new WP_Error( 'invalid', __( "Custom status doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
 
@@ -698,6 +717,15 @@ class CustomStatus {
 			return new WP_Error( 'invalid', __( 'Unable to delete custom status.', 'vip-workflow' ) );
 		}
 
+		/**
+		 * Fires after a custom status is deleted from the database.
+		 *
+		 * @param int $term_id The ID of the status being deleted
+		 * @param string $term_name The name of the status being deleted
+		 * @param string $old_status_slug The slug of the status being deleted
+		 */
+		do_action( 'vw_delete_custom_status', $status_id, $old_status->name, $old_status_slug );
+
 		// Re-order the positions after deletion
 		$custom_statuses = self::get_custom_statuses();
 
@@ -727,9 +755,9 @@ class CustomStatus {
 		$statuses = get_terms( [
 			'taxonomy'   => self::TAXONOMY_KEY,
 			'hide_empty' => false,
-			'orderby' => 'meta_value_num',
-			'order' => 'ASC',
-			'meta_key' => self::METADATA_POSITION_KEY,
+			'orderby'    => 'meta_value_num',
+			'order'      => 'ASC',
+			'meta_key'   => self::METADATA_POSITION_KEY,
 		]);
 
 		if ( is_wp_error( $statuses ) || empty( $statuses ) ) {
@@ -738,7 +766,7 @@ class CustomStatus {
 
 		// Add metadata to each term
 		$statuses = array_map( function ( $status ) {
-			$term_meta = apply_filters( 'vw_register_custom_status_meta', [], $status );
+			$term_meta    = apply_filters( 'vw_register_custom_status_meta', [], $status );
 			$status->meta = $term_meta;
 
 			return $status;
@@ -771,8 +799,8 @@ class CustomStatus {
 
 		if ( is_wp_error( $custom_status ) || ! $custom_status ) {
 			$custom_status = false;
-		} else if ( $include_metadata ) {
-			$term_meta = apply_filters( 'vw_register_custom_status_meta', [], $custom_status );
+		} elseif ( $include_metadata ) {
+			$term_meta           = apply_filters( 'vw_register_custom_status_meta', [], $custom_status );
 			$custom_status->meta = $term_meta;
 		}
 
@@ -794,9 +822,9 @@ class CustomStatus {
 				'description' => __( 'Post is a draft; not ready for review or publication.', 'vip-workflow' ),
 			],
 			[
-				'name'               => __( 'Pending Review' ),
-				'slug'               => 'pending',
-				'description'        => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
+				'name'        => __( 'Pending Review' ),
+				'slug'        => 'pending',
+				'description' => __( 'Post needs to be reviewed by an editor.', 'vip-workflow' ),
 			],
 		];
 
