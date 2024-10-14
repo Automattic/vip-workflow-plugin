@@ -77,9 +77,12 @@ class Telemetry {
 		] );
 
 		if ( 'publish' === $new_status ) {
+			$em_field_counts = self::get_em_field_counts_for_post( $post->ID );
+
 			self::$tracks->record_event( 'post_custom_status_published', [
 				'post_id'          => $post->ID,
-				'em_fields_filled' => self::get_filled_em_fields_for_post( $post->ID ),
+				'em_fields_filled' => $em_field_counts['filled'],
+				'em_fields_total'  => $em_field_counts['total'],
 			] );
 		}
 	}
@@ -309,9 +312,11 @@ class Telemetry {
 	 * Get the number of filled editorial metadata fields for a post
 	 *
 	 * @param int $post_id The post ID
-	 * @return int The number of fields with a value set
+	 * @return array An associative array with keys:
+	 *     int 'filled_count': The number of filled fields
+	 *     int 'total_count': The total number of EM fields available
 	 */
-	private static function get_filled_em_fields_for_post( int $post_id ): int {
+	private static function get_em_field_counts_for_post( int $post_id ): array {
 		$editorial_metadata_terms = EditorialMetadata::get_editorial_metadata_terms();
 		$filled_em_fields         = 0;
 
@@ -324,7 +329,10 @@ class Telemetry {
 			}
 		}
 
-		return $filled_em_fields;
+		return [
+			'filled' => $filled_em_fields,
+			'total'  => count( $editorial_metadata_terms ),
+		];
 	}
 }
 
