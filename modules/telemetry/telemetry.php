@@ -4,6 +4,7 @@ namespace VIPWorkflow\Modules\Telemetry;
 
 use Automattic\VIP\Telemetry\Tracks;
 use VIPWorkflow\Modules\CustomStatus;
+use VIPWorkflow\Modules\EditorialMetadata;
 use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 use WP_Post;
 use WP_Term;
@@ -34,6 +35,9 @@ class Telemetry {
 		// Settings events
 		add_action( 'vw_upgrade_version', [ __CLASS__, 'record_admin_update' ], 10, 2 );
 		add_action( 'vw_save_settings', [ __CLASS__, 'record_settings_update' ], 10, 2 );
+
+		// Editorial Metadata events
+		add_action( 'vw_add_editorial_metadata_field', [ __CLASS__, 'record_add_editorial_metadata_field' ], 10, 1 );
 	}
 
 	// Custom Status events
@@ -240,6 +244,22 @@ class Telemetry {
 		} else {
 			self::$tracks->record_event( 'send_to_email_enabled' );
 		}
+	}
+
+	// Editorial Metadata events
+
+	/**
+	 * Record an event when an editorial metadata field is added
+	 *
+	 * @param WP_Term $editorial_metadata The name of the field
+	 */
+	public static function record_add_editorial_metadata_field( WP_Term $editorial_metadata ): void {
+		self::$tracks->record_event( 'em_field_created', [
+			'term_id' => $editorial_metadata->term_id,
+			'name'    => $editorial_metadata->name,
+			'slug'    => $editorial_metadata->slug,
+			'type'    => $editorial_metadata->meta[ EditorialMetadata::METADATA_TYPE_KEY ],
+		] );
 	}
 }
 

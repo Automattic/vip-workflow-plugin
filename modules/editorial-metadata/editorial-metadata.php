@@ -270,8 +270,8 @@ class EditorialMetadata {
 			return $term;
 		}
 
-		$term_meta = [];
-		$term_meta[ self::METADATA_TYPE_KEY ] = get_term_meta( $term->term_id, self::METADATA_TYPE_KEY, true );
+		$term_meta                                = [];
+		$term_meta[ self::METADATA_TYPE_KEY ]     = get_term_meta( $term->term_id, self::METADATA_TYPE_KEY, true );
 		$term_meta[ self::METADATA_POSTMETA_KEY ] = get_term_meta( $term->term_id, self::METADATA_POSTMETA_KEY, true );
 
 		if ( '' === $term_meta[ self::METADATA_TYPE_KEY ] || '' === $term_meta[ self::METADATA_POSTMETA_KEY ] ) {
@@ -294,7 +294,7 @@ class EditorialMetadata {
 			'slug'        => $args['slug'] ?? sanitize_title( $args['name'] ),
 			'description' => $args['description'] ?? '',
 		];
-		$term_name = $args['name'];
+		$term_name    = $args['name'];
 
 		$inserted_term = wp_insert_term( $term_name, self::METADATA_TAXONOMY, $term_to_save );
 
@@ -304,13 +304,13 @@ class EditorialMetadata {
 
 		$term_id = $inserted_term['term_id'];
 
-		$metadata_type = $args['type'];
-		$metadata_postmeta_key  = self::get_postmeta_key( $metadata_type, $term_id );
+		$metadata_type         = $args['type'];
+		$metadata_postmeta_key = self::get_postmeta_key( $metadata_type, $term_id );
 
 		$type_meta_result = add_term_meta( $term_id, self::METADATA_TYPE_KEY, $metadata_type );
 		if ( is_wp_error( $type_meta_result ) ) {
 			return $type_meta_result;
-		} else if ( ! $type_meta_result ) {
+		} elseif ( ! $type_meta_result ) {
 			// If we can't save the type, we should delete the term
 			wp_delete_term( $term_id, self::METADATA_TAXONOMY );
 			return new WP_Error( 'invalid', __( 'Unable to create editorial metadata.', 'vip-workflow' ) );
@@ -319,7 +319,7 @@ class EditorialMetadata {
 		$postmeta_meta_result = add_term_meta( $term_id, self::METADATA_POSTMETA_KEY, $metadata_postmeta_key );
 		if ( is_wp_error( $postmeta_meta_result ) ) {
 			return $postmeta_meta_result;
-		} else if ( ! $postmeta_meta_result ) {
+		} elseif ( ! $postmeta_meta_result ) {
 			// If we can't save the postmeta key, we should delete the term
 			delete_term_meta( $term_id, self::METADATA_TYPE_KEY );
 			wp_delete_term( $term_id, self::METADATA_TAXONOMY );
@@ -327,6 +327,15 @@ class EditorialMetadata {
 		}
 
 		$term_result = self::get_editorial_metadata_term_by( 'id', $term_id );
+
+		if ( ! is_wp_error( $term_result ) ) {
+			/**
+			 * Fires after a new editorial metadata field is added to the database.
+			 *
+			 * @param WP_Term $term The editorial metadata term object.
+			 */
+			do_action( 'vw_add_editorial_metadata_field', $term_result );
+		}
 
 		return $term_result;
 	}
@@ -342,13 +351,13 @@ class EditorialMetadata {
 		$old_term = self::get_editorial_metadata_term_by( 'id', $term_id );
 		if ( is_wp_error( $old_term ) ) {
 			return $old_term;
-		} else if ( ! $old_term ) {
+		} elseif ( ! $old_term ) {
 			return new WP_Error( 'invalid', __( "Editorial metadata doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
 
 		$term_fields_to_update = [
-			'name'    => isset( $args['name'] ) ? $args['name'] : $old_term->name,
-			'slug'    => isset( $args['slug'] ) ? $args['slug'] : $old_term->slug,
+			'name'        => isset( $args['name'] ) ? $args['name'] : $old_term->name,
+			'slug'        => isset( $args['slug'] ) ? $args['slug'] : $old_term->slug,
 			'description' => isset( $args['description'] ) ? $args['description'] : $old_term->description,
 		];
 
@@ -375,7 +384,7 @@ class EditorialMetadata {
 		$term = self::get_editorial_metadata_term_by( 'id', $term_id );
 		if ( is_wp_error( $term ) ) {
 			return $term;
-		} else if ( ! $term ) {
+		} elseif ( ! $term ) {
 			return new WP_Error( 'invalid', __( "Editorial metadata term doesn't exist.", 'vip-workflow' ), array( 'status' => 400 ) );
 		}
 
