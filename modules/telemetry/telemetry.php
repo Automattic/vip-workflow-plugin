@@ -26,8 +26,8 @@ class Telemetry {
 		// Custom Status events
 		add_action( 'transition_post_status', [ __CLASS__, 'record_custom_status_change' ], 10, 3 );
 		add_action( 'vw_add_custom_status', [ __CLASS__, 'record_add_custom_status' ], 10, 3 );
-		add_action( 'vw_delete_custom_status', [ __CLASS__, 'record_delete_custom_status' ], 10, 3 );
 		add_action( 'vw_update_custom_status', [ __CLASS__, 'record_update_custom_status' ], 10, 2 );
+		add_action( 'vw_delete_custom_status', [ __CLASS__, 'record_delete_custom_status' ], 10, 3 );
 
 		// Notification events
 		add_action( 'vw_notification_status_change', [ __CLASS__, 'record_notification_sent' ], 10, 3 );
@@ -38,6 +38,8 @@ class Telemetry {
 
 		// Editorial Metadata events
 		add_action( 'vw_add_editorial_metadata_field', [ __CLASS__, 'record_add_editorial_metadata_field' ], 10, 1 );
+		add_action( 'vw_update_editorial_metadata_field', [ __CLASS__, 'record_update_editorial_metadata_field' ], 10, 1 );
+		add_action( 'vw_editorial_metadata_term_deleted', [ __CLASS__, 'record_delete_editorial_metadata_field' ], 10, 3 );
 	}
 
 	// Custom Status events
@@ -259,6 +261,36 @@ class Telemetry {
 			'name'    => $editorial_metadata->name,
 			'slug'    => $editorial_metadata->slug,
 			'type'    => $editorial_metadata->meta[ EditorialMetadata::METADATA_TYPE_KEY ],
+		] );
+	}
+
+	/**
+	 * Record an event when an editorial metadata field is updated
+	 *
+	 * @param WP_Term $updated_status The updated status WP_Term object.
+	 * @param array $update_args The arguments used to update the status.
+	 */
+	public static function record_update_editorial_metadata_field( WP_Term $editorial_metadata ): void {
+		self::$tracks->record_event( 'em_field_changed', [
+			'term_id' => $editorial_metadata->term_id,
+			'name'    => $editorial_metadata->name,
+			'slug'    => $editorial_metadata->slug,
+			'type'    => $editorial_metadata->meta[ EditorialMetadata::METADATA_TYPE_KEY ],
+		] );
+	}
+
+	/**
+	 * Record an event when an editorial metadata field is deleted
+	 *
+	 * @param int $term_id The editorial metadata field term ID
+	 * @param string $term_name The editorial metadata name
+	 * @param string $slug The editorial metadata slug
+	 */
+	public static function record_delete_editorial_metadata_field( int $term_id, string $term_name, string $slug ): void {
+		self::$tracks->record_event( 'em_field_deleted', [
+			'term_id' => $term_id,
+			'name'    => $term_name,
+			'slug'    => $slug,
 		] );
 	}
 }

@@ -371,6 +371,15 @@ class EditorialMetadata {
 
 		$term_result = self::get_editorial_metadata_term_by( 'id', $term_id );
 
+		if ( $term_result ) {
+			/**
+			 * Fires after an editorial metadata field is updated in the database.
+			 *
+			 * @param WP_Term $editorial_metadata The updated editorial metadata WP_Term object.
+			 */
+			do_action( 'vw_update_editorial_metadata_field', $term_result );
+		}
+
 		return $term_result;
 	}
 
@@ -401,7 +410,14 @@ class EditorialMetadata {
 			return new WP_Error( 'invalid', __( 'Unable to delete editorial metadata term.', 'vip-workflow' ) );
 		}
 
-		do_action( 'vw_editorial_metadata_term_deleted', $term_id );
+		/**
+		 * Fires after an editorial metadata field is deleted.
+		 *
+		 * @param int $term_id The ID of the editorial metadata field being deleted
+		 * @param string $term_name The name of the editorial metadata field being deleted
+		 * @param string $term_slug The slug of the editorial metadata field being deleted
+		 */
+		do_action( 'vw_editorial_metadata_term_deleted', $term_id, $term->name, $term->slug );
 
 		return $result;
 	}
