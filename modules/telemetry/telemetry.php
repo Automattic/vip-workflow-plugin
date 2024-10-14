@@ -4,6 +4,7 @@ namespace VIPWorkflow\Modules\Telemetry;
 
 use Automattic\VIP\Telemetry\Tracks;
 use VIPWorkflow\Modules\CustomStatus;
+use VIPWorkflow\Modules\EditorialMetadata;
 use VIPWorkflow\Modules\Shared\PHP\HelperUtilities;
 use WP_Post;
 use WP_Term;
@@ -25,8 +26,8 @@ class Telemetry {
 		// Custom Status events
 		add_action( 'transition_post_status', [ __CLASS__, 'record_custom_status_change' ], 10, 3 );
 		add_action( 'vw_add_custom_status', [ __CLASS__, 'record_add_custom_status' ], 10, 3 );
-		add_action( 'vw_delete_custom_status', [ __CLASS__, 'record_delete_custom_status' ], 10, 3 );
 		add_action( 'vw_update_custom_status', [ __CLASS__, 'record_update_custom_status' ], 10, 2 );
+		add_action( 'vw_delete_custom_status', [ __CLASS__, 'record_delete_custom_status' ], 10, 3 );
 
 		// Notification events
 		add_action( 'vw_notification_status_change', [ __CLASS__, 'record_notification_sent' ], 10, 3 );
@@ -34,6 +35,11 @@ class Telemetry {
 		// Settings events
 		add_action( 'vw_upgrade_version', [ __CLASS__, 'record_admin_update' ], 10, 2 );
 		add_action( 'vw_save_settings', [ __CLASS__, 'record_settings_update' ], 10, 2 );
+
+		// Editorial Metadata events
+		add_action( 'vw_add_editorial_metadata_field', [ __CLASS__, 'record_add_editorial_metadata_field' ], 10, 1 );
+		add_action( 'vw_update_editorial_metadata_field', [ __CLASS__, 'record_update_editorial_metadata_field' ], 10, 1 );
+		add_action( 'vw_editorial_metadata_term_deleted', [ __CLASS__, 'record_delete_editorial_metadata_field' ], 10, 4 );
 	}
 
 	// Custom Status events
@@ -69,6 +75,16 @@ class Telemetry {
 			'new_status' => $new_status,
 			'post_id'    => $post->ID,
 		] );
+
+		if ( 'publish' === $new_status ) {
+			$em_field_counts = self::get_em_field_counts_for_post( $post->ID );
+
+			self::$tracks->record_event( 'post_custom_status_published', [
+				'post_id'          => $post->ID,
+				'em_fields_filled' => $em_field_counts['filled'],
+				'em_fields_total'  => $em_field_counts['total'],
+			] );
+		}
 	}
 
 	/**
@@ -240,6 +256,83 @@ class Telemetry {
 		} else {
 			self::$tracks->record_event( 'send_to_email_enabled' );
 		}
+	}
+
+	// Editorial Metadata events
+
+	/**
+	 * Record an event when an editorial metadata field is added
+	 *
+	 * @param WP_Term $editorial_metadata The name of the field
+	 */
+	public static function record_add_editorial_metadata_field( WP_Term $editorial_metadata ): void {
+		self::$tracks->record_event( 'em_field_created', [
+			'term_id' => $editorial_metadata->term_id,
+			'name'    => $editorial_metadata->name,
+			'slug'    => $editorial_metadata->slug,
+			'type'    => $editorial_metadata->meta[ EditorialMetadata::METADATA_TYPE_KEY ],
+		] );
+	}
+
+	/**
+	 * Record an event when an editorial metadata field is updated
+	 *
+	 * @param WP_Term $updated_status The updated status WP_Term object.
+	 * @param array $update_args The arguments used to update the status.
+	 */
+	public static function record_update_editorial_metadata_field( WP_Term $editorial_metadata ): void {
+		self::$tracks->record_event( 'em_field_changed', [
+			'term_id' => $editorial_metadata->term_id,
+			'name'    => $editorial_metadata->name,
+			'slug'    => $editorial_metadata->slug,
+			'type'    => $editorial_metadata->meta[ EditorialMetadata::METADATA_TYPE_KEY ],
+		] );
+	}
+
+	/**
+	 * Record an event when an editorial metadata field is deleted
+	 *
+	 * @param int $term_id The editorial metadata field term ID
+	 * @param string $term_name The editorial metadata name
+	 * @param string $slug The editorial metadata slug
+	 * @param string $metadata_type The type of field, e.g. 'date', 'text'
+	 */
+	public static function record_delete_editorial_metadata_field( int $term_id, string $term_name, string $slug, string $metadata_type ): void {
+		self::$tracks->record_event( 'em_field_deleted', [
+			'term_id' => $term_id,
+			'name'    => $term_name,
+			'slug'    => $slug,
+			'type'    => $metadata_type,
+		] );
+	}
+
+	// Utility methods
+
+	/**
+	 * Get the number of filled editorial metadata fields for a post
+	 *
+	 * @param int $post_id The post ID
+	 * @return array An associative array with keys:
+	 *     int 'filled_count': The number of filled fields
+	 *     int 'total_count': The total number of EM fields available
+	 */
+	private static function get_em_field_counts_for_post( int $post_id ): array {
+		$editorial_metadata_terms = EditorialMetadata::get_editorial_metadata_terms();
+		$filled_em_fields         = 0;
+
+		foreach ( $editorial_metadata_terms as $em_term ) {
+			$post_meta_key   = $em_term->meta[ EditorialMetadata::METADATA_POSTMETA_KEY ];
+			$post_meta_value = get_post_meta( $post_id, $post_meta_key, true );
+
+			if ( '' !== $post_meta_value ) {
+				++$filled_em_fields;
+			}
+		}
+
+		return [
+			'filled' => $filled_em_fields,
+			'total'  => count( $editorial_metadata_terms ),
+		];
 	}
 }
 
