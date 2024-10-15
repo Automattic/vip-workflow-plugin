@@ -10,11 +10,11 @@
   },
   "login": true,
   "steps": [
-      {
-        "step": "defineWpConfigConsts",
-        "consts": {
-            "WP_DEBUG": true
-        }
+    {
+      "step": "defineWpConfigConsts",
+      "consts": {
+        "WP_DEBUG": true
+      }
     },
     {
       "step": "installPlugin",
