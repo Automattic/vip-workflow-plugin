@@ -20,7 +20,7 @@
       "step": "installPlugin",
       "pluginData": {
         "resource": "url",
-        "url": "https://github-proxy.com/proxy/?repo=Automattic/vip-workflow-plugin&branch=fix/blueprint-install"
+        "url": "https://github-proxy.com/proxy/?repo=Automattic/vip-workflow-plugin"
       },
       "options": {
         "activate": true
