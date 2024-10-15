@@ -23,8 +23,7 @@
         "url": "https://github-proxy.com/proxy/?repo=Automattic/vip-workflow-plugin&branch=fix/blueprint-install"
       },
       "options": {
-        "activate": true,
-        "targetFolderName": "vip-workflow-plugin"
+        "activate": true
       }
     },
     {
