@@ -268,8 +268,15 @@ class CustomStatus {
 
 		$custom_statuses = self::get_custom_statuses();
 
-		// Add the required editorial metadata to the custom statuses for UI purposes
+		// Add the required editorial metadata to the custom statuses for UI purposes.
+		// When the current post type is unsupported, get_custom_statuses() returns the result of
+		// get_core_statuses(), which are plain arrays rather than WP_Term objects. Skip those since
+		// they carry no editorial metadata, and attempting object property access on an array is a
+		// fatal error in PHP 8.
 		foreach ( $custom_statuses as $status ) {
+			if ( ! is_object( $status ) ) {
+				continue;
+			}
 			$required_metadata_ids = $status->meta[ self::METADATA_REQ_EDITORIAL_IDS_KEY ] ?? [];
 			$required_metadatas    = [];
 			foreach ( $required_metadata_ids as $metadata_id ) {
