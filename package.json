@@ -62,6 +62,11 @@
     "typescript": "^5.6.2",
     "webpack": "^5.91.0"
   },
+  "overrides": {
+    "basic-ftp": "5.2.1",
+    "form-data": "4.0.4",
+    "simple-git": "3.36.0"
+  },
   "stylelint": {
     "extends": "./node_modules/@wordpress/scripts/config/.stylelintrc.json"
   }
